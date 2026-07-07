@@ -19,6 +19,9 @@ export interface OrgSettings {
   aiName: string;
   neverSay: string;
   channels: string[];
+  whatsappNumber: string;
+  sellsDescription: string;
+  businessHours: { open: string; close: string };
 }
 
 export const defaultOrgSettings: OrgSettings = {
@@ -34,6 +37,9 @@ export const defaultOrgSettings: OrgSettings = {
   aiName: "Lumi",
   neverSay: "",
   channels: ["website"],
+  whatsappNumber: "",
+  sellsDescription: "",
+  businessHours: { open: "9:00 AM", close: "6:00 PM" },
 };
 
 function slugify(name: string): string {
@@ -68,6 +74,7 @@ export interface CreateOrgInput {
   websiteUrl?: string;
   industry?: string;
   country?: string;
+  currency?: string;
   settings?: Partial<OrgSettings>;
 }
 
@@ -104,6 +111,7 @@ export async function createOrganizationForUser(
         websiteUrl: input.websiteUrl ?? null,
         industry: input.industry ?? null,
         country: input.country ?? "Nigeria",
+        currency: input.currency ?? "NGN",
         settings: { ...defaultOrgSettings, ...(input.settings ?? {}) },
       },
     }),

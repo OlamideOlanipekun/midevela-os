@@ -1,35 +1,23 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const cookieHeader = request.headers.get('cookie') || '';
-  const isSignedIn = cookieHeader.includes('midevela_mock_auth=true');
+// Pages that require a signed-in user. API routes enforce auth in their
+// handlers (via requireUser/requireOrg) so they return proper 401 JSON
+// instead of redirects; the widget + webhooks stay public by design.
+const isProtectedPage = createRouteMatcher(["/dashboard(.*)", "/onboarding(.*)"]);
 
-  // Protect /dashboard/* and /api/* (except public endpoints)
-  const isDashboardRoute = pathname.startsWith('/dashboard');
-  const isProtectedApi = pathname.startsWith('/api') && 
-    !pathname.startsWith('/api/auth') && 
-    !pathname.startsWith('/api/webhooks') && 
-    !pathname.startsWith('/api/public') &&
-    !pathname.startsWith('/api/widget') && // widget is embedded on merchant sites, visitors have no auth cookie
-    !pathname.startsWith('/api/workspace/subscription'); // allow mock subscription API for easy testing
-
-  if (isDashboardRoute || isProtectedApi) {
-    if (!isSignedIn) {
-      // Redirect unauthenticated requests to login, preserving intended path
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect_url', pathname);
-      return NextResponse.redirect(loginUrl);
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedPage(req)) {
+    const { userId, redirectToSignIn } = await auth();
+    if (!userId) {
+      return redirectToSignIn({ returnBackUrl: req.url });
     }
   }
-
-  return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/api/:path*',
+    // Run on everything except Next internals and static assets
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
   ],
 };

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMockAuth } from "@/components/providers/MockAuthProvider";
+import { useUser } from "@clerk/nextjs";
 import "./dashboard.css";
 
 const renderActivityText = (name: string, text: string) => {
@@ -23,10 +23,11 @@ const renderActivityText = (name: string, text: string) => {
 };
 
 export default function DashboardHome() {
-  const { user } = useMockAuth();
+  const { user } = useUser();
   const router = useRouter();
-  
-  const userName = user?.fullName || "Ola";
+
+  const userName =
+    user?.fullName || user?.primaryEmailAddress?.emailAddress || "there";
   const firstName = userName.split(" ")[0];
   
   const [greeting, setGreeting] = useState(`Good afternoon, ${firstName}.`);

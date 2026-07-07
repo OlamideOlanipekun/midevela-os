@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useMockAuth } from "@/components/providers/MockAuthProvider";
+import { useUser } from "@clerk/nextjs";
 
 interface TopBarProps {
   onMenuToggle: () => void;
@@ -10,13 +10,14 @@ interface TopBarProps {
 export default function TopBar({ onMenuToggle }: TopBarProps) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [isMac, setIsMac] = useState(true);
-  const { user } = useMockAuth();
+  const { user } = useUser();
 
   useEffect(() => {
     setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
   }, []);
 
-  const userName = user?.fullName || "Ola";
+  const userName =
+    user?.fullName || user?.primaryEmailAddress?.emailAddress || "";
   const userInitials = userName ? userName[0].toUpperCase() : "O";
 
   return (

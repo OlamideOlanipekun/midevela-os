@@ -19,6 +19,8 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(2);
   const [loading, setLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [embedCode, setEmbedCode] = useState<string | null>(null);
+  const [orgReady, setOrgReady] = useState(false);
 
   // Form states
   const [businessName, setBusinessName] = useState("");
@@ -58,47 +60,80 @@ export default function OnboardingPage() {
   };
 
   const handleCopySnippet = () => {
-    const snippetCode = `<!-- Midevela AI Counter -->\n<script>\n  (function(m,i,d,e,v,l,a){\n    m['MidevelaObject']=v;\n    m[v]=m[v]||function(){(m[v].q=m[v].q||[]).push(arguments)};\n    l=i.createElement(d);l.async=1;\n    l.src='https://cdn.midevela.com/v1/counter.js';\n    a=i.getElementsByTagName(d)[0];\n    a.parentNode.insertBefore(l,a);\n  })(window,document,'script','','mdv');\n  mdv('init', 'workspace_tk_xk92jw');\n</script>`;
-    navigator.clipboard.writeText(snippetCode);
+    if (!embedCode) return;
+    navigator.clipboard.writeText(embedCode);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
   };
 
-  const handleLaunch = async () => {
+  const currencyCode = (label: string) => {
+    if (label.includes("Naira")) return "NGN";
+    if (label.includes("Dollar")) return "USD";
+    if (label.includes("Pound")) return "GBP";
+    if (label.includes("Cedi")) return "GHS";
+    return "NGN";
+  };
+
+  // Creates the org (idempotent server-side) and receives the real
+  // widget key + embed snippet. Runs when the user reaches step 6.
+  const completeOnboarding = async (): Promise<boolean> => {
     setLoading(true);
     try {
-      // POST the user's configurations to persistent settings
-      const res = await fetch("/api/workspace/settings", {
+      const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orgName: businessName || "Lumina Beauty Co.",
+          businessName: businessName.trim(),
+          website: websiteUrl.trim(),
+          industry,
+          currency: currencyCode(currency),
+          aiName,
           tone: selectedTone.toLowerCase(),
-          greeting: greeting,
-          accentColor: "#1E6F64",
-          delaySeconds: 3,
-          exitIntent: true
-        })
+          greeting,
+          neverSay,
+          channels,
+          whatsappNumber: waNumber,
+          sellsDescription: sellsDesc,
+          businessHours: { open: openingTime, close: closingTime },
+        }),
       });
-      if (res.ok) {
-        router.push("/dashboard");
-      } else {
-        alert("Failed to save settings. Please try launching again.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Could not save your setup. Please try again.");
+        return false;
       }
+      const data = await res.json();
+      if (data.embedSnippet) setEmbedCode(data.embedSnippet);
+      setOrgReady(true);
+      return true;
     } catch (err) {
       console.error("Failed to complete onboarding:", err);
-      // Fallback redirect
-      router.push("/dashboard");
+      alert("Could not save your setup. Check your connection and try again.");
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSkip = () => {
-    setCurrentStep(6);
+  const handleLaunch = async () => {
+    if (!orgReady) {
+      const ok = await completeOnboarding();
+      if (!ok) return;
+    }
+    router.push("/dashboard");
   };
 
-  const handleNext = () => {
+  const handleSkip = async () => {
+    if (await completeOnboarding()) setCurrentStep(6);
+  };
+
+  const handleNext = async () => {
+    if (currentStep === 5) {
+      // Entering the install step — persist everything and mint the
+      // real widget key so the snippet shown is the live one.
+      if (await completeOnboarding()) setCurrentStep(6);
+      return;
+    }
     if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
     }
@@ -572,7 +607,7 @@ export default function OnboardingPage() {
                 <button className="snippet-copy" onClick={handleCopySnippet}>
                   {copySuccess ? "Copied!" : "Copy"}
                 </button>
-                <code>{`<!-- Midevela AI Counter -->\n<script>\n  (function(m,i,d,e,v,l,a){\n    m['MidevelaObject']=v;\n    m[v]=m[v]||function(){(m[v].q=m[v].q||[]).push(arguments)};\n    l=i.createElement(d);l.async=1;\n    l.src='https://cdn.midevela.com/v1/counter.js';\n    a=i.getElementsByTagName(d)[0];\n    a.parentNode.insertBefore(l,a);\n  })(window,document,'script','','mdv');\n  mdv('init', 'workspace_tk_xk92jw');\n</script>`}</code>
+                <code>{embedCode ?? "Generating your embed code…"}</code>
               </div>
 
               <div className="install-options">

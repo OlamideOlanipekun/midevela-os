@@ -1,8 +1,8 @@
 
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-import { MockAuthProvider } from "@/components/providers/MockAuthProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,7 +35,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body>
-        <MockAuthProvider>{children}</MockAuthProvider>
+        <ClerkProvider>{children}</ClerkProvider>
       </body>
     </html>
   );

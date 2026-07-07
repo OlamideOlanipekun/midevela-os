@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSubscription } from "@/components/providers/SubscriptionProvider";
-import { useMockAuth } from "@/components/providers/MockAuthProvider";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -109,7 +109,9 @@ const workspaceNavItems = [
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const { subscription } = useSubscription();
-  const { user, signOut } = useMockAuth();
+  const { user } = useUser();
+  const { signOut: clerkSignOut } = useClerk();
+  const signOut = () => clerkSignOut({ redirectUrl: "/login" });
   const [orgName, setOrgName] = useState("Lumina Beauty Co.");
 
   useEffect(() => {
@@ -123,11 +125,12 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
   const currentPlan = subscription?.status === "active" ? `${subscription.plan.toUpperCase()} PLAN` : "EXPIRED PLAN";
 
-  const userName = user?.fullName || "Ola";
+  const userName =
+    user?.fullName || user?.primaryEmailAddress?.emailAddress || "";
   const userInitials = userName
     ? userName
         .split(" ")
-        .map((n) => n[0])
+        .map((n: string) => n[0])
         .join("")
         .substring(0, 2)
         .toUpperCase()
