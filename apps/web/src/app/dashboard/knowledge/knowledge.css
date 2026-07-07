@@ -1,0 +1,522 @@
+/* ═══════════════════════════════════════════════════════════
+   KNOWLEDGE — "The Business Brain"
+   FAQs, policies, brand voice and document ingestion, with a
+   quiet health sidebar that makes gaps actionable rather than
+   just decorative alarm color.
+   ═══════════════════════════════════════════════════════════ */
+
+.know-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.know-page-head h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: clamp(30px, 3.4vw, 40px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 10px 0 0;
+  color: var(--ink);
+}
+
+.know-page-sub {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+.know-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ─── FAQ / POLICY ROWS ─── */
+.know-row {
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color .15s ease;
+  animation: fadeUp 0.35s var(--ease-default) both;
+}
+
+.know-row:hover {
+  border-color: rgba(15, 31, 28, 0.15);
+}
+
+.know-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.know-row-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 16.5px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+
+.know-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.know-row-meta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+
+.know-row-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.know-delete-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+}
+
+.know-delete-btn:hover:not(:disabled) {
+  background: rgba(178, 58, 46, 0.1);
+  border-color: rgba(178, 58, 46, 0.3);
+  color: var(--rust);
+}
+
+.know-delete-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ─── BRAND VOICE FORM ─── */
+.know-voice-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.know-voice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.know-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.know-field label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.know-field input,
+.know-field select,
+.know-field textarea {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.know-field input:focus,
+.know-field select:focus,
+.know-field textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(30, 111, 100, 0.1);
+}
+
+.know-field select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b5546' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 13px;
+  padding-right: 36px;
+}
+
+.know-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ─── DOCUMENTS TAB ─── */
+.know-uploader {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 44px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  transition: all .2s ease;
+  background: rgba(26, 24, 20, 0.015);
+}
+
+.know-uploader:hover {
+  border-color: var(--teal);
+  background: rgba(30, 111, 100, 0.03);
+}
+
+.know-uploader-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.know-uploader-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.know-doc-row {
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.know-doc-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.know-doc-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.know-doc-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.know-doc-meta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+/* Website crawler widget */
+.know-crawl-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  background: var(--paper-raised);
+}
+
+.know-crawl-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 19px;
+  color: var(--ink);
+}
+
+.know-crawl-desc {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  max-width: 42ch;
+  line-height: 1.5;
+}
+
+.know-crawl-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+  margin-top: 8px;
+}
+
+.know-crawl-row input {
+  flex: 1;
+  padding: 11px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  transition: border-color .2s ease;
+}
+
+.know-crawl-row input:focus {
+  border-color: var(--teal);
+}
+
+.know-crawl-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--teal);
+  margin-top: 10px;
+}
+
+/* ─── RIGHT: HEALTH SIDEBAR ─── */
+.know-sidebar {
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.know-sidebar-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+/* Health is a single ratio → meter, not a decorative ring */
+.know-health-value {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 40px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-align: center;
+  line-height: 1;
+}
+
+.know-health-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(30, 111, 100, 0.12);
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.know-health-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--teal);
+  transition: width .6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.know-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.know-stat-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.know-stat-line strong {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.know-gaps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* Gap alerts: amber status tint (was undefined --gold-tint/--gold-border) */
+.know-gap-card {
+  background: rgba(217, 130, 43, 0.08);
+  border: 1px solid rgba(217, 130, 43, 0.22);
+  border-radius: var(--radius-md);
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.know-gap-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #8A5416;
+}
+
+.know-gap-desc {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.know-gap-action {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8A5416;
+  font-weight: 700;
+  cursor: pointer;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 2px;
+}
+
+.know-gap-action:hover {
+  text-decoration: underline;
+}
+
+/* ─── ADD FAQ DRAWER ─── */
+.know-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 31, 28, 0.35);
+  backdrop-filter: blur(3px);
+  z-index: 150;
+  animation: fadeIn 0.2s ease;
+}
+
+.know-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 440px;
+  max-width: 92vw;
+  background: var(--paper-raised);
+  border-left: 1px solid var(--border);
+  box-shadow: -20px 0 60px -20px rgba(15, 31, 28, 0.25);
+  z-index: 151;
+  padding: 30px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: drawerIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes drawerIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+.know-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+}
+
+.know-drawer-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.know-drawer-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+}
+
+.know-drawer-close:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 991px) {
+  .know-layout {
+    grid-template-columns: 1fr;
+  }
+  .know-voice-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .know-drawer {
+    width: 100%;
+    padding: 24px 20px;
+  }
+}

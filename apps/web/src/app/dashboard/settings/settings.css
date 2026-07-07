@@ -1,0 +1,260 @@
+/* ═══════════════════════════════════════════════════════════
+   SETTINGS — "The Back Office"
+   Plain forms done well: generous field spacing, one card per
+   concern, a real code block for the install snippet.
+   ═══════════════════════════════════════════════════════════ */
+
+.set-page-head {
+  margin-bottom: 24px;
+}
+
+.set-page-head h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: clamp(30px, 3.4vw, 40px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 10px 0 0;
+  color: var(--ink);
+}
+
+.set-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.set-card-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.set-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.set-field label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.set-field input[type="text"],
+.set-field input[type="email"],
+.set-field select {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.set-field select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b5546' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 13px;
+  padding-right: 36px;
+}
+
+.set-field input:focus,
+.set-field select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(30, 111, 100, 0.1);
+}
+
+.set-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.set-hint {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.set-color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.set-color-input {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--border);
+  background: none;
+  width: 44px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 2px;
+}
+
+.set-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.set-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.set-color-hex {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.set-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.set-slider-row input[type="range"] {
+  flex: 1;
+  max-width: 220px;
+  accent-color: var(--teal);
+}
+
+.set-slider-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 32px;
+}
+
+.set-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.set-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.set-checkbox-row input {
+  accent-color: var(--teal);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Code snippet block */
+.set-code-block {
+  background: var(--pine-black);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.set-code-block pre {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(247, 245, 240, 0.85);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+.set-copy-btn {
+  align-self: flex-end;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(247, 245, 240, 0.08);
+  border: 1px solid rgba(247, 245, 240, 0.18);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  color: var(--paper);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.set-copy-btn:hover {
+  background: rgba(247, 245, 240, 0.15);
+}
+
+/* Team */
+.set-team-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.set-team-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.set-team-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--pine-black);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.set-team-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.set-team-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.set-team-email {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 640px) {
+  .set-field-row {
+    grid-template-columns: 1fr;
+  }
+}

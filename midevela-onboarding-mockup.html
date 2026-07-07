@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Midevela — Set up your counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE2;
+    --paper-raised:#F6F3EB;
+    --ink:#1A1814;
+    --ink-soft:#5b5546;
+    --rust:#B23A2E;
+    --teal:#1E6F64;
+    --teal-bright:#5FD9B8;
+    --panel:#13201B;
+    --panel-2:#1B2C25;
+    --line:#CBC3AF;
+    --line-dark:#2C3C35;
+    --radius-sm:10px;
+    --radius-md:14px;
+    --radius-lg:20px;
+    --radius-pill:999px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{ color:inherit; text-decoration:none; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .display{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800; text-transform:uppercase; letter-spacing:0.01em; line-height:0.95;
+  }
+  :focus-visible{ outline:3px solid var(--teal); outline-offset:2px; }
+  button{ font-family:inherit; cursor:pointer; border:none; }
+
+  /* ====================================================
+     LAYOUT: 3-column — progress rail | step content | live preview
+     ==================================================== */
+  .shell{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns: 280px 1fr 320px;
+    grid-template-rows: 60px 1fr;
+    grid-template-areas:
+      "topbar topbar topbar"
+      "rail   content preview";
+  }
+  @media (max-width:1140px){
+    .shell{
+      grid-template-columns: 240px 1fr;
+      grid-template-areas:
+        "topbar topbar"
+        "rail   content";
+    }
+    .preview-col{ display:none; }
+  }
+  @media (max-width:720px){
+    .shell{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "topbar"
+        "content";
+    }
+    .rail{ display:none; }
+  }
+
+  /* ====================================================
+     TOP BAR
+     ==================================================== */
+  .topbar{
+    grid-area:topbar;
+    background:var(--panel); color:var(--paper);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 28px;
+    border-bottom:1px solid var(--line-dark);
+  }
+  .tb-logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:18px;
+    text-transform:uppercase; color:#fff;
+  }
+  .tb-logo .mark{
+    width:24px;height:24px; background:var(--teal-bright); border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--panel); font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:11px;
+  }
+  .tb-center{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.1em; color:#8FA098;
+  }
+  .tb-skip{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:#8FA098;
+    background:transparent; border:none; cursor:pointer; padding:6px 12px; border-radius:var(--radius-pill);
+  }
+  .tb-skip:hover{ color:#fff; background:rgba(255,255,255,0.06); }
+
+  /* ====================================================
+     PROGRESS RAIL (left sidebar)
+     ==================================================== */
+  .rail{
+    grid-area:rail;
+    background:var(--panel); color:var(--paper);
+    padding:36px 24px;
+    display:flex; flex-direction:column; gap:0;
+  }
+  .rail-heading{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:0.1em; color:#5E7268; margin-bottom:22px;
+  }
+  .rail-step{
+    display:flex; gap:14px; align-items:flex-start;
+    padding:14px 0; position:relative;
+  }
+  /* vertical connector line between steps */
+  .rail-step:not(:last-child)::after{
+    content:''; position:absolute; left:15px; top:44px;
+    width:1px; height:calc(100% - 14px);
+    background:var(--line-dark);
+  }
+  .rail-step.done:not(:last-child)::after{ background:var(--teal); }
+
+  .step-num{
+    width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600;
+    border:1px solid var(--line-dark); background:transparent; color:#5E7268;
+    position:relative; z-index:1;
+    transition: all .2s ease;
+  }
+  .rail-step.done .step-num{
+    background:var(--teal); border-color:var(--teal); color:var(--panel);
+  }
+  .rail-step.active .step-num{
+    background:var(--paper); border-color:var(--paper); color:var(--ink);
+  }
+
+  .step-info{ padding-top:4px; }
+  .step-label{
+    font-size:13.5px; font-weight:600;
+    color:#C7D1CB;
+  }
+  .rail-step.active .step-label{ color:#fff; }
+  .rail-step.done .step-label{ color:#8FA098; }
+  .step-sublabel{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#5E7268;
+    margin-top:3px;
+  }
+  .rail-step.active .step-sublabel{ color:#8FA098; }
+
+  .rail-eta{
+    margin-top:auto; padding-top:24px; border-top:1px solid var(--line-dark);
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:#5E7268;
+    display:flex; align-items:center; gap:8px;
+  }
+  .rail-eta .eta-num{ color:var(--teal-bright); font-weight:600; }
+
+  /* ====================================================
+     STEP CONTENT (center)
+     ==================================================== */
+  .content{
+    grid-area:content;
+    padding:44px 48px;
+    overflow-y:auto;
+  }
+  @media (max-width:720px){ .content{ padding:28px 20px; } }
+
+  .step-panel{ display:none; }
+  .step-panel.active{ display:block; }
+
+  .step-eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; text-transform:uppercase;
+    letter-spacing:0.1em; color:var(--rust); display:flex; align-items:center; gap:8px;
+    margin-bottom:10px;
+  }
+  .step-eyebrow .dot{ width:6px;height:6px;border-radius:50%;background:var(--teal); }
+  .step-panel h2{
+    font-size:clamp(26px,3vw,36px); margin-bottom:8px;
+  }
+  .step-panel .step-desc{
+    color:var(--ink-soft); font-size:14.5px; line-height:1.6; max-width:52ch; margin-bottom:32px;
+  }
+
+  /* ---- form fields ---- */
+  .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+  .field label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--ink-soft);
+  }
+  .field input, .field select, .field textarea{
+    font-family:'IBM Plex Sans', sans-serif; font-size:14.5px;
+    padding:13px 16px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    background:#fff; color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    border-color:var(--teal); outline:none;
+  }
+  .field textarea{ resize:vertical; min-height:90px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:560px){ .field-row{ grid-template-columns:1fr; } }
+
+  /* ---- channel cards (Step 3) ---- */
+  .channel-grid{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:24px;
+  }
+  @media (max-width:560px){ .channel-grid{ grid-template-columns:1fr; } }
+  .channel-card{
+    border:1.5px solid var(--line); border-radius:var(--radius-md);
+    padding:18px; cursor:pointer; background:var(--paper-raised);
+    transition: border-color .15s ease, background .15s ease;
+    position:relative;
+  }
+  .channel-card:hover{ border-color:var(--teal); }
+  .channel-card.selected{ border-color:var(--teal); background:#fff; }
+  .channel-card.selected::after{
+    content:'✓'; position:absolute; top:12px; right:14px;
+    width:20px; height:20px; border-radius:50%;
+    background:var(--teal); color:#fff;
+    font-size:11px; display:flex; align-items:center; justify-content:center;
+  }
+  .ch-icon{
+    width:38px; height:38px; border-radius:var(--radius-sm);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; margin-bottom:10px;
+    background:var(--paper);
+  }
+  .channel-card.whatsapp .ch-icon{ background:#E7F7E0; }
+  .channel-card.instagram .ch-icon{ background:#FCE9F4; }
+  .channel-card.facebook .ch-icon{ background:#E7EFFB; }
+  .channel-card.website .ch-icon{ background:#E7F3F0; }
+  .ch-name{ font-weight:600; font-size:14px; }
+  .ch-desc{ font-size:12.5px; color:var(--ink-soft); margin-top:3px; }
+
+  /* whatsapp connect sub-panel */
+  .wa-panel{
+    border:1.5px solid var(--line); border-radius:var(--radius-md);
+    padding:20px; background:#fff; margin-top:-6px; margin-bottom:20px;
+    display:none;
+  }
+  .wa-panel.visible{ display:block; }
+  .wa-panel h4{ font-size:14px; font-weight:600; margin-bottom:12px; }
+  .wa-qr{
+    width:88px; height:88px; border-radius:8px;
+    background:repeating-linear-gradient(
+      0deg, #000 0, #000 3px, #fff 3px, #fff 6px,
+      #fff 6px, #fff 9px, #000 9px, #000 12px, #fff 12px, #fff 18px
+    );
+    margin-bottom:10px; opacity:0.85;
+  }
+  .wa-instructions{ font-size:13px; color:var(--ink-soft); line-height:1.5; }
+  .wa-instructions b{ color:var(--ink); }
+
+  /* ---- catalog source cards (Step 4) ---- */
+  .catalog-grid{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:24px;
+  }
+  @media (max-width:560px){ .catalog-grid{ grid-template-columns:1fr; } }
+  .catalog-card{
+    border:1.5px solid var(--line); border-radius:var(--radius-md);
+    padding:18px; cursor:pointer; background:var(--paper-raised);
+    transition: border-color .15s ease;
+    display:flex; align-items:center; gap:14px;
+  }
+  .catalog-card:hover{ border-color:var(--teal); background:#fff; }
+  .catalog-card.selected{ border-color:var(--teal); background:#fff; }
+  .cat-ico{
+    width:40px; height:40px; border-radius:var(--radius-sm);
+    background:var(--paper); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; flex-shrink:0;
+  }
+  .cat-name{ font-weight:600; font-size:14px; }
+  .cat-desc{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+
+  /* ---- AI voice tone selector (Step 5) ---- */
+  .tone-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px;
+  }
+  @media (max-width:560px){ .tone-grid{ grid-template-columns:1fr; } }
+  .tone-card{
+    border:1.5px solid var(--line); border-radius:var(--radius-md);
+    padding:16px 14px; cursor:pointer; background:var(--paper-raised);
+    transition: border-color .15s ease;
+    text-align:center;
+  }
+  .tone-card:hover{ border-color:var(--teal); }
+  .tone-card.selected{ border-color:var(--teal); background:#fff; }
+  .tone-emoji{ font-size:24px; margin-bottom:8px; }
+  .tone-name{ font-weight:600; font-size:13.5px; }
+  .tone-desc{ font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.4; }
+
+  /* ---- snippet box (Step 6) ---- */
+  .snippet-box{
+    background:var(--panel); border-radius:var(--radius-md);
+    padding:20px 22px; margin-bottom:20px; position:relative;
+  }
+  .snippet-box code{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px;
+    color:var(--teal-bright); line-height:1.7; white-space:pre-wrap;
+  }
+  .snippet-copy{
+    position:absolute; top:14px; right:14px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase;
+    background:rgba(255,255,255,0.1); color:var(--paper); border:none;
+    border-radius:var(--radius-pill); padding:6px 12px; cursor:pointer;
+  }
+  .snippet-copy:hover{ background:rgba(255,255,255,0.18); }
+  .install-options{ display:flex; gap:12px; flex-wrap:wrap; }
+  .install-btn{
+    display:flex; align-items:center; gap:8px;
+    border:1.5px solid var(--line); border-radius:var(--radius-pill);
+    padding:11px 18px; background:var(--paper-raised); font-size:13.5px; font-weight:500;
+    cursor:pointer; transition: all .15s ease;
+  }
+  .install-btn:hover{ border-color:var(--teal); background:#fff; }
+  .install-btn.primary{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .install-btn.primary:hover{ background:#000; }
+
+  /* ---- nav buttons ---- */
+  .step-nav{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:36px; padding-top:24px; border-top:1px solid var(--line);
+  }
+  .btn-back{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; text-transform:uppercase;
+    letter-spacing:0.04em; background:transparent; color:var(--ink-soft);
+    border:none; cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+  .btn-back:hover{ color:var(--ink); }
+  .btn-next{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; text-transform:uppercase;
+    letter-spacing:0.04em; background:var(--ink); color:var(--paper);
+    border:none; border-radius:var(--radius-pill); padding:13px 28px;
+    cursor:pointer; display:flex; align-items:center; gap:8px;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .btn-next:hover{ transform:translateY(-2px); background:#000; }
+  .btn-next.teal{ background:var(--teal); }
+  .btn-next.teal:hover{ background:#155249; }
+
+  /* ====================================================
+     LIVE PREVIEW (right column)
+     ==================================================== */
+  .preview-col{
+    grid-area:preview;
+    background:var(--panel-2); border-left:1px solid var(--line-dark);
+    padding:28px 20px;
+    display:flex; flex-direction:column;
+  }
+  .preview-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:0.1em; color:#5E7268; margin-bottom:18px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .preview-label .dot{ width:6px;height:6px;border-radius:50%; background:var(--teal-bright); }
+
+  /* mini widget mockup */
+  .preview-widget{
+    background:var(--paper-raised); border-radius:var(--radius-lg);
+    overflow:hidden; box-shadow:0 24px 50px -20px rgba(0,0,0,0.5);
+  }
+  .pw-head{
+    padding:14px 16px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .pw-avatar{
+    width:30px; height:30px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:13px;
+    color:var(--panel); background:var(--teal-bright); flex-shrink:0;
+  }
+  .pw-name{ font-size:13px; font-weight:600; }
+  .pw-status{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--teal);
+    display:flex; align-items:center; gap:4px;
+  }
+  .pw-dot{ width:5px;height:5px;border-radius:50%;background:var(--teal-bright); }
+
+  .pw-body{ padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .pw-bubble{
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    border-top-left-radius:4px;
+    padding:10px 14px; font-size:13px; line-height:1.45; color:var(--ink);
+    max-width:88%;
+  }
+  .pw-chips{ display:flex; flex-direction:column; gap:6px; }
+  .pw-chip{
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    border:1px solid var(--line); border-radius:var(--radius-pill);
+    padding:7px 12px; background:var(--paper); cursor:pointer;
+    transition: background .15s; color:var(--ink);
+  }
+  .pw-chip:hover{ background:var(--ink); color:var(--paper); }
+  .pw-input-row{
+    display:flex; align-items:center; gap:8px;
+    border:1px solid var(--line); border-radius:var(--radius-pill);
+    padding:8px 8px 8px 14px; margin:0 0 6px;
+  }
+  .pw-input{ flex:1; font-size:12.5px; color:var(--ink-soft); }
+  .pw-send{
+    width:28px; height:28px; border-radius:50%; background:var(--ink);
+    color:var(--paper); display:flex; align-items:center; justify-content:center;
+    font-size:12px; cursor:pointer; flex-shrink:0;
+  }
+
+  .preview-note{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:#5E7268;
+    margin-top:14px; line-height:1.5;
+  }
+
+  /* pass card mini (Step 1) */
+  .pass-mini{
+    background:var(--paper-raised); border-radius:var(--radius-md);
+    padding:18px; box-shadow:0 20px 40px -20px rgba(0,0,0,0.45);
+    transform:rotate(-1deg);
+  }
+  .pass-mini .pm-kicker{ font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); }
+  .pass-mini .pm-name{ font-size:18px; margin:6px 0; }
+  .pass-mini .pm-tag{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); }
+  .pass-mini .pm-bar{ height:28px; border-radius:3px; margin-top:14px; background:repeating-linear-gradient(90deg, var(--ink) 0, var(--ink) 2px, transparent 2px, transparent 5px, var(--ink) 5px, var(--ink) 6px, transparent 6px, transparent 10px); opacity:0.75; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="tb-logo"><span class="mark">M</span> Midevela</div>
+    <div class="tb-center mono">Setting up your counter</div>
+    <button class="tb-skip" onclick="skipToEnd()">Skip setup →</button>
+  </header>
+
+  <!-- PROGRESS RAIL -->
+  <aside class="rail">
+    <div class="rail-heading">Setup steps</div>
+
+    <div class="rail-step done" data-step="1">
+      <div class="step-num">✓</div>
+      <div class="step-info">
+        <div class="step-label">Account created</div>
+        <div class="step-sublabel">Identity confirmed</div>
+      </div>
+    </div>
+
+    <div class="rail-step active" id="rail-2" data-step="2">
+      <div class="step-num">2</div>
+      <div class="step-info">
+        <div class="step-label">Your business</div>
+        <div class="step-sublabel">Name, industry, hours</div>
+      </div>
+    </div>
+
+    <div class="rail-step" id="rail-3" data-step="3">
+      <div class="step-num">3</div>
+      <div class="step-info">
+        <div class="step-label">Connect channels</div>
+        <div class="step-sublabel">WhatsApp, Instagram, website</div>
+      </div>
+    </div>
+
+    <div class="rail-step" id="rail-4" data-step="4">
+      <div class="step-num">4</div>
+      <div class="step-info">
+        <div class="step-label">Import catalog</div>
+        <div class="step-sublabel">Products & services</div>
+      </div>
+    </div>
+
+    <div class="rail-step" id="rail-5" data-step="5">
+      <div class="step-num">5</div>
+      <div class="step-info">
+        <div class="step-label">Train your AI</div>
+        <div class="step-sublabel">Brand voice & rules</div>
+      </div>
+    </div>
+
+    <div class="rail-step" id="rail-6" data-step="6">
+      <div class="step-num">6</div>
+      <div class="step-info">
+        <div class="step-label">Install widget</div>
+        <div class="step-sublabel">One line of code</div>
+      </div>
+    </div>
+
+    <div class="rail-eta">
+      <span class="eta-num">~5 min</span> total setup time remaining
+    </div>
+  </aside>
+
+  <!-- STEP CONTENT -->
+  <main class="content">
+
+    <!-- STEP 2: Business info -->
+    <div class="step-panel active" id="step-2">
+      <div class="step-eyebrow"><span class="dot"></span> Step 2 of 6</div>
+      <h2 class="display">Tell us about your business</h2>
+      <p class="step-desc">This is how your AI introduces itself to customers and tailors recommendations to your products and audience.</p>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Business name</label>
+          <input type="text" id="biz-name" placeholder="e.g. Lumina Beauty Co." oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Industry</label>
+          <select id="biz-industry" onchange="updatePreview()">
+            <option value="">Select industry…</option>
+            <option>Fashion & Retail</option>
+            <option>Beauty & Cosmetics</option>
+            <option selected>Beauty & Cosmetics</option>
+            <option>Electronics</option>
+            <option>Food & Beverage</option>
+            <option>Furniture & Home</option>
+            <option>Professional Services</option>
+            <option>Real Estate</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>What do you sell? (one line)</label>
+        <input type="text" placeholder="e.g. Premium skincare and beauty products for Nigerian women">
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Business opening time</label>
+          <select>
+            <option>8:00 AM</option><option>9:00 AM</option><option selected>10:00 AM</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Business closing time</label>
+          <select>
+            <option>6:00 PM</option><option selected>8:00 PM</option><option>10:00 PM</option><option>24/7 (Always open)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Currency</label>
+        <select>
+          <option selected>Nigerian Naira (₦)</option>
+          <option>US Dollar ($)</option>
+          <option>British Pound (£)</option>
+        </select>
+      </div>
+
+      <div class="step-nav">
+        <div></div>
+        <button class="btn-next" onclick="goToStep(3)">Connect channels →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Connect channels -->
+    <div class="step-panel" id="step-3">
+      <div class="step-eyebrow"><span class="dot"></span> Step 3 of 6</div>
+      <h2 class="display">Where do customers reach you?</h2>
+      <p class="step-desc">Connect the channels your customers already use. You can add more later — start with at least one.</p>
+
+      <div class="channel-grid">
+        <div class="channel-card whatsapp selected" onclick="toggleChannel(this,'wa')">
+          <div class="ch-icon">💬</div>
+          <div class="ch-name">WhatsApp</div>
+          <div class="ch-desc">Most used in Nigeria — high conversion</div>
+        </div>
+        <div class="channel-card website" onclick="toggleChannel(this,'web')">
+          <div class="ch-icon">🌐</div>
+          <div class="ch-name">Website widget</div>
+          <div class="ch-desc">Embed on your site in one line</div>
+        </div>
+        <div class="channel-card instagram" onclick="toggleChannel(this,'ig')">
+          <div class="ch-icon">📸</div>
+          <div class="ch-name">Instagram DMs</div>
+          <div class="ch-desc">Auto-reply to product enquiries</div>
+        </div>
+        <div class="channel-card facebook" onclick="toggleChannel(this,'fb')">
+          <div class="ch-icon">👍</div>
+          <div class="ch-name">Facebook Messenger</div>
+          <div class="ch-desc">Page DMs and ad click-throughs</div>
+        </div>
+      </div>
+
+      <!-- WhatsApp QR connect sub-panel -->
+      <div class="wa-panel visible" id="wa-panel">
+        <h4>Connect your WhatsApp Business number</h4>
+        <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
+          <div class="wa-qr"></div>
+          <div class="wa-instructions">
+            <b>1.</b> Open WhatsApp on your phone<br>
+            <b>2.</b> Tap ⋮ → Linked Devices<br>
+            <b>3.</b> Tap "Link a Device"<br>
+            <b>4.</b> Scan this QR code<br><br>
+            Or enter your WhatsApp Business API credentials manually below.
+          </div>
+        </div>
+        <div class="field" style="margin-top:16px;">
+          <label>WhatsApp phone number</label>
+          <input type="tel" placeholder="+234…">
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goToStep(2)">← Back</button>
+        <button class="btn-next" onclick="goToStep(4)">Import catalog →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Import catalog -->
+    <div class="step-panel" id="step-4">
+      <div class="step-eyebrow"><span class="dot"></span> Step 4 of 6</div>
+      <h2 class="display">Bring in your products</h2>
+      <p class="step-desc">The AI needs to know what you sell before it can recommend anything. Pick the fastest route to get your catalog in.</p>
+
+      <div class="catalog-grid">
+        <div class="catalog-card selected" onclick="selectCatalog(this)">
+          <div class="cat-ico">🌐</div>
+          <div>
+            <div class="cat-name">Crawl my website</div>
+            <div class="cat-desc">We read your site and pull products automatically</div>
+          </div>
+        </div>
+        <div class="catalog-card" onclick="selectCatalog(this)">
+          <div class="cat-ico">📦</div>
+          <div>
+            <div class="cat-name">Shopify / WooCommerce</div>
+            <div class="cat-desc">Connect your store in one click</div>
+          </div>
+        </div>
+        <div class="catalog-card" onclick="selectCatalog(this)">
+          <div class="cat-ico">CSV</div>
+          <div>
+            <div class="cat-name">Upload CSV or Excel</div>
+            <div class="cat-desc">Import a spreadsheet of your products</div>
+          </div>
+        </div>
+        <div class="catalog-card" onclick="selectCatalog(this)">
+          <div class="cat-ico">✏️</div>
+          <div>
+            <div class="cat-name">Add manually</div>
+            <div class="cat-desc">Enter products one by one (great for small catalogs)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- URL input for crawl option -->
+      <div class="field">
+        <label>Your website URL</label>
+        <input type="url" placeholder="https://yourbusiness.com" value="https://luminabeauty.ng">
+      </div>
+
+      <div style="background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-md); padding:16px; font-size:13.5px; color:var(--ink-soft); line-height:1.5;">
+        We'll scan your site and pull product names, descriptions, prices, and images into your AI catalog. This usually takes under 2 minutes. You can review and edit everything before it goes live.
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goToStep(3)">← Back</button>
+        <button class="btn-next" onclick="goToStep(5)">Train your AI →</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: AI voice / rules -->
+    <div class="step-panel" id="step-5">
+      <div class="step-eyebrow"><span class="dot"></span> Step 5 of 6</div>
+      <h2 class="display">How should your AI talk?</h2>
+      <p class="step-desc">Your AI speaks as part of your brand. Set the tone so it sounds like you, not a generic bot.</p>
+
+      <div class="field">
+        <label>What's your AI called?</label>
+        <input type="text" placeholder="e.g. Lumi, Ada, or just leave blank" id="ai-name" oninput="updateWidgetName()">
+      </div>
+
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:12px;">Brand tone</div>
+      <div class="tone-grid">
+        <div class="tone-card selected" onclick="selectTone(this)">
+          <div class="tone-emoji">😊</div>
+          <div class="tone-name">Friendly & warm</div>
+          <div class="tone-desc">Approachable, helpful, conversational</div>
+        </div>
+        <div class="tone-card" onclick="selectTone(this)">
+          <div class="tone-emoji">💼</div>
+          <div class="tone-name">Professional</div>
+          <div class="tone-desc">Confident, polished, business-like</div>
+        </div>
+        <div class="tone-card" onclick="selectTone(this)">
+          <div class="tone-emoji">✨</div>
+          <div class="tone-name">Luxury</div>
+          <div class="tone-desc">Elevated, exclusive, aspirational</div>
+        </div>
+        <div class="tone-card" onclick="selectTone(this)">
+          <div class="tone-emoji">⚡</div>
+          <div class="tone-name">Bold & direct</div>
+          <div class="tone-desc">No fluff, fast answers, gets to the point</div>
+        </div>
+        <div class="tone-card" onclick="selectTone(this)">
+          <div class="tone-emoji">🎉</div>
+          <div class="tone-name">Playful & fun</div>
+          <div class="tone-desc">Energetic, casual, Gen Z-friendly</div>
+        </div>
+        <div class="tone-card" onclick="selectTone(this)">
+          <div class="tone-emoji">🤝</div>
+          <div class="tone-name">Custom</div>
+          <div class="tone-desc">Write your own instructions below</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Anything the AI should never say or do?</label>
+        <textarea placeholder="e.g. Never mention competitor brands. Never offer discounts unless I've set one. Always offer to call back if the customer prefers."></textarea>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goToStep(4)">← Back</button>
+        <button class="btn-next" onclick="goToStep(6)">Install widget →</button>
+      </div>
+    </div>
+
+    <!-- STEP 6: Install widget -->
+    <div class="step-panel" id="step-6">
+      <div class="step-eyebrow"><span class="dot"></span> Step 6 of 6 — Almost live!</div>
+      <h2 class="display">Install your AI counter</h2>
+      <p class="step-desc">Paste this snippet before the closing &lt;/body&gt; tag on your website. It loads asynchronously — zero impact on page speed.</p>
+
+      <div class="snippet-box">
+        <button class="snippet-copy" onclick="copySnippet()">Copy</button>
+        <code id="snippet-code">&lt;!-- Midevela AI Counter --&gt;
+&lt;script&gt;
+  (function(m,i,d,e,v,l,a){
+    m['MidevelaObject']=v;
+    m[v]=m[v]||function(){(m[v].q=m[v].q||[]).push(arguments)};
+    l=i.createElement(d);l.async=1;
+    l.src='https://cdn.midevela.com/v1/counter.js';
+    a=i.getElementsByTagName(d)[0];
+    a.parentNode.insertBefore(l,a);
+  })(window,document,'script','','mdv');
+  mdv('init', '<span style="color:#fff;font-weight:600;">workspace_tk_xk92jw</span>');
+&lt;/script&gt;</code>
+      </div>
+
+      <div class="install-options">
+        <button class="install-btn primary">
+          📦 Install Shopify App
+        </button>
+        <button class="install-btn">
+          🔌 WordPress Plugin
+        </button>
+        <button class="install-btn">
+          📧 Email to developer
+        </button>
+      </div>
+
+      <div style="margin-top:24px; background:#fff; border:1px solid var(--line); border-radius:var(--radius-md); padding:18px; display:flex; align-items:center; gap:14px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#E7F3F0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">✅</div>
+        <div>
+          <div style="font-weight:600;font-size:14px;">Widget already installed?</div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">If you installed the snippet on a previous account, your counter is already active.</div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-back" onclick="goToStep(5)">← Back</button>
+        <button class="btn-next teal" onclick="launchDashboard()">🚀 Launch my counter →</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- LIVE PREVIEW (right column) -->
+  <aside class="preview-col">
+    <div class="preview-label"><span class="dot"></span> Live preview</div>
+
+    <!-- Step 2 preview: access pass -->
+    <div id="preview-2">
+      <div class="pass-mini">
+        <div class="pm-kicker">Midevela — AI Counter</div>
+        <div class="pm-name display" id="prev-biz-name">Your business</div>
+        <div class="pm-tag" id="prev-industry">Industry · not set</div>
+        <div class="pm-bar"></div>
+      </div>
+      <p class="preview-note" style="margin-top:14px;">Your access pass is generated automatically when you complete this step.</p>
+    </div>
+
+    <!-- Step 3 preview: widget -->
+    <div id="preview-3" style="display:none;">
+      <div class="preview-widget">
+        <div class="pw-head" id="pw-head" style="background:var(--ink);">
+          <div class="pw-avatar" id="pw-avatar">M</div>
+          <div>
+            <div class="pw-name" style="color:#fff;" id="pw-widget-name">Midevela AI</div>
+            <div class="pw-status"><span class="pw-dot"></span> Active now</div>
+          </div>
+        </div>
+        <div class="pw-body">
+          <div class="pw-bubble" id="pw-greeting">Hey! Welcome to Lumina Beauty. What are you looking for today? 👋</div>
+          <div class="pw-chips">
+            <button class="pw-chip">Browse products</button>
+            <button class="pw-chip">I need a recommendation</button>
+            <button class="pw-chip">I have a question</button>
+          </div>
+          <div class="pw-input-row">
+            <div class="pw-input">Type a message…</div>
+            <div class="pw-send">→</div>
+          </div>
+        </div>
+      </div>
+      <p class="preview-note">This is exactly how your widget will look to customers after installation.</p>
+    </div>
+
+    <!-- Step 4 preview -->
+    <div id="preview-4" style="display:none;">
+      <div style="background:var(--paper-raised);border:1px solid var(--line-dark);border-radius:var(--radius-lg);padding:18px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#5E7268;margin-bottom:14px;">Catalog import progress</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span>Scanning pages</span><span style="color:var(--teal-bright)">Done ✓</span></div>
+            <div style="height:5px;background:var(--line-dark);border-radius:4px;overflow:hidden;"><div style="height:100%;width:100%;background:var(--teal);border-radius:4px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span>Extracting products</span><span style="color:var(--teal-bright)">Done ✓</span></div>
+            <div style="height:5px;background:var(--line-dark);border-radius:4px;overflow:hidden;"><div style="height:100%;width:100%;background:var(--teal);border-radius:4px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span>AI enrichment</span><span style="color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:11px;">In progress…</span></div>
+            <div style="height:5px;background:var(--line-dark);border-radius:4px;overflow:hidden;"><div style="height:100%;width:68%;background:var(--amber);border-radius:4px;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;color:var(--ink-soft);"><span>Building knowledge</span><span>—</span></div>
+            <div style="height:5px;background:var(--line-dark);border-radius:4px;overflow:hidden;"><div style="height:100%;width:0%;background:var(--teal);border-radius:4px;"></div></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal-bright);">24 products found so far…</div>
+      </div>
+      <p class="preview-note">Import runs in the background — you can continue setup while it processes.</p>
+    </div>
+
+    <!-- Step 5 preview: AI greeting -->
+    <div id="preview-5" style="display:none;">
+      <div class="preview-widget">
+        <div class="pw-head" style="background:var(--ink);">
+          <div class="pw-avatar">L</div>
+          <div>
+            <div class="pw-name" style="color:#fff;" id="pw-ai-name">Lumi</div>
+            <div class="pw-status"><span class="pw-dot"></span> Active now</div>
+          </div>
+        </div>
+        <div class="pw-body">
+          <div class="pw-bubble" id="pw-tone-greeting">Hey beautiful! ✨ Welcome to Lumina Beauty. What are you shopping for today?</div>
+        </div>
+      </div>
+      <p class="preview-note">Your AI's greeting updates in real time as you choose a tone.</p>
+    </div>
+
+    <!-- Step 6 preview: go-live -->
+    <div id="preview-6" style="display:none;">
+      <div style="background:var(--paper-raised);border:1px solid var(--line-dark);border-radius:var(--radius-lg);padding:20px;text-align:center;">
+        <div style="font-size:36px;margin-bottom:12px;">🚀</div>
+        <div class="display" style="font-size:22px;color:var(--panel);margin-bottom:8px;">Ready to go live</div>
+        <div style="font-size:13px;color:var(--ink-soft);line-height:1.5;">Once installed, your AI counter starts engaging visitors immediately — 24/7, across every connected channel.</div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line);display:flex;justify-content:space-around;">
+          <div style="text-align:center;">
+            <div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:22px;">4</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);text-transform:uppercase;">Channels</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:22px;">24</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);text-transform:uppercase;">Products</div>
+          </div>
+          <div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:22px;text-align:center;">
+            <div>24/7</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);text-transform:uppercase;font-weight:400;">AI uptime</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<script>
+  let currentStep = 2;
+
+  const toneGreetings = {
+    'Friendly & warm': "Hey! 👋 Welcome to Lumina Beauty. What are you looking for today?",
+    'Professional': "Welcome to Lumina Beauty. How may I assist you today?",
+    'Luxury': "Welcome. I'm here to help you discover the perfect beauty experience.",
+    'Bold & direct': "Hi. What do you need?",
+    'Playful & fun': "Heyy! ✨💕 Lumina Beauty in the building! What are we shopping for?",
+    'Custom': "Hi! I'm here to help. What can I do for you today?"
+  };
+
+  function goToStep(n){
+    document.getElementById('step-' + currentStep).classList.remove('active');
+    document.getElementById('preview-' + currentStep).style.display = 'none';
+    document.getElementById('rail-' + currentStep).classList.remove('active');
+    if(n > currentStep) document.getElementById('rail-' + currentStep).classList.add('done');
+
+    currentStep = n;
+    document.getElementById('step-' + currentStep).classList.add('active');
+    document.getElementById('preview-' + currentStep).style.display = 'block';
+    document.getElementById('rail-' + currentStep).classList.add('active');
+    document.getElementById('rail-' + currentStep).classList.remove('done');
+
+    // mark all previous steps done
+    for(let i = 2; i < currentStep; i++){
+      const r = document.getElementById('rail-' + i);
+      if(r){ r.classList.remove('active'); r.classList.add('done'); r.querySelector('.step-num').textContent = '✓'; }
+    }
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function updatePreview(){
+    const name = document.getElementById('biz-name').value.trim() || 'Your business';
+    const ind = document.getElementById('biz-industry').value || 'not set';
+    document.getElementById('prev-biz-name').textContent = name;
+    document.getElementById('prev-industry').textContent = 'Industry · ' + ind;
+    document.getElementById('pw-greeting').textContent = 'Hey! Welcome to ' + name + '. What are you looking for today? 👋';
+  }
+
+  function updateWidgetName(){
+    const n = document.getElementById('ai-name').value.trim() || 'Lumi';
+    document.getElementById('pw-ai-name').textContent = n;
+  }
+
+  function toggleChannel(card, id){
+    card.classList.toggle('selected');
+    const waPanel = document.getElementById('wa-panel');
+    if(id === 'wa') waPanel.classList.toggle('visible', card.classList.contains('selected'));
+  }
+
+  function selectCatalog(card){
+    document.querySelectorAll('.catalog-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  }
+
+  function selectTone(card){
+    document.querySelectorAll('.tone-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    const tone = card.querySelector('.tone-name').textContent;
+    document.getElementById('pw-tone-greeting').textContent = toneGreetings[tone] || toneGreetings['Friendly & warm'];
+  }
+
+  function copySnippet(){
+    const code = document.getElementById('snippet-code').innerText;
+    navigator.clipboard.writeText(code).catch(()=>{});
+    const btn = document.querySelector('.snippet-copy');
+    btn.textContent = 'Copied!';
+    setTimeout(()=>{ btn.textContent = 'Copy'; }, 2000);
+  }
+
+  function launchDashboard(){
+    alert('Counter is live! Redirecting to your dashboard…');
+  }
+
+  function skipToEnd(){
+    goToStep(6);
+  }
+</script>
+
+</body>
+</html>

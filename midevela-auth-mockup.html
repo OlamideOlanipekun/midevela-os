@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Midevela — Sign in or open your counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE2;
+    --paper-raised:#F6F3EB;
+    --ink:#1A1814;
+    --ink-soft:#5b5546;
+    --rust:#B23A2E;
+    --teal:#1E6F64;
+    --teal-bright:#5FD9B8;
+    --panel:#13201B;
+    --panel-2:#1B2C25;
+    --line:#CBC3AF;
+    --line-dark:#2C3C35;
+    --radius-sm:10px;
+    --radius-md:16px;
+    --radius-lg:22px;
+    --radius-pill:999px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  .mono{ font-family:'IBM Plex Mono', monospace; letter-spacing:0.02em; }
+  .display{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800; text-transform:uppercase; letter-spacing:0.01em; line-height:0.95;
+  }
+  :focus-visible{ outline:3px solid var(--teal); outline-offset:2px; }
+
+  /* ---------------- SHELL ---------------- */
+  .shell{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width:980px){
+    .shell{ grid-template-columns:1fr; }
+  }
+
+  /* ---------------- LEFT: ISSUING PANEL ---------------- */
+  .issue-panel{
+    background:var(--panel);
+    color:var(--paper);
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:48px 52px;
+    position:relative;
+    overflow:hidden;
+  }
+  @media (max-width:980px){
+    .issue-panel{ padding:36px 28px 44px; }
+  }
+
+  .issue-top{
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:20px;
+    text-transform:uppercase; color:#fff; text-decoration:none;
+  }
+  .logo .mark{
+    width:26px;height:26px;background:var(--teal-bright);
+    border-radius:9px;
+    display:inline-flex;align-items:center;justify-content:center;
+    color:var(--panel); font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:12px;
+  }
+  .back-link{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:#9FAEA7;
+    text-decoration:none; display:flex; align-items:center; gap:6px;
+  }
+  .back-link:hover{ color:#fff; }
+
+  .issue-mid{
+    margin:44px 0;
+  }
+  .eyebrow-dark{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.16em;
+    text-transform:uppercase; color:var(--teal-bright);
+    display:flex; align-items:center; gap:10px; margin-bottom:18px;
+  }
+  .eyebrow-dark .dot{
+    width:7px;height:7px;border-radius:50%; background:var(--teal-bright);
+    box-shadow:0 0 0 3px rgba(95,217,184,0.18);
+  }
+  .issue-mid h1{
+    color:#fff; font-size:clamp(30px, 3.2vw, 42px); margin:0 0 14px;
+  }
+  .issue-mid p{
+    color:#B9C4BE; font-size:14.5px; line-height:1.6; max-width:38ch; margin:0;
+  }
+
+  /* ---------------- ACCESS PASS (signature element) ---------------- */
+  .pass-stage{
+    perspective:1200px;
+    margin:auto 0;
+  }
+  .pass{
+    width:100%; max-width:360px;
+    background:var(--paper-raised);
+    color:var(--ink);
+    border-radius:var(--radius-lg);
+    padding:24px 24px 20px;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,0.55);
+    position:relative;
+    transform: rotate(-1.2deg);
+    transition: transform .3s ease;
+  }
+  .pass:hover{ transform: rotate(0deg) translateY(-2px); }
+
+  .pass-head{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    border-bottom:1px dashed var(--line);
+    padding-bottom:14px; margin-bottom:16px;
+  }
+  .pass-head .pass-kicker{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--ink-soft);
+  }
+  .pass-head .pass-brand{
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800;
+    font-size:18px; text-transform:uppercase; margin-top:2px;
+  }
+  .pass-head .pass-status{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase;
+    background:rgba(30,111,100,0.12); color:var(--teal);
+    padding:5px 10px; border-radius:var(--radius-pill);
+    white-space:nowrap;
+  }
+
+  .pass-id-row{
+    display:flex; align-items:center; gap:14px; margin-bottom:18px;
+  }
+  .pass-avatar{
+    width:52px; height:52px; border-radius:50%;
+    background:var(--ink); color:var(--paper);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:22px;
+    flex-shrink:0;
+    transition: background .2s ease;
+  }
+  .pass-name-block{ min-width:0; }
+  .pass-business-name{
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800;
+    font-size:21px; text-transform:uppercase; line-height:1.05;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .pass-business-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft);
+    margin-top:3px;
+  }
+
+  .pass-fields{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px 16px;
+    margin-bottom:18px;
+  }
+  .pass-field .pf-label{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--ink-soft); margin-bottom:3px;
+  }
+  .pass-field .pf-value{
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600;
+  }
+
+  .pass-barcode{
+    height:34px;
+    background:repeating-linear-gradient(
+      90deg, var(--ink) 0, var(--ink) 2px, transparent 2px, transparent 5px,
+      var(--ink) 5px, var(--ink) 6px, transparent 6px, transparent 10px
+    );
+    opacity:0.85;
+    border-radius:4px;
+    margin-bottom:10px;
+  }
+  .pass-foot{
+    display:flex; justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--ink-soft);
+  }
+
+  .pass-punch{
+    position:absolute; left:-11px; top:50%; transform:translateY(-50%);
+    width:22px; height:22px; border-radius:50%;
+    background:var(--panel);
+  }
+
+  /* ---------------- ISSUE BOTTOM: TRUST STRIP ---------------- */
+  .issue-bottom{
+    display:flex; gap:28px; flex-wrap:wrap;
+    border-top:1px solid var(--line-dark);
+    padding-top:22px;
+  }
+  .trust-item{ display:flex; flex-direction:column; gap:2px; }
+  .trust-item .t-num{
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:24px; color:#fff;
+  }
+  .trust-item .t-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:0.06em; color:#8FA098;
+  }
+
+  /* ---------------- RIGHT: FORM PANEL ---------------- */
+  .form-panel{
+    display:flex; align-items:center; justify-content:center;
+    padding:48px 32px;
+  }
+  .form-stage{
+    width:100%; max-width:420px;
+  }
+
+  .panel-head{ margin-bottom:28px; }
+  .panel-head h2{ font-size:clamp(26px, 3vw, 32px); margin:8px 0 6px; }
+  .panel-head p{ font-size:14px; color:var(--ink-soft); margin:0; }
+
+  /* Mode toggle (ticket tabs) */
+  .mode-toggle{
+    display:flex;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-pill);
+    padding:4px;
+    margin-bottom:30px;
+  }
+  .mode-btn{
+    flex:1;
+    border:none; background:transparent; cursor:pointer;
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; text-transform:uppercase;
+    letter-spacing:0.04em;
+    padding:11px 14px; border-radius:var(--radius-pill);
+    color:var(--ink-soft);
+    transition: background .2s ease, color .2s ease;
+  }
+  .mode-btn.active{
+    background:var(--ink); color:var(--paper);
+  }
+
+  form{ display:flex; flex-direction:column; gap:16px; }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--ink-soft);
+  }
+  .field input{
+    font-family:'IBM Plex Sans', sans-serif; font-size:14.5px;
+    padding:13px 16px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    background:#fff; color:var(--ink);
+  }
+  .field input:focus{ border-color:var(--teal); }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:480px){ .field-row{ grid-template-columns:1fr; } }
+
+  .row-between{
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:13px;
+  }
+  .checkbox-row{ display:flex; align-items:center; gap:8px; color:var(--ink-soft); }
+  .checkbox-row input{ accent-color:var(--teal); width:15px; height:15px; }
+  .link-rust{ color:var(--rust); text-decoration:none; font-weight:600; }
+  .link-rust:hover{ text-decoration:underline; }
+
+  .btn-primary{
+    font-family:'IBM Plex Mono', monospace; font-size:13.5px; text-transform:uppercase;
+    letter-spacing:0.04em; padding:14px 24px; border-radius:var(--radius-pill);
+    border:1px solid var(--ink); background:var(--ink); color:var(--paper);
+    cursor:pointer; width:100%; margin-top:6px;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .btn-primary:hover{ transform:translateY(-2px); background:#000; }
+
+  .divider{
+    display:flex; align-items:center; gap:14px;
+    margin:22px 0; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; font-size:11px;
+    text-transform:uppercase;
+  }
+  .divider::before, .divider::after{ content:""; flex:1; height:1px; background:var(--line); }
+
+  .switch-mode{
+    text-align:center; font-size:13.5px; color:var(--ink-soft);
+  }
+
+  .terms-note{
+    margin-top:22px; font-size:11.5px; color:var(--ink-soft); line-height:1.5; text-align:center;
+  }
+
+  /* form mode visibility */
+  .signup-only{ display:none; }
+  .form-stage[data-mode="signup"] .signup-only{ display:flex; }
+  .form-stage[data-mode="signup"] .login-only{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- LEFT: ISSUING PANEL -->
+  <div class="issue-panel">
+    <div class="issue-top">
+      <a href="#" class="logo"><span class="mark">M</span> Midevela</a>
+      <a href="#" class="back-link">← Back to site</a>
+    </div>
+
+    <div class="issue-mid">
+      <div class="eyebrow-dark"><span class="dot"></span> ISSUING ACCESS PASS</div>
+      <h1 class="display">Your counter,<br>under your name.</h1>
+      <p>Every business that joins gets its own AI counter — staffed, branded, and live the moment you finish this form.</p>
+    </div>
+
+    <div class="pass-stage">
+      <div class="pass" id="accessPass">
+        <div class="pass-punch"></div>
+        <div class="pass-head">
+          <div>
+            <div class="pass-kicker">MIDEVELA ACCESS PASS</div>
+            <div class="pass-brand">Counter Pass</div>
+          </div>
+          <div class="pass-status" id="passStatus">PENDING</div>
+        </div>
+
+        <div class="pass-id-row">
+          <div class="pass-avatar" id="passAvatar">?</div>
+          <div class="pass-name-block">
+            <div class="pass-business-name" id="passBusinessName">Your business name</div>
+            <div class="pass-business-tag" id="passIndustry">Industry · not set</div>
+          </div>
+        </div>
+
+        <div class="pass-fields">
+          <div class="pass-field">
+            <div class="pf-label">Plan</div>
+            <div class="pf-value" id="passPlan">Starter</div>
+          </div>
+          <div class="pass-field">
+            <div class="pf-label">Channel</div>
+            <div class="pf-value">Website + WhatsApp</div>
+          </div>
+        </div>
+
+        <div class="pass-barcode" aria-hidden="true"></div>
+        <div class="pass-foot">
+          <span>ISSUED ON SIGNUP</span>
+          <span id="passDate"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-bottom">
+      <div class="trust-item"><div class="t-num mono">5 min</div><div class="t-label">avg. setup time</div></div>
+      <div class="trust-item"><div class="t-num mono">256-bit</div><div class="t-label">encryption</div></div>
+      <div class="trust-item"><div class="t-num mono">24/7</div><div class="t-label">AI uptime</div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: FORM PANEL -->
+  <div class="form-panel">
+    <div class="form-stage" id="formStage" data-mode="login">
+
+      <div class="panel-head">
+        <div class="eyebrow" style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:var(--rust); display:flex; align-items:center; gap:8px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;"></span>
+          COUNTER ACCESS
+        </div>
+        <h2 class="display login-only">Sign in to your counter</h2>
+        <h2 class="display signup-only" style="display:none;">Open your counter</h2>
+        <p class="login-only">Pick up where you left off — your AI is already running.</p>
+        <p class="signup-only" style="display:none;">Takes about five minutes. No card required to start.</p>
+      </div>
+
+      <div class="mode-toggle" role="tablist" aria-label="Choose sign in or create account">
+        <button class="mode-btn active" id="tabLogin" role="tab" aria-selected="true" type="button">Sign in</button>
+        <button class="mode-btn" id="tabSignup" role="tab" aria-selected="false" type="button">Create account</button>
+      </div>
+
+      <form onsubmit="event.preventDefault();">
+
+        <div class="field signup-only">
+          <label for="businessName">Business name</label>
+          <input type="text" id="businessName" placeholder="e.g. Lumina Beauty Co." autocomplete="organization">
+        </div>
+
+        <div class="field-row signup-only">
+          <div class="field">
+            <label for="industry">Industry</label>
+            <input type="text" id="industry" placeholder="e.g. Beauty & Cosmetics">
+          </div>
+          <div class="field">
+            <label for="fullName">Full name</label>
+            <input type="text" id="fullName" placeholder="Your name" autocomplete="name">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@yourbusiness.com" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+
+        <div class="row-between login-only">
+          <label class="checkbox-row"><input type="checkbox"> Stay signed in</label>
+          <a href="#" class="link-rust">Forgot password?</a>
+        </div>
+
+        <div class="row-between signup-only" style="font-size:12.5px; color:var(--ink-soft);">
+          <label class="checkbox-row"><input type="checkbox" required> I agree to the <a href="#" class="link-rust" style="margin-left:3px;">Terms of Service</a></label>
+        </div>
+
+        <button type="submit" class="btn-primary login-only">Sign in →</button>
+        <button type="submit" class="btn-primary signup-only" style="display:none;">Create my account →</button>
+      </form>
+
+      <div class="divider">or continue with</div>
+
+      <button type="button" class="btn-primary" style="background:transparent; color:var(--ink); display:flex; align-items:center; justify-content:center; gap:10px;">
+        Google
+      </button>
+
+      <p class="switch-mode" style="margin-top:24px;">
+        <span class="login-only">New to Midevela? <a href="#" class="link-rust" id="goSignup">Open your counter</a></span>
+        <span class="signup-only" style="display:none;">Already have a counter? <a href="#" class="link-rust" id="goLogin">Sign in</a></span>
+      </p>
+
+      <p class="terms-note">🔒 Protected by enterprise-grade encryption. Your data stays yours.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // MODE TOGGLE: switches between sign-in and create-account, including
+  // re-labeling every login-only / signup-only element via the shared
+  // data-mode attribute on the form stage.
+  (function(){
+    const stage = document.getElementById('formStage');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabSignup = document.getElementById('tabSignup');
+    const goSignup = document.getElementById('goSignup');
+    const goLogin = document.getElementById('goLogin');
+
+    function setMode(mode){
+      stage.dataset.mode = mode;
+      const isSignup = mode === 'signup';
+      tabSignup.classList.toggle('active', isSignup);
+      tabLogin.classList.toggle('active', !isSignup);
+      tabSignup.setAttribute('aria-selected', String(isSignup));
+      tabLogin.setAttribute('aria-selected', String(!isSignup));
+
+      // Toggle every element scoped to a mode, since CSS alone can't flip
+      // inline style="display:none" placeholders added for no-JS fallback.
+      document.querySelectorAll('.login-only').forEach(el => {
+        el.style.display = isSignup ? 'none' : '';
+      });
+      document.querySelectorAll('.signup-only').forEach(el => {
+        el.style.display = isSignup ? '' : 'none';
+      });
+
+      document.getElementById('passStatus').textContent = isSignup ? 'ISSUING…' : 'PENDING';
+    }
+
+    tabLogin.addEventListener('click', () => setMode('login'));
+    tabSignup.addEventListener('click', () => setMode('signup'));
+    goSignup.addEventListener('click', (e) => { e.preventDefault(); setMode('signup'); });
+    goLogin.addEventListener('click', (e) => { e.preventDefault(); setMode('login'); });
+
+    setMode('login');
+  })();
+
+  // ACCESS PASS: mirrors the signup form live into the printed pass card.
+  (function(){
+    const nameInput = document.getElementById('businessName');
+    const industryInput = document.getElementById('industry');
+    const passName = document.getElementById('passBusinessName');
+    const passIndustry = document.getElementById('passIndustry');
+    const passAvatar = document.getElementById('passAvatar');
+    const passDate = document.getElementById('passDate');
+
+    function updatePass(){
+      const name = nameInput.value.trim();
+      const industry = industryInput.value.trim();
+      passName.textContent = name || 'Your business name';
+      passIndustry.textContent = industry ? `Industry · ${industry}` : 'Industry · not set';
+      passAvatar.textContent = name ? name.charAt(0).toUpperCase() : '?';
+    }
+
+    nameInput.addEventListener('input', updatePass);
+    industryInput.addEventListener('input', updatePass);
+
+    const today = new Date();
+    passDate.textContent = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  })();
+</script>
+
+</body>
+</html>

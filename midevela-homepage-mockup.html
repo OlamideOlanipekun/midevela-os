@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Midevela — Every visitor gets a salesperson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE2;
+    --paper-raised:#F6F3EB;
+    --ink:#1A1814;
+    --ink-soft:#5b5546;
+    --rust:#B23A2E;
+    --teal:#1E6F64;
+    --teal-bright:#5FD9B8;
+    --panel:#13201B;
+    --panel-2:#1B2C25;
+    --line:#CBC3AF;
+    --line-dark:#2C3C35;
+    --radius-ticket: 4px;
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 22px;
+    --radius-pill: 999px;
+    --maxw: 1180px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  a{color:inherit;}
+  img{max-width:100%;}
+
+  .wrap{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:0 28px;
+  }
+
+  .mono{
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.02em;
+  }
+
+  .display{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    line-height:0.92;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--rust);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--teal);
+    box-shadow:0 0 0 3px rgba(30,111,100,0.18);
+  }
+  .eyebrow.on-dark{ color: var(--teal-bright); }
+  .eyebrow.on-dark .dot{ background:var(--teal-bright); box-shadow:0 0 0 3px rgba(95,217,184,0.18); }
+
+  :focus-visible{
+    outline:3px solid var(--teal);
+    outline-offset:2px;
+  }
+
+  /* ---------------- HEADER ---------------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(237,234,226,0.92);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800; font-size:22px; text-transform:uppercase;
+    letter-spacing:0.02em;
+  }
+  .logo .mark{
+    width:28px;height:28px;background:var(--ink);
+    display:inline-flex;align-items:center;justify-content:center;
+    border-radius:9px;
+  }
+  .logo .mark span{
+    color:var(--paper); font-family:'IBM Plex Mono',monospace;
+    font-size:13px; font-weight:600;
+  }
+  .navlinks{
+    display:flex; gap:32px; align-items:center;
+    font-size:14px; font-weight:500;
+  }
+  .navlinks a{ text-decoration:none; opacity:0.78; transition:opacity .15s; }
+  .navlinks a:hover{ opacity:1; }
+  .navcta{
+    display:flex; align-items:center; gap:18px;
+  }
+
+  .btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:13px 24px;
+    border-radius:var(--radius-pill);
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); background:#000; }
+  .btn.ghost{
+    background:transparent; color:var(--ink); border:1px solid var(--ink);
+  }
+  .btn.ghost:hover{ background:var(--ink); color:var(--paper); }
+  .btn.on-dark{ border-color:var(--teal-bright); color:var(--panel); background:var(--teal-bright); }
+  .btn.on-dark:hover{ background:#7CEBCB; transform:translateY(-2px); }
+
+  @media (max-width:860px){
+    .navlinks{ display:none; }
+  }
+
+  /* ---------------- HERO ---------------- */
+  .hero{
+    padding:72px 0 60px;
+    position:relative;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap:56px;
+    align-items:start;
+  }
+  @media (max-width:980px){
+    .hero-grid{ grid-template-columns:1fr; }
+  }
+
+  .hero h1{
+    font-size:clamp(48px, 6.4vw, 92px);
+    margin:18px 0 22px;
+  }
+  .hero h1 .accent{ color:var(--rust); }
+
+  .hero p.lede{
+    font-size:18px;
+    line-height:1.55;
+    color:var(--ink-soft);
+    max-width:46ch;
+    margin:0 0 30px;
+  }
+
+  .hero-actions{
+    display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+    margin-bottom:38px;
+  }
+  .hero-actions .micro{
+    font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft);
+  }
+
+  .stat-row{
+    display:flex; gap:34px; flex-wrap:wrap;
+    border-top:1px solid var(--line);
+    padding-top:22px;
+  }
+  .stat{ min-width:120px; }
+  .stat .num{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800; font-size:34px; color:var(--ink);
+  }
+  .stat .label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft);
+    margin-top:2px;
+  }
+
+  /* ---------------- RECEIPT (signature element) ---------------- */
+  .receipt-stage{
+    display:flex; justify-content:center;
+  }
+  .receipt{
+    background:var(--paper-raised);
+    width:100%;
+    max-width:380px;
+    border:1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: 0 28px 60px -24px rgba(26,24,20,0.35);
+    position:relative;
+    padding:26px 24px 22px;
+    transform: rotate(-0.6deg);
+  }
+  .receipt::before, .receipt::after{
+    content:"";
+    position:absolute; left:0; right:0; height:10px;
+    background:
+      radial-gradient(circle 5px at 0 5px, transparent 99%, var(--paper) 100%) 0 0/16px 100%,
+      var(--paper-raised);
+    background-color:transparent;
+  }
+  .receipt::before{ top:-5px; transform:scaleY(-1); }
+  .receipt::after{ bottom:-5px; }
+
+  .receipt .r-head{
+    text-align:center;
+    border-bottom:1px dashed var(--line);
+    padding-bottom:14px;
+    margin-bottom:14px;
+  }
+  .receipt .r-head .r-logo{
+    font-family:'Big Shoulders Display',sans-serif; font-weight:800;
+    font-size:20px; text-transform:uppercase;
+  }
+  .receipt .r-head .r-sub{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft);
+    margin-top:4px; letter-spacing:0.05em;
+  }
+
+  .r-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    line-height:1.6;
+    opacity:0;
+    transform:translateY(4px);
+    animation: rline 0.5s ease forwards;
+  }
+  .r-line.cust{ color:var(--ink-soft); }
+  .r-line.tag{ color:var(--rust); font-weight:600; margin-top:10px; }
+  .r-line .who{ color:var(--ink-soft); font-weight:600; }
+
+  @keyframes rline{ to{ opacity:1; transform:none; } }
+
+  .r-card{
+    margin:14px 0;
+    border:1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background:#fff;
+    padding:12px 12px 14px;
+    opacity:0;
+    animation: rline 0.5s ease forwards;
+    animation-delay: 1.7s;
+  }
+  .r-card .r-card-title{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-weight:700; font-size:13.5px;
+  }
+  .r-card .r-card-title .match{
+    font-family:'IBM Plex Mono',monospace; color:var(--teal); font-size:12px;
+  }
+  .r-card ul{ margin:8px 0 0; padding-left:16px; font-size:12px; color:var(--ink-soft); }
+  .r-card li{ margin-bottom:3px; }
+
+  .meter{
+    margin-top:14px;
+    opacity:0;
+    animation: rline .5s ease forwards;
+    animation-delay: 2.3s;
+  }
+  .meter .meter-label{
+    display:flex; justify-content:space-between;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .meter .track{
+    height:7px; background:var(--line); border-radius:var(--radius-pill); overflow:hidden;
+  }
+  .meter .fill{
+    height:100%; width:0%; background:var(--teal);
+    border-radius:var(--radius-pill);
+    animation: fillbar 1.6s ease forwards;
+    animation-delay: 2.5s;
+  }
+  @keyframes fillbar{ to{ width:94%; } }
+
+  .r-foot{
+    margin-top:16px; padding-top:12px; border-top:1px dashed var(--line);
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft);
+    display:flex; justify-content:space-between;
+    opacity:0;
+    animation: rline .5s ease forwards;
+    animation-delay: 3s;
+  }
+  .r-stamp{
+    position:absolute; right:18px; top:96px;
+    border:2.5px solid var(--rust); color:var(--rust);
+    font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:12px;
+    padding:4px 8px; transform:rotate(-12deg);
+    opacity:0; letter-spacing:0.08em;
+    animation: stampin .3s ease forwards;
+    animation-delay: 3.2s;
+  }
+  @keyframes stampin{ from{ opacity:0; transform:rotate(-12deg) scale(1.6);} to{ opacity:0.85; transform:rotate(-12deg) scale(1);} }
+
+  @media (prefers-reduced-motion: reduce){
+    .r-line, .r-card, .meter, .r-foot, .r-stamp{ animation:none !important; opacity:1 !important; transform:none !important; }
+    .meter .fill{ width:94% !important; }
+  }
+
+  /* ---------------- SECTION SHELLS ---------------- */
+  section{ padding:88px 0; }
+  .section-head{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    gap:24px; margin-bottom:48px; flex-wrap:wrap;
+  }
+  .section-head h2{
+    font-size:clamp(30px, 4vw, 48px); margin:10px 0 0;
+  }
+  .section-head .note{
+    max-width:34ch; font-size:14.5px; color:var(--ink-soft); line-height:1.5;
+  }
+
+  /* ---------------- PROBLEM (abandoned tickets) ---------------- */
+  .problem{ background:var(--paper); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .ticket-row{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:20px;
+  }
+  @media (max-width:860px){ .ticket-row{ grid-template-columns:1fr; } }
+  .ticket{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding:24px 22px;
+    position:relative;
+  }
+  .ticket .t-no{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--rust);
+    letter-spacing:0.08em;
+  }
+  .ticket h3{
+    font-family:'Big Shoulders Display',sans-serif; text-transform:uppercase;
+    font-size:24px; margin:10px 0 8px; font-weight:700;
+  }
+  .ticket p{ font-size:14px; color:var(--ink-soft); line-height:1.55; margin:0; }
+  .ticket .void{
+    position:absolute; top:18px; right:16px;
+    font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-soft);
+    border:1px solid var(--line); padding:2px 6px; transform:rotate(4deg);
+  }
+
+  /* ---------------- PIPELINE (stations) ---------------- */
+  .stations{
+    display:grid; grid-template-columns:repeat(5,1fr); gap:14px;
+  }
+  @media (max-width:980px){ .stations{ grid-template-columns:1fr; } }
+  .station{
+    padding:28px 22px;
+    border:1px solid var(--line);
+    border-radius: var(--radius-md);
+    background:var(--paper-raised);
+    position:relative;
+    transition: background .2s ease, transform .2s ease;
+  }
+  .station:hover{ background:#fff; transform:translateY(-3px); }
+  .station .s-no{
+    font-family:'Big Shoulders Display',sans-serif; font-weight:800;
+    font-size:38px; color:var(--line); line-height:1;
+  }
+  .station h4{
+    font-family:'IBM Plex Mono',monospace; text-transform:uppercase;
+    font-size:13px; letter-spacing:0.06em; margin:14px 0 8px;
+  }
+  .station p{ font-size:13.5px; color:var(--ink-soft); line-height:1.5; margin:0; }
+
+  /* ---------------- OMNICHANNEL ---------------- */
+  .counter{
+    display:grid; grid-template-columns: 1fr 1fr; gap:50px; align-items:center;
+  }
+  @media (max-width:900px){ .counter{ grid-template-columns:1fr; } }
+  .channels{
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .channel-row{
+    display:flex; align-items:center; gap:14px;
+    background:var(--paper-raised); border:1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding:14px 18px;
+    transition: transform .15s ease;
+  }
+  .channel-row:hover{ transform:translateX(4px); }
+  .channel-row .ico{
+    width:38px;height:38px; border-radius:50%; background:var(--ink);
+    color:var(--paper); display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700;
+    flex-shrink:0;
+  }
+  .channel-row .name{ font-weight:600; font-size:14.5px; }
+  .channel-row .desc{ font-size:12.5px; color:var(--ink-soft); }
+  .channel-row .arrow{ margin-left:auto; font-family:'IBM Plex Mono',monospace; color:var(--teal); font-size:13px; }
+
+  .brain-window{
+    background:var(--panel);
+    color:var(--paper);
+    padding:36px 30px;
+    position:relative;
+    border:1px solid var(--line-dark);
+    border-radius: var(--radius-lg);
+  }
+  .brain-window h3{
+    font-family:'Big Shoulders Display',sans-serif; text-transform:uppercase;
+    font-size:26px; margin:14px 0 10px; color:#fff;
+  }
+  .brain-window p{ font-size:14px; color:#B9C4BE; line-height:1.6; max-width:36ch; }
+  .brain-window .tag-mono{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--teal-bright);
+    letter-spacing:0.08em;
+  }
+
+  /* ---------------- DASHBOARD (dark panel) ---------------- */
+  .dash{
+    background:var(--panel);
+    color:var(--paper);
+  }
+  .dash .section-head .note{ color:#9FAEA7; }
+  .dash .eyebrow{ margin-bottom:0; }
+  .dash h2{ color:#fff; }
+
+  .dash-grid{
+    display:grid; grid-template-columns: 1.2fr 0.8fr; gap:22px;
+  }
+  @media (max-width:980px){ .dash-grid{ grid-template-columns:1fr; } }
+
+  .visitor-list{
+    background:var(--panel-2); border:1px solid var(--line-dark);
+    border-radius: var(--radius-lg);
+    padding:8px;
+  }
+  .visitor{
+    display:grid; grid-template-columns: 1fr auto auto; gap:14px; align-items:center;
+    padding:14px 16px; border-bottom:1px solid var(--line-dark);
+    border-radius: var(--radius-sm);
+    transition: background .15s ease;
+  }
+  .visitor:hover{ background:rgba(255,255,255,0.03); }
+  .visitor:last-child{ border-bottom:none; }
+  .visitor .v-name{ font-size:14px; font-weight:600; }
+  .visitor .v-meta{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8FA098; margin-top:2px; }
+  .visitor .v-state{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase;
+    padding:5px 11px; border-radius:var(--radius-pill); white-space:nowrap;
+  }
+  .v-state.buying{ background:rgba(95,217,184,0.16); color:var(--teal-bright); }
+  .v-state.comparing{ background:rgba(214,180,90,0.16); color:#D6B45A; }
+  .v-state.stuck{ background:rgba(178,58,46,0.18); color:#E08376; }
+  .visitor .v-score{ font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:20px; color:#fff; }
+
+  .alert-card{
+    background:var(--panel-2); border:1px solid var(--line-dark);
+    border-radius: var(--radius-lg);
+    padding:22px;
+  }
+  .alert-card h4{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--teal-bright); margin:0 0 14px;
+  }
+  .alert-card .a-item{
+    font-size:13.5px; color:#D7DFDA; line-height:1.5; padding:10px 0;
+    border-bottom:1px solid var(--line-dark);
+  }
+  .alert-card .a-item:last-child{ border-bottom:none; }
+  .alert-card .a-item b{ color:#fff; }
+
+  /* ---------------- TESTIMONIAL (receipt stub) ---------------- */
+  .stub-row{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:20px;
+  }
+  @media (max-width:860px){ .stub-row{ grid-template-columns:1fr; } }
+  .stub{
+    background:var(--paper-raised); border:1px dashed var(--line);
+    border-radius: var(--radius-md);
+    padding:22px 20px;
+  }
+  .stub p.quote{
+    font-size:14.5px; line-height:1.55; margin:0 0 14px;
+  }
+  .stub .who{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); }
+  .stub .who b{ color:var(--ink); }
+
+  /* ---------------- PRICING ---------------- */
+  .pricing-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:20px;
+  }
+  @media (max-width:900px){ .pricing-grid{ grid-template-columns:1fr; } }
+  .price-card{
+    background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:28px 26px; position:relative;
+    display:flex; flex-direction:column;
+  }
+  .price-card.featured{
+    background:var(--panel); border-color:var(--line-dark); color:var(--paper);
+    transform:translateY(-8px);
+    box-shadow:0 30px 60px -28px rgba(19,32,27,0.5);
+  }
+  .price-card .badge-featured{
+    position:absolute; top:-13px; left:26px;
+    background:var(--teal-bright); color:var(--panel);
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:0.06em; padding:5px 12px; border-radius:var(--radius-pill);
+  }
+  .price-card .p-name{
+    font-family:'Big Shoulders Display', sans-serif; text-transform:uppercase;
+    font-weight:800; font-size:22px; margin-bottom:6px;
+  }
+  .price-card .p-price{
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800;
+    font-size:38px; line-height:1; margin-bottom:4px;
+  }
+  .price-card .p-price span{
+    font-family:'IBM Plex Mono', monospace; font-weight:400; font-size:13px;
+    text-transform:none; opacity:0.7; margin-left:4px;
+  }
+  .price-card .p-desc{
+    font-size:13.5px; color:var(--ink-soft); line-height:1.5; margin-bottom:20px;
+  }
+  .price-card.featured .p-desc{ color:#B9C4BE; }
+  .price-card .p-list{ list-style:none; margin:0 0 24px; padding:0; flex:1; }
+  .price-card .p-list li{
+    font-size:13.5px; padding:9px 0; border-top:1px solid var(--line);
+    display:flex; gap:8px;
+  }
+  .price-card.featured .p-list li{ border-top:1px solid var(--line-dark); }
+  .price-card .p-list li:first-child{ border-top:none; }
+  .price-card .p-list li .check{ color:var(--teal); flex-shrink:0; }
+  .price-card.featured .p-list li .check{ color:var(--teal-bright); }
+  .price-card .btn{ justify-content:center; width:100%; }
+  .price-card.featured .btn{ background:var(--teal-bright); color:var(--panel); border-color:var(--teal-bright); }
+  .price-card.featured .btn:hover{ background:#7CEBCB; }
+
+  /* ---------------- WAITLIST FORM ---------------- */
+  .waitlist{
+    background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:40px;
+    max-width:760px; margin:0 auto;
+  }
+  @media (max-width:600px){ .waitlist{ padding:26px; } }
+  .form-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:16px;
+    margin:28px 0 6px;
+  }
+  @media (max-width:640px){ .form-grid{ grid-template-columns:1fr; } }
+  .form-field{ display:flex; flex-direction:column; gap:6px; }
+  .form-field.full{ grid-column:1 / -1; }
+  .form-field label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--ink-soft);
+  }
+  .form-field input, .form-field select{
+    font-family:'IBM Plex Sans', sans-serif; font-size:14px;
+    padding:12px 16px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    background:#fff; color:var(--ink);
+  }
+  .form-field input:focus, .form-field select:focus{
+    outline:3px solid var(--teal); outline-offset:1px; border-color:var(--teal);
+  }
+  .waitlist .btn{ width:100%; justify-content:center; margin-top:14px; padding:15px 24px; }
+  .waitlist .secure-note{
+    text-align:center; font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color:var(--ink-soft); margin-top:14px;
+  }
+
+  /* ---------------- CTA / FOOTER ---------------- */
+  .cta{
+    text-align:center;
+    border-top:1px solid var(--line);
+  }
+  .cta h2{ font-size:clamp(32px,5vw,58px); margin:14px 0 18px; }
+  .cta p{ color:var(--ink-soft); max-width:48ch; margin:0 auto 30px; font-size:15.5px; }
+  .cta-actions{ display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:40px 0 50px;
+    font-size:13px; color:var(--ink-soft);
+  }
+  .foot-grid{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap;
+  }
+  .foot-grid .logo{ font-size:18px; margin-bottom:8px; }
+  .foot-links{ display:flex; gap:22px; flex-wrap:wrap; }
+  .foot-links a{ text-decoration:none; }
+  .foot-links a:hover{ color:var(--ink); }
+
+  /* ---------------- LIVE WIDGET (slide-in greeter) ---------------- */
+  .sw-launcher{
+    position:fixed; bottom:26px; right:26px; z-index:90;
+    width:58px; height:58px; border-radius:50%;
+    background:var(--ink); color:var(--paper);
+    display:flex; align-items:center; justify-content:center;
+    border:none; cursor:pointer;
+    box-shadow:0 14px 30px -10px rgba(26,24,20,0.45);
+    font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:13px;
+    transform:scale(0); opacity:0;
+    transition:transform .3s ease, opacity .3s ease;
+  }
+  .sw-launcher.show{ transform:scale(1); opacity:1; }
+  .sw-launcher .sw-ping{
+    position:absolute; top:-3px; right:-3px;
+    width:13px; height:13px; border-radius:50%;
+    background:var(--teal-bright); border:2px solid var(--paper);
+  }
+
+  .sw-panel{
+    position:fixed; bottom:26px; right:26px; z-index:91;
+    width:336px; max-width:88vw;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    box-shadow:0 30px 70px -24px rgba(26,24,20,0.45);
+    transform:translateY(28px) scale(0.97);
+    opacity:0; pointer-events:none;
+    transition:transform .5s cubic-bezier(.22,1,.36,1), opacity .4s ease;
+    overflow:hidden;
+  }
+  .sw-panel.open{ transform:translateY(0) scale(1); opacity:1; pointer-events:auto; }
+
+  .sw-head{
+    display:flex; align-items:center; gap:10px;
+    padding:16px 16px 14px;
+    border-bottom:1px solid var(--line);
+    background:var(--ink); color:var(--paper);
+  }
+  .sw-head .sw-avatar{
+    width:32px; height:32px; border-radius:50%;
+    background:var(--teal-bright); color:var(--panel);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:14px;
+    flex-shrink:0;
+  }
+  .sw-head .sw-meta{ flex:1; min-width:0; }
+  .sw-head .sw-name{ font-size:13.5px; font-weight:600; }
+  .sw-head .sw-status{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--teal-bright);
+    display:flex; align-items:center; gap:5px; margin-top:1px;
+  }
+  .sw-head .sw-status .dot2{
+    width:6px;height:6px;border-radius:50%; background:var(--teal-bright);
+  }
+  .sw-head .sw-close{
+    background:transparent; border:none; color:var(--paper); opacity:0.7;
+    cursor:pointer; font-size:18px; line-height:1; padding:4px; border-radius:8px;
+  }
+  .sw-head .sw-close:hover{ opacity:1; background:rgba(255,255,255,0.08); }
+
+  .sw-body{ padding:16px; }
+  .sw-bubble{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius-md);
+    border-top-left-radius:6px;
+    padding:12px 14px; font-size:13.5px; line-height:1.5; color:var(--ink);
+    margin-bottom:12px;
+  }
+  .sw-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .sw-chip{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px;
+    border:1px solid var(--line); background:#fff;
+    border-radius:var(--radius-pill); padding:7px 13px; cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .sw-chip:hover{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+  .sw-inputrow{
+    display:flex; align-items:center; gap:8px;
+    border:1px solid var(--line); border-radius:var(--radius-pill);
+    padding:6px 6px 6px 14px; background:#fff;
+  }
+  .sw-inputrow input{
+    flex:1; border:none; outline:none; background:transparent;
+    font-family:'IBM Plex Sans', sans-serif; font-size:13px; color:var(--ink);
+  }
+  .sw-inputrow button{
+    width:32px; height:32px; border-radius:50%; border:none;
+    background:var(--ink); color:var(--paper); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:14px;
+    flex-shrink:0;
+  }
+
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    border-top-left-radius: 6px;
+    width: max-content;
+    margin-bottom: 12px;
+  }
+  .typing-indicator span {
+    width: 6px;
+    height: 6px;
+    background: var(--ink-soft);
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out both;
+  }
+  .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+  .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+  @keyframes typing {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .sw-launcher, .sw-panel{ transition:none !important; }
+  }
+  @media (max-width:480px){
+    .sw-panel{ right:14px; bottom:14px; }
+    .sw-launcher{ right:16px; bottom:16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="logo"><span class="mark"><span>M</span></span> Midevela</div>
+    <nav class="navlinks">
+      <a href="#how">How it works</a>
+      <a href="#channels">Channels</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <div class="navcta">
+      <a href="#" class="btn ghost" >Log in</a>
+      <a href="#signup" class="btn">Get started free →</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> NOW SERVING · TICKET #00482 · AI COMMERCE OS</div>
+        <h1 class="display">Stop making<br>customers<br>shop <span class="accent">alone.</span></h1>
+        <p class="lede">Midevela turns your website into a salesperson that understands intent, recommends with reasons, and closes with confidence — on your site, WhatsApp, and Instagram, all from one brain.</p>
+        <div class="hero-actions">
+          <a href="#signup" class="btn">Open your store's counter →</a>
+          <a href="#how" class="btn ghost">Watch it sell</a>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="num mono">38s</div><div class="label">avg. time to recommend</div></div>
+          <div class="stat"><div class="num mono">94%</div><div class="label">recommendation confidence</div></div>
+          <div class="stat"><div class="num mono">24/7</div><div class="label">staffed, every visitor</div></div>
+        </div>
+      </div>
+
+      <div class="receipt-stage">
+        <div class="receipt" role="img" aria-label="Mock receipt showing the AI assistant recommending a laptop to a customer with a 94 percent confidence score">
+          <div class="r-head">
+            <div class="r-logo">Midevela</div>
+            <div class="r-sub">AI COUNTER · WEBSITE CHANNEL</div>
+          </div>
+
+          <div class="r-line cust" style="animation-delay:.2s;"><span class="who">CUSTOMER —</span> "need a laptop for video editing, budget ~₦700k"</div>
+          <div class="r-line tag" style="animation-delay:.9s;">INTENT DETECTED: Purchase · 88% confidence</div>
+          <div class="r-line cust" style="animation-delay:1.3s;"><span class="who">AI —</span> Recommending based on workload + budget...</div>
+
+          <div class="r-card">
+            <div class="r-card-title">MacBook Air M2 <span class="match">96% MATCH</span></div>
+            <ul>
+              <li>Handles 4K editing within budget</li>
+              <li>8hr battery for on-set work</li>
+              <li>In stock · ships in 2 days</li>
+            </ul>
+          </div>
+
+          <div class="meter">
+            <div class="meter-label"><span>BUYING CONFIDENCE</span><span class="mono">94%</span></div>
+            <div class="track"><div class="fill"></div></div>
+          </div>
+
+          <div class="r-foot">
+            <span>RECOMMENDATION PRINTED</span>
+            <span>09:41</span>
+          </div>
+          <div class="r-stamp">CLOSED</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST STRIP -->
+  <section class="trust-strip" style="padding: 24px 0; border-bottom: 1px solid var(--line); background: #fff;">
+    <div class="wrap" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; color:var(--ink-soft); display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--teal);">🛡️</span> NDPR &amp; GDPR COMPLIANT
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; color:var(--ink-soft); display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--teal);">🔒</span> AES-256 ENCRYPTION
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; color:var(--ink-soft); display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--teal);">⚡</span> &lt;100KB WIDGET PAYLOAD
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; color:var(--ink-soft); display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--teal);">🚫</span> ZERO DATA TRAINING
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="problem">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> WHY CUSTOMERS WALK OUT</div>
+          <h2 class="display">Three voided<br>tickets a day.</h2>
+        </div>
+        <p class="note">Your website isn't short on visitors. It's short on someone to talk to.</p>
+      </div>
+
+      <div class="ticket-row">
+        <div class="ticket">
+          <div class="void">VOID</div>
+          <div class="t-no mono">TICKET #1102</div>
+          <h3>Too many options</h3>
+          <p>A customer arrives knowing the problem, not the product. Filters and categories don't ask "what are you actually trying to do?"</p>
+        </div>
+        <div class="ticket">
+          <div class="void">VOID</div>
+          <div class="t-no mono">TICKET #1103</div>
+          <h3>Nobody's on the floor</h3>
+          <p>A physical store has staff. A website has a search bar. At 11pm, on a holiday, during your busiest sale — still nobody's there.</p>
+        </div>
+        <div class="ticket">
+          <div class="void">VOID</div>
+          <div class="t-no mono">TICKET #1104</div>
+          <h3>Search isn't sales</h3>
+          <p>Search returns matches. It doesn't explain trade-offs, resolve objections, or build the confidence a customer needs to actually buy.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS / PIPELINE -->
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> THE COUNTER PROCESS</div>
+          <h2 class="display">Five stations.<br>One conversation.</h2>
+        </div>
+        <p class="note">Every visitor moves through the same sequence — the order is what makes the recommendation trustworthy.</p>
+      </div>
+
+      <div class="stations">
+        <div class="station">
+          <div class="s-no mono">01</div>
+          <h4>Observe</h4>
+          <p>Reads behavior before speaking — pages viewed, time spent, what's been compared.</p>
+        </div>
+        <div class="station">
+          <div class="s-no mono">02</div>
+          <h4>Understand</h4>
+          <p>Asks what a salesperson would ask: budget, use case, who it's for.</p>
+        </div>
+        <div class="station">
+          <div class="s-no mono">03</div>
+          <h4>Recommend</h4>
+          <p>Shortlists from your real catalog, with the reasoning shown, not hidden.</p>
+        </div>
+        <div class="station">
+          <div class="s-no mono">04</div>
+          <h4>Resolve</h4>
+          <p>Handles price, fit, and trust objections using your actual policies.</p>
+        </div>
+        <div class="station">
+          <div class="s-no mono">05</div>
+          <h4>Close</h4>
+          <p>Guides checkout, then remembers the customer for next time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OMNICHANNEL -->
+  <section id="channels" style="background:var(--paper-raised); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> ONE BRAIN, EVERY COUNTER</div>
+          <h2 class="display">Same salesperson,<br>every channel.</h2>
+        </div>
+        <p class="note">A customer can start on Instagram and finish on your website without repeating a single word.</p>
+      </div>
+
+      <div class="counter">
+        <div class="channels">
+          <div class="channel-row">
+            <div class="ico">W</div>
+            <div><div class="name">Website widget</div><div class="desc">Watches behavior, starts the right conversation</div></div>
+            <div class="arrow">→</div>
+          </div>
+          <div class="channel-row">
+            <div class="ico">@</div>
+            <div><div class="name">Instagram DMs</div><div class="desc">Same product knowledge, same memory</div></div>
+            <div class="arrow">→</div>
+          </div>
+          <div class="channel-row">
+            <div class="ico">+</div>
+            <div><div class="name">WhatsApp</div><div class="desc">Checkout links, order status, follow-up</div></div>
+            <div class="arrow">→</div>
+          </div>
+          <div class="channel-row">
+            <div class="ico">✉</div>
+            <div><div class="name">Email</div><div class="desc">Resumes the conversation where it stopped</div></div>
+            <div class="arrow">→</div>
+          </div>
+        </div>
+
+        <div class="brain-window">
+          <div class="tag-mono">BUSINESS BRAIN</div>
+          <h3>One memory.<br>No repeated questions.</h3>
+          <p>Every channel reads and writes to the same customer profile — preferences, history, and the conversation so far.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="dash">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow on-dark"><span class="dot"></span> THE BACK OFFICE</div>
+          <h2 class="display">See the floor,<br>not just the reports.</h2>
+        </div>
+        <p class="note">Intent Radar shows who's on your site right now, and what they need from you.</p>
+      </div>
+
+      <div class="dash-grid">
+        <div class="visitor-list">
+          <div class="visitor">
+            <div><div class="v-name">Visitor — Lagos, NG</div><div class="v-meta">Viewing: Gaming Laptops · 6 min</div></div>
+            <div class="v-state buying">Buying</div>
+            <div class="v-score mono">91</div>
+          </div>
+          <div class="visitor">
+            <div><div class="v-name">Visitor — Abuja, NG</div><div class="v-meta">Comparing 3 skincare sets</div></div>
+            <div class="v-state comparing">Comparing</div>
+            <div class="v-score mono">64</div>
+          </div>
+          <div class="visitor">
+            <div><div class="v-name">Visitor — PH, NG</div><div class="v-meta">3 unanswered shipping questions</div></div>
+            <div class="v-state stuck">Stuck</div>
+            <div class="v-score mono">22</div>
+          </div>
+          <div class="visitor">
+            <div><div class="v-name">Returning — Chiamaka O.</div><div class="v-meta">Resuming yesterday's cart</div></div>
+            <div class="v-state buying">Buying</div>
+            <div class="v-score mono">88</div>
+          </div>
+        </div>
+
+        <div class="alert-card">
+          <h4>Live alerts</h4>
+          <div class="a-item"><b>Cart abandonment up 12%</b> on the checkout step today.</div>
+          <div class="a-item"><b>Missing knowledge:</b> 9 customers asked about international shipping this week.</div>
+          <div class="a-item"><b>High-value visitor</b> needs human assistance — invite to take over.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUARDRAILS -->
+  <section id="guardrails" style="background:var(--paper); border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow"><span class="dot" style="background:var(--rust); box-shadow:0 0 0 3px rgba(178,58,46,0.18);"></span> AI SAFETY &amp; GUARDRAILS</div>
+          <h2 class="display">Zero hallucinations.<br>Zero rogue prices.</h2>
+        </div>
+        <p class="note">Business owners fear AI because it invents things. Midevela's Conversation Engine is locked down. It only knows what you tell it.</p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:24px;">
+        <div class="station" style="background:#fff; border-color:var(--rust);">
+          <div style="position:absolute; top:12px; right:16px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--rust); font-weight:700;">OTHER BOTS</div>
+          <p style="font-size:13px; color:var(--ink-soft); margin-bottom:8px;">CUSTOMER — "Can I get a discount?"</p>
+          <div class="sw-bubble" style="background:rgba(178,58,46,0.05); border-color:rgba(178,58,46,0.2); color:var(--rust); margin-bottom:0;">
+            Sure! Since you asked nicely, here is 50% off your entire order today.
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--rust); margin-top:16px; font-weight:600;">⚠️ LLM Hallucination (Revenue Loss)</div>
+        </div>
+        
+        <div class="station" style="background:var(--paper-raised); border-color:var(--teal);">
+          <div style="position:absolute; top:12px; right:16px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--teal); font-weight:700;">MIDEVELA</div>
+          <p style="font-size:13px; color:var(--ink-soft); margin-bottom:8px;">CUSTOMER — "Can I get a discount?"</p>
+          <div class="sw-bubble" style="border-color:var(--teal); margin-bottom:0;">
+            I don't have the ability to generate custom discounts, but let me instantly connect you with a human manager who can help!
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--teal); margin-top:16px; font-weight:600;">✓ Safe Human Handoff Executed</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROOF -->
+  <section id="proof">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> FROM BUSINESSES ON THE FLOOR</div>
+          <h2 class="display">Stamped & signed.</h2>
+        </div>
+        <p class="note">Receipts from businesses already letting Midevela work the counter.</p>
+      </div>
+
+      <div class="stub-row">
+        <div class="stub">
+          <p class="quote">"Customers used to bounce off our laptop page in seconds. Now the AI asks the same questions our best sales rep used to."</p>
+          <div class="who"><b>Growing electronics brand</b> · Lagos</div>
+        </div>
+        <div class="stub">
+          <p class="quote">"Half our DMs used to go unanswered overnight. Now every one gets a real recommendation, not just a 'thanks for reaching out.'"</p>
+          <div class="who"><b>Skincare brand</b> · Abuja</div>
+        </div>
+        <div class="stub">
+          <p class="quote">"We finally know why people leave without buying. The dashboard shows the actual question they got stuck on."</p>
+          <div class="who"><b>Furniture retailer</b> · Port Harcourt</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" style="background:var(--paper-raised); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> PRICE TAGS, NOT SEAT LICENSES</div>
+          <h2 class="display">One counter.<br>One price.</h2>
+        </div>
+        <p class="note">Pay per business, not per seat. One recovered sale covers months of the subscription.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="p-name">Starter</div>
+          <div class="p-price">₦15,000<span>/ month</span></div>
+          <p class="p-desc">For small retailers and entrepreneurs getting started with automated sales.</p>
+          <ul class="p-list">
+            <li><span class="check">✓</span> WhatsApp + website widget</li>
+            <li><span class="check">✓</span> Catalog up to 20 items</li>
+            <li><span class="check">✓</span> Core AI qualification &amp; scoring</li>
+            <li><span class="check">✓</span> Standard AI sales agent</li>
+            <li><span class="check">✓</span> Real-time dashboard</li>
+            <li><span class="check">✓</span> Hot-lead WhatsApp alerts</li>
+          </ul>
+          <a href="#signup" class="btn ghost">Start with Starter →</a>
+        </div>
+
+        <div class="price-card featured">
+          <div class="badge-featured">Most recommended</div>
+          <div class="p-name">Growth</div>
+          <div class="p-price">₦45,000<span>/ month</span></div>
+          <p class="p-desc">For growing businesses handling daily customer inquiries across channels.</p>
+          <ul class="p-list">
+            <li><span class="check">✓</span> Everything in Starter</li>
+            <li><span class="check">✓</span> All channels — WhatsApp, website, social</li>
+            <li><span class="check">✓</span> Unlimited catalog items</li>
+            <li><span class="check">✓</span> Paystack payment link generation</li>
+            <li><span class="check">✓</span> Appointment booking engine</li>
+            <li><span class="check">✓</span> Revenue Leak Audit dashboard</li>
+          </ul>
+          <a href="#signup" class="btn">Start with Growth →</a>
+        </div>
+
+        <div class="price-card">
+          <div class="p-name">Pro</div>
+          <div class="p-price">₦150,000<span>/ month</span></div>
+          <p class="p-desc">For established businesses needing custom AI training and dedicated support.</p>
+          <ul class="p-list">
+            <li><span class="check">✓</span> Everything in Growth</li>
+            <li><span class="check">✓</span> Custom-trained AI persona</li>
+            <li><span class="check">✓</span> Multi-staff dashboard access</li>
+            <li><span class="check">✓</span> Predictive lead scoring</li>
+            <li><span class="check">✓</span> Priority support &amp; dedicated manager</li>
+            <li><span class="check">✓</span> Unlimited AI messages</li>
+          </ul>
+          <a href="#signup" class="btn ghost">Talk to sales →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTEGRATION -->
+  <section id="integration" style="background:var(--paper); border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> SETUP &amp; INTEGRATION</div>
+          <h2 class="display">Live in minutes,<br>not months.</h2>
+        </div>
+        <p class="note">No manual data entry. Paste one script tag, enter your website URL, and the Knowledge Engine automatically crawls and syncs your catalog.</p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:32px; align-items:center;">
+        <div class="station" style="background:var(--panel); border:1px solid var(--line-dark); padding:24px;">
+          <div style="display:flex; gap:6px; margin-bottom:16px;">
+            <div style="width:10px; height:10px; border-radius:50%; background:#E08376;"></div>
+            <div style="width:10px; height:10px; border-radius:50%; background:#D6B45A;"></div>
+            <div style="width:10px; height:10px; border-radius:50%; background:#5FD9B8;"></div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#8FA098; line-height:1.7;">
+            <span style="color:#B9C4BE;">&lt;!-- Midevela Widget --&gt;</span><br>
+            <span style="color:#5FD9B8;">&lt;script</span> <span style="color:#D6B45A;">src=</span><span style="color:#E08376;">"https://cdn.midevela.com/widget.js"</span><br>
+            &nbsp;&nbsp;<span style="color:#D6B45A;">data-store-id=</span><span style="color:#E08376;">"str_88492"</span><br>
+            &nbsp;&nbsp;<span style="color:#D6B45A;">defer</span><span style="color:#5FD9B8;">&gt;&lt;/script&gt;</span>
+          </div>
+        </div>
+        
+        <div>
+          <h4 style="font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.06em; margin:0 0 12px; color:var(--ink-soft);">Platform Agnostic</h4>
+          <p style="font-size:14.5px; line-height:1.6; color:var(--ink);">Works seamlessly with Shopify, WooCommerce, Magento, or custom builds. The AI reads your site exactly like a human visitor does, keeping inventory and prices perfectly in sync.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="cta">
+    <div class="wrap">
+      <div class="eyebrow" style="justify-content:center;"><span class="dot"></span> READY TO OPEN</div>
+      <h2 class="display">Give your website<br>a salesperson.</h2>
+      <p>Connect your catalog, set your brand voice, and your AI counter is live the same day — on your site and every channel you already use.</p>
+    </div>
+  </section>
+
+  <!-- SIGNUP -->
+  <section id="signup">
+    <div class="wrap">
+      <form id="waitlistForm" class="waitlist">
+        <div class="eyebrow"><span class="dot"></span> CREATE YOUR ACCOUNT</div>
+        <h2 class="display" style="font-size:clamp(26px,3.4vw,38px); margin-top:10px;">Open your AI counter.</h2>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="f-name">Full name</label>
+            <input id="f-name" type="text" placeholder="e.g. Adaeze Okonkwo" required>
+          </div>
+          <div class="form-field">
+            <label for="f-business">Business name</label>
+            <input id="f-business" type="text" placeholder="e.g. Lumina Beauty Co." required>
+          </div>
+
+          <div class="form-field">
+            <label for="f-email">Business email</label>
+            <input id="f-email" type="email" placeholder="you@yourbusiness.com" required>
+          </div>
+          <div class="form-field">
+            <label for="f-password">Password</label>
+            <input id="f-password" type="password" placeholder="Create a password" required>
+          </div>
+
+          <div class="form-field">
+            <label for="f-industry">Industry</label>
+            <select id="f-industry" required>
+              <option value="">Select industry…</option>
+              <option>Fashion &amp; Retail</option>
+              <option>Food &amp; Beverage</option>
+              <option>Beauty &amp; Cosmetics</option>
+              <option>Electronics</option>
+              <option>Logistics</option>
+              <option>Professional Services</option>
+              <option>Real Estate</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="f-website">Website (optional)</label>
+            <input id="f-website" type="text" placeholder="yourbusiness.com">
+          </div>
+
+          <div class="form-field full">
+            <label for="f-whatsapp">WhatsApp number to connect</label>
+            <input id="f-whatsapp" type="tel" placeholder="+234…">
+          </div>
+        </div>
+
+        <button type="submit" class="btn">Create my account →</button>
+        <div class="secure-note">🔒 Protected by enterprise-grade TLS.</div>
+      </form>
+      <div id="waitlistSuccess" class="waitlist" style="display:none; text-align:center; padding: 60px 20px;">
+        <div class="eyebrow" style="justify-content:center; margin-bottom:16px;"><span class="dot"></span> SUCCESS</div>
+        <h2 class="display" style="font-size:clamp(26px,3.4vw,38px);">You're on the list.</h2>
+        <p style="color:var(--ink-soft); margin-top:12px;">We'll be in touch shortly to get your AI counter set up.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-grid">
+    <div>
+      <div class="logo display">Midevela</div>
+      <div class="mono" style="font-size:11.5px;">AI COMMERCE OPERATING SYSTEM</div>
+    </div>
+    <div class="foot-links">
+      <a href="#how">How it works</a>
+      <a href="#channels">Channels</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#signup">Get started</a>
+    </div>
+  </div>
+</footer>
+
+<!-- LIVE WIDGET: slides in on page load like a salesperson greeting at the door -->
+<button class="sw-launcher" id="swLauncher" aria-label="Open chat with Midevela assistant" aria-expanded="false">
+  M<span class="sw-ping" aria-hidden="true"></span>
+</button>
+
+<div class="sw-panel" id="swPanel" role="dialog" aria-label="Midevela AI assistant chat" aria-live="polite">
+  <div class="sw-head">
+    <div class="sw-avatar">M</div>
+    <div class="sw-meta">
+      <div class="sw-name">Midevela Assistant</div>
+      <div class="sw-status"><span class="dot2"></span> Active now</div>
+    </div>
+    <button class="sw-close" id="swClose" aria-label="Minimize chat">&times;</button>
+  </div>
+  <div class="sw-body">
+    <div id="swTyping" class="typing-indicator"><span></span><span></span><span></span></div>
+    <div id="swMessage" class="sw-bubble" style="display:none;">Hey, welcome in! What are you shopping for today?</div>
+    <div id="swChips" class="sw-chips" style="display:none;">
+      <button class="sw-chip" type="button">Just browsing</button>
+      <button class="sw-chip" type="button">Need a recommendation</button>
+      <button class="sw-chip" type="button">I have a question</button>
+    </div>
+    <div class="sw-inputrow">
+      <input id="swInput" type="text" placeholder="Type what you're looking for…" aria-label="Message Midevela assistant" />
+      <button type="button" aria-label="Send message">→</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // LIVE WIDGET: slides in unprompted shortly after page load — the "salesperson
+  // greets you at the door" model, rather than waiting for behavior signals.
+  (function(){
+    const launcher = document.getElementById('swLauncher');
+    const panel = document.getElementById('swPanel');
+    const closeBtn = document.getElementById('swClose');
+    if (!launcher || !panel) return;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const greetDelay = reduceMotion ? 200 : 1100;
+
+    let hasGreeted = false;
+
+    function openPanel(){
+      panel.classList.add('open');
+      launcher.classList.remove('show');
+      launcher.setAttribute('aria-expanded', 'true');
+
+      const input = document.getElementById('swInput');
+      if (input) setTimeout(() => input.focus(), 500); // Focus input when sliding open
+
+      if (!hasGreeted) {
+        hasGreeted = true;
+        const typing = document.getElementById('swTyping');
+        const msg = document.getElementById('swMessage');
+        const chips = document.getElementById('swChips');
+        
+        if (!reduceMotion) {
+          setTimeout(() => {
+            if (typing) typing.style.display = 'none';
+            if (msg) msg.style.display = 'block';
+            if (chips) chips.style.display = 'flex';
+          }, 1200);
+        } else {
+          if (typing) typing.style.display = 'none';
+          if (msg) msg.style.display = 'block';
+          if (chips) chips.style.display = 'flex';
+        }
+      }
+    }
+    function closePanel(){
+      panel.classList.remove('open');
+      launcher.classList.add('show');
+      launcher.setAttribute('aria-expanded', 'false');
+    }
+
+    // Greet automatically, once, shortly after arrival — no waiting on scroll or clicks.
+    setTimeout(openPanel, greetDelay);
+
+    closeBtn.addEventListener('click', closePanel);
+    launcher.addEventListener('click', openPanel);
+  })();
+</script>
+
+<script>
+  // (kept subtle and purely additive — fine to no-op if IntersectionObserver is unsupported)
+  if ('IntersectionObserver' in window) {
+    const receipt = document.querySelector('.receipt');
+    if (receipt) {
+      const lines = receipt.querySelectorAll('.r-line, .r-card, .meter, .r-foot, .r-stamp');
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            lines.forEach(el => { el.style.animationPlayState = 'running'; });
+          }
+        });
+      }, { threshold: 0.3 });
+      io.observe(receipt);
+    }
+
+    // Scroll-triggered fade-ins for tickets and stations
+    const fadeElements = document.querySelectorAll('.ticket, .station');
+    fadeElements.forEach(el => el.classList.add('fade-up'));
+    
+    const fadeIo = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    
+    fadeElements.forEach(el => fadeIo.observe(el));
+  }
+
+  // Waitlist form success state handling
+  const waitlistForm = document.getElementById('waitlistForm');
+  const waitlistSuccess = document.getElementById('waitlistSuccess');
+  if(waitlistForm && waitlistSuccess) {
+    waitlistForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      waitlistForm.style.display = 'none';
+      waitlistSuccess.style.display = 'block';
+    });
+  }
+</script>
+
+</body>
+</html>

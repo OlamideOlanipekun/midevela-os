@@ -1,0 +1,717 @@
+/* ═══════════════════════════════════════════════════════════
+   CONVERSATIONS — "The Counter Floor"
+   Editorial three-panel console: queue · conversation · customer file.
+   Ink AI bubbles / white customer cards, teal as the single data hue,
+   mono for machine text, Playfair for identity moments.
+   ═══════════════════════════════════════════════════════════ */
+
+.conv-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--topbar-height) - 2 * var(--space-xl));
+  min-height: 0;
+}
+
+.conv-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.conv-page-head h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 6px 0 0;
+  color: var(--ink);
+}
+
+.conv-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 16px;
+}
+
+.conv-panel {
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ─── LEFT: QUEUE ─── */
+.conv-list-header {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conv-list-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.conv-list-title h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.conv-list-count {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+
+.conv-list-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0 14px;
+  height: 36px;
+  color: var(--ink-soft);
+  transition: border-color .15s ease;
+}
+
+.conv-list-search:focus-within {
+  border-color: var(--teal);
+}
+
+.conv-list-search-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  width: 100%;
+}
+
+.conv-list-search-input::placeholder {
+  color: var(--ink-soft);
+}
+
+.conv-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.conv-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 12px 12px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background .15s ease;
+  border: 1px solid transparent;
+  animation: fadeUp 0.4s var(--ease-default) both;
+}
+
+.conv-item:nth-child(1) { animation-delay: 0.03s; }
+.conv-item:nth-child(2) { animation-delay: 0.07s; }
+.conv-item:nth-child(3) { animation-delay: 0.11s; }
+.conv-item:nth-child(4) { animation-delay: 0.15s; }
+.conv-item:nth-child(5) { animation-delay: 0.19s; }
+
+.conv-item:hover {
+  background: rgba(26, 24, 20, 0.03);
+}
+
+.conv-item.active {
+  background: #fff;
+  border-color: var(--border);
+  box-shadow: var(--shadow-luxury, 0 10px 24px -14px rgba(0,0,0,0.12));
+}
+
+.conv-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--pine-black);
+}
+
+.conv-item-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.conv-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--pine-black);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.conv-item-unread {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--teal);
+  border: 2px solid var(--paper-raised);
+}
+
+.conv-item-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.conv-item-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.conv-item-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-item-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.conv-item-preview {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-item-bottom {
+  margin-top: 5px;
+}
+
+/* ─── CENTER: CONVERSATION ─── */
+.conv-chat-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.conv-chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.conv-chat-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.conv-chat-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.conv-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 0 rgba(30, 111, 100, 0.5);
+  animation: pulse 1.8s ease-out infinite;
+}
+
+/* Takeover banner — a warning state: amber tint + label, never color alone */
+.conv-takeover-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 22px;
+  background: rgba(217, 130, 43, 0.09);
+  border-bottom: 1px solid rgba(217, 130, 43, 0.25);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: #8A5416;
+}
+
+.conv-takeover-banner button {
+  background: none;
+  border: 1px solid rgba(138, 84, 22, 0.35);
+  border-radius: var(--radius-pill);
+  color: #8A5416;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.conv-takeover-banner button:hover {
+  background: #8A5416;
+  color: #fff;
+}
+
+.conv-chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: var(--paper);
+}
+
+/* Message bubbles: customer = white card (left), AI = ink panel (right) —
+   the same language as the marketing hero chat and the live widget. */
+.conv-msg-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 72%;
+  animation: fadeUp 0.35s var(--ease-default) both;
+}
+
+.conv-msg-group.customer {
+  align-self: flex-start;
+}
+
+.conv-msg-group.ai {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.conv-msg-bubble {
+  padding: 13px 17px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.customer .conv-msg-bubble {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+
+.ai .conv-msg-bubble {
+  background: var(--pine-black);
+  color: var(--paper);
+  border-bottom-right-radius: 4px;
+}
+
+.conv-msg-meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  display: flex;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.conv-msg-meta .ticks {
+  color: var(--teal);
+}
+
+/* Recommendation cards inside the thread */
+.conv-recos-container {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 0;
+  width: 100%;
+  scrollbar-width: thin;
+}
+
+.conv-reco-card {
+  flex-shrink: 0;
+  width: 190px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
+
+.conv-reco-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv-reco-price {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--teal);
+}
+
+.conv-reco-why {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.conv-reco-btn {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--teal);
+  cursor: pointer;
+  transition: color .15s ease;
+}
+
+.conv-reco-btn:hover {
+  color: #14453D;
+  text-decoration: underline;
+}
+
+/* Composer */
+.conv-chat-input-area {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--paper-raised);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.conv-chat-input {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 12px 20px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.conv-chat-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(30, 111, 100, 0.1);
+}
+
+.conv-send-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--pine-black);
+  color: var(--paper);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 12px 22px;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+  flex-shrink: 0;
+}
+
+.conv-send-btn:hover {
+  background: #000;
+  transform: translateY(-1px);
+}
+
+/* Take over button */
+.conv-takeover-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid rgba(26, 24, 20, 0.25);
+  border-radius: var(--radius-pill);
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: all .15s ease;
+  white-space: nowrap;
+}
+
+.conv-takeover-btn:hover:not(:disabled) {
+  background: var(--pine-black);
+  border-color: var(--pine-black);
+  color: var(--paper);
+}
+
+.conv-takeover-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ─── RIGHT: CUSTOMER FILE ─── */
+.conv-profile-panel {
+  padding: 22px 20px;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.conv-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 18px;
+}
+
+.conv-profile-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: var(--pine-black);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.conv-profile-name {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.conv-profile-email {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  margin-top: 3px;
+  word-break: break-all;
+}
+
+.conv-profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+}
+
+.conv-profile-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+
+/* Confidence meter — a single ratio, so a meter, not a ring */
+.conv-conf-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.conv-conf-value {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.conv-conf-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--teal);
+}
+
+.conv-conf-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(30, 111, 100, 0.12);
+  overflow: hidden;
+}
+
+.conv-conf-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--teal);
+  transition: width .6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.conv-profile-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.conv-profile-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+}
+
+.conv-viewed-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color .15s ease;
+}
+
+.conv-viewed-item:hover {
+  border-color: rgba(26, 24, 20, 0.2);
+}
+
+.conv-viewed-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.conv-viewed-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1280px) {
+  .conv-layout {
+    grid-template-columns: 280px 1fr;
+  }
+  .conv-profile-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .conv-layout {
+    grid-template-columns: 1fr;
+  }
+  .conv-list-panel {
+    display: none;
+  }
+  /* Grid items default to min-width:auto, which stops them shrinking
+     below their content's intrinsic width — the chat header's avatar +
+     name + badge + button don't wrap, so without this the whole column
+     (and every bubble sized relative to it) overflows past the viewport. */
+  .conv-chat-panel {
+    min-width: 0;
+  }
+  .conv-chat-header {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .conv-msg-group {
+    max-width: 88%;
+  }
+}
+
+/* ─── SCROLLBARS ─── */
+.conv-list-scroll::-webkit-scrollbar,
+.conv-chat-scroll::-webkit-scrollbar,
+.conv-profile-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.conv-list-scroll::-webkit-scrollbar-thumb,
+.conv-chat-scroll::-webkit-scrollbar-thumb,
+.conv-profile-panel::-webkit-scrollbar-thumb {
+  background: rgba(26, 24, 20, 0.12);
+  border-radius: var(--radius-pill);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conv-item, .conv-msg-group {
+    animation: none !important;
+  }
+}

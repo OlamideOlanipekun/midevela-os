@@ -1,0 +1,91 @@
+/* ═══════════════════════════════════════════════════════════
+   AI PERFORMANCE — "Reasoning & Alignment"
+   Reuses kpi-strip / bars / insight primitives from dashboard.css;
+   the one new piece is the escalation-reasons list, which uses
+   amber (not teal) because it's a problem-magnitude, not a success one.
+   ═══════════════════════════════════════════════════════════ */
+
+.aip-page-head {
+  margin-bottom: 28px;
+}
+
+.aip-page-head h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: clamp(30px, 3.4vw, 40px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 10px 0 0;
+  color: var(--ink);
+}
+
+.aip-kpi-desc {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin: 8px 0 10px;
+}
+
+/* Escalation reasons — sequential single hue (amber), magnitude of a
+   problem. Darkest = the biggest driver of human handoffs. */
+.aip-esc-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.aip-esc-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.aip-esc-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aip-esc-reason {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.aip-esc-count {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+
+.aip-esc-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.aip-esc-pct {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #8A5416;
+  min-width: 34px;
+  text-align: right;
+}
+
+.aip-esc-track {
+  width: 70px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(217, 130, 43, 0.15);
+  overflow: hidden;
+}
+
+.aip-esc-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: #C9711F;
+}

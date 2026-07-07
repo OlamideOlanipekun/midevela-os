@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Midevela — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE2;
+    --paper-raised:#F6F3EB;
+    --ink:#1A1814;
+    --ink-soft:#5b5546;
+    --rust:#B23A2E;
+    --teal:#1E6F64;
+    --teal-bright:#5FD9B8;
+    --panel:#13201B;
+    --panel-2:#1B2C25;
+    --line:#CBC3AF;
+    --line-dark:#2C3C35;
+    --radius-sm:10px;
+    --radius-md:14px;
+    --radius-lg:18px;
+    --radius-pill:999px;
+    --amber:#D6B45A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  a{ color:inherit; text-decoration:none; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .display{
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800;
+    text-transform:uppercase; letter-spacing:0.01em; line-height:0.95;
+  }
+  :focus-visible{ outline:3px solid var(--teal); outline-offset:2px; }
+  button{ font-family:inherit; cursor:pointer; }
+
+  /* ---------------- APP SHELL ---------------- */
+  .app{
+    display:grid;
+    grid-template-columns:236px 1fr;
+    min-height:100vh;
+  }
+  @media (max-width:980px){
+    .app{ grid-template-columns:1fr; }
+    .sidebar{ display:none; }
+  }
+
+  /* ---------------- SIDEBAR ---------------- */
+  .sidebar{
+    background:var(--panel); color:var(--paper);
+    display:flex; flex-direction:column;
+    padding:20px 14px;
+    position:sticky; top:0; height:100vh;
+  }
+  .sb-logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:18px;
+    text-transform:uppercase; color:#fff; padding:6px 10px 22px;
+  }
+  .sb-logo .mark{
+    width:24px;height:24px; background:var(--teal-bright); border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--panel); font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:11px;
+  }
+  .sb-workspace{
+    display:flex; align-items:center; gap:10px;
+    background:var(--panel-2); border:1px solid var(--line-dark);
+    border-radius:var(--radius-md); padding:10px 12px; margin-bottom:18px;
+    cursor:pointer;
+  }
+  .sb-workspace .wk-avatar{
+    width:28px;height:28px;border-radius:8px; background:var(--rust);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:13px; color:#fff;
+    flex-shrink:0;
+  }
+  .sb-workspace .wk-name{ font-size:13px; font-weight:600; }
+  .sb-workspace .wk-plan{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8FA098; }
+  .sb-workspace .wk-caret{ margin-left:auto; color:#8FA098; font-size:11px; }
+
+  .sb-nav{ display:flex; flex-direction:column; gap:2px; flex:1; }
+  .sb-section-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase;
+    letter-spacing:0.1em; color:#5E7268; padding:14px 10px 6px;
+  }
+  .sb-link{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 10px; border-radius:var(--radius-sm);
+    font-size:13.5px; color:#C7D1CB;
+    transition: background .15s ease, color .15s ease;
+  }
+  .sb-link .ico{ width:16px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:12px; opacity:0.85; }
+  .sb-link:hover{ background:var(--panel-2); color:#fff; }
+  .sb-link.active{ background:var(--teal-bright); color:var(--panel); font-weight:600; }
+  .sb-link.active .ico{ opacity:1; }
+  .sb-link .badge{
+    margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:9.5px;
+    background:var(--rust); color:#fff; border-radius:var(--radius-pill); padding:1px 6px;
+  }
+
+  .sb-footer{
+    border-top:1px solid var(--line-dark); padding-top:14px; margin-top:10px;
+  }
+  .sb-user{
+    display:flex; align-items:center; gap:10px; padding:6px 10px;
+  }
+  .sb-user .u-avatar{
+    width:28px;height:28px;border-radius:50%; background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:12px; color:var(--paper);
+  }
+  .sb-user .u-name{ font-size:12.5px; font-weight:600; }
+  .sb-user .u-role{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8FA098; }
+
+  /* ---------------- TOP BAR ---------------- */
+  .topbar{
+    display:flex; align-items:center; gap:16px;
+    padding:14px 28px;
+    border-bottom:1px solid var(--line);
+    background:rgba(237,234,226,0.92);
+    backdrop-filter:blur(6px);
+    position:sticky; top:0; z-index:20;
+  }
+  .tb-search{
+    flex:1; max-width:420px;
+    display:flex; align-items:center; gap:10px;
+    background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:var(--radius-pill); padding:9px 16px;
+    color:var(--ink-soft); font-size:13px;
+  }
+  .tb-search kbd{
+    margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    background:#fff; border:1px solid var(--line); border-radius:5px; padding:2px 6px;
+  }
+  .tb-spacer{ flex:1; }
+  .tb-command{
+    display:flex; align-items:center; gap:8px;
+    font-family:'IBM Plex Mono',monospace; font-size:12px;
+    background:var(--ink); color:var(--paper);
+    border:none; border-radius:var(--radius-pill); padding:9px 16px;
+  }
+  .tb-icon-btn{
+    width:36px;height:36px;border-radius:50%;
+    background:var(--paper-raised); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; position:relative;
+  }
+  .tb-icon-btn .dot-alert{
+    position:absolute; top:6px; right:7px; width:7px;height:7px; border-radius:50%;
+    background:var(--rust); border:1.5px solid var(--paper);
+  }
+  .tb-avatar{
+    width:36px;height:36px;border-radius:50%; background:var(--ink); color:var(--paper);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:14px;
+  }
+
+  /* ---------------- MAIN ---------------- */
+  main{ padding:28px; }
+  .page-head{
+    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px;
+    margin-bottom:24px;
+  }
+  .page-head h1{ font-size:clamp(26px,3vw,34px); margin:6px 0 0; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--rust); display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow .dot{ width:6px;height:6px;border-radius:50%; background:var(--teal); }
+  .live-pill{
+    display:flex; align-items:center; gap:8px;
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:var(--radius-pill); padding:7px 14px;
+  }
+  .live-pill .pulse{
+    width:7px;height:7px;border-radius:50%; background:var(--teal-bright);
+    box-shadow:0 0 0 0 rgba(95,217,184,0.6);
+    animation: pulse 1.8s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(95,217,184,0.55); }
+    70%{ box-shadow:0 0 0 7px rgba(95,217,184,0); }
+    100%{ box-shadow:0 0 0 0 rgba(95,217,184,0); }
+  }
+  @media (prefers-reduced-motion: reduce){ .pulse{ animation:none; } }
+
+  /* ---------------- KPI STRIP ---------------- */
+  .kpi-strip{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:14px;
+    margin-bottom:24px;
+  }
+  @media (max-width:1180px){ .kpi-strip{ grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:620px){ .kpi-strip{ grid-template-columns:repeat(2,1fr); } }
+  .kpi-card{
+    background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:var(--radius-lg); padding:16px 16px 14px;
+    transition: transform .15s ease;
+  }
+  .kpi-card:hover{ transform:translateY(-2px); }
+  .kpi-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:8px;
+  }
+  .kpi-value{
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800; font-size:26px;
+  }
+  .kpi-delta{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; margin-top:4px;
+    display:flex; align-items:center; gap:4px;
+  }
+  .kpi-delta.up{ color:var(--teal); }
+  .kpi-delta.down{ color:var(--rust); }
+
+  /* ---------------- TWO COLUMN ---------------- */
+  .grid-2{
+    display:grid; grid-template-columns:1.4fr 1fr; gap:18px;
+    margin-bottom:24px;
+  }
+  @media (max-width:980px){ .grid-2{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:var(--radius-lg); padding:20px;
+  }
+  .card-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+  }
+  .card-head h3{
+    font-family:'Big Shoulders Display', sans-serif; text-transform:uppercase;
+    font-weight:700; font-size:17px; margin:0;
+  }
+  .card-head .view-all{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft);
+  }
+  .card-head .view-all:hover{ color:var(--ink); }
+
+  /* Activity feed */
+  .feed-item{
+    display:flex; gap:12px; padding:11px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .feed-item:last-child{ border-bottom:none; padding-bottom:0; }
+  .feed-item:first-child{ padding-top:0; }
+  .feed-dot{
+    width:8px;height:8px;border-radius:50%; margin-top:6px; flex-shrink:0;
+  }
+  .feed-dot.teal{ background:var(--teal); }
+  .feed-dot.rust{ background:var(--rust); }
+  .feed-dot.amber{ background:var(--amber); }
+  .feed-text{ font-size:13.5px; line-height:1.4; }
+  .feed-text b{ font-weight:600; }
+  .feed-time{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); margin-top:2px; }
+
+  /* AI Insights */
+  .insight{
+    border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:14px; margin-bottom:10px; background:#fff;
+  }
+  .insight:last-child{ margin-bottom:0; }
+  .insight-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase;
+    letter-spacing:0.06em; color:var(--rust); margin-bottom:6px;
+  }
+  .insight p{ font-size:13px; line-height:1.5; margin:0 0 10px; }
+  .insight-action{
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    background:var(--ink); color:var(--paper); border:none;
+    border-radius:var(--radius-pill); padding:7px 14px;
+  }
+  .insight-action:hover{ background:#000; }
+
+  /* ---------------- WIDGETS ROW ---------------- */
+  .grid-3{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px;
+    margin-bottom:24px;
+  }
+  @media (max-width:980px){ .grid-3{ grid-template-columns:1fr; } }
+
+  /* mini bar chart */
+  .bars{
+    display:flex; align-items:flex-end; gap:6px; height:90px; margin-top:6px;
+  }
+  .bars .bar{
+    flex:1; background:var(--teal); border-radius:4px 4px 0 0;
+    opacity:0.85;
+  }
+  .bars .bar.peak{ background:var(--rust); opacity:1; }
+  .bar-labels{
+    display:flex; justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--ink-soft); margin-top:6px;
+  }
+
+  /* funnel */
+  .funnel-row{
+    display:flex; align-items:center; gap:10px; margin-bottom:10px;
+  }
+  .funnel-row:last-child{ margin-bottom:0; }
+  .funnel-label{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; width:84px; flex-shrink:0; color:var(--ink-soft);
+  }
+  .funnel-bar-track{ flex:1; height:18px; background:var(--paper); border-radius:var(--radius-pill); overflow:hidden; }
+  .funnel-bar-fill{ height:100%; background:var(--teal); border-radius:var(--radius-pill); }
+  .funnel-pct{ font-family:'IBM Plex Mono', monospace; font-size:11px; width:36px; text-align:right; }
+
+  /* health ring */
+  .health-wrap{ display:flex; align-items:center; gap:18px; margin-top:6px; }
+  .health-ring{ width:84px; height:84px; flex-shrink:0; }
+  .health-text .h-num{ font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:30px; }
+  .health-text .h-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); }
+
+  /* ---------------- QUICK ACTIONS ---------------- */
+  .quick-actions{
+    display:flex; gap:12px; flex-wrap:wrap;
+  }
+  .qa-btn{
+    display:flex; align-items:center; gap:8px;
+    background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:var(--radius-pill); padding:10px 18px;
+    font-size:13px; font-weight:500;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .qa-btn:hover{ background:var(--ink); color:var(--paper); transform:translateY(-2px); }
+  .qa-btn .qa-ico{ font-family:'IBM Plex Mono',monospace; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo"><span class="mark">M</span> Midevela</div>
+
+    <div class="sb-workspace">
+      <div class="wk-avatar">L</div>
+      <div>
+        <div class="wk-name">Lumina Beauty Co.</div>
+        <div class="wk-plan">GROWTH PLAN</div>
+      </div>
+      <div class="wk-caret">⌄</div>
+    </div>
+
+    <nav class="sb-nav">
+      <a href="#" class="sb-link active"><span class="ico">▣</span> Dashboard</a>
+      <a href="#" class="sb-link"><span class="ico">◔</span> Conversations <span class="badge">12</span></a>
+      <a href="#" class="sb-link"><span class="ico">◐</span> Customers</a>
+      <a href="#" class="sb-link"><span class="ico">▤</span> Products</a>
+      <a href="#" class="sb-link"><span class="ico">◈</span> Knowledge</a>
+
+      <div class="sb-section-label">Intelligence</div>
+      <a href="#" class="sb-link"><span class="ico">▦</span> Analytics</a>
+      <a href="#" class="sb-link"><span class="ico">₦</span> Revenue</a>
+      <a href="#" class="sb-link"><span class="ico">⚡</span> Automations</a>
+
+      <div class="sb-section-label">Workspace</div>
+      <a href="#" class="sb-link"><span class="ico">⇄</span> Integrations</a>
+      <a href="#" class="sb-link"><span class="ico">$</span> Billing</a>
+      <a href="#" class="sb-link"><span class="ico">⚙</span> Settings</a>
+      <a href="#" class="sb-link"><span class="ico">◌</span> Notifications</a>
+    </nav>
+
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="u-avatar">O</div>
+        <div>
+          <div class="u-name">Ola</div>
+          <div class="u-role">Owner</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div>
+    <header class="topbar">
+      <div class="tb-search">
+        🔍 Search customers, products, conversations…
+        <kbd>⌘K</kbd>
+      </div>
+      <div class="tb-spacer"></div>
+      <button class="tb-command">✦ Ask AI</button>
+      <button class="tb-icon-btn">🔔<span class="dot-alert"></span></button>
+      <div class="tb-avatar">O</div>
+    </header>
+
+    <main>
+      <div class="page-head">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> WORKSPACE OVERVIEW</div>
+          <h1 class="display">Good afternoon, Ola.</h1>
+        </div>
+        <div class="live-pill"><span class="pulse"></span> 24 visitors active right now</div>
+      </div>
+
+      <!-- KPI STRIP -->
+      <div class="kpi-strip">
+        <div class="kpi-card">
+          <div class="kpi-label">Revenue Today</div>
+          <div class="kpi-value mono">₦486k</div>
+          <div class="kpi-delta up">▲ 14% vs yesterday</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">AI Revenue</div>
+          <div class="kpi-value mono">68%</div>
+          <div class="kpi-delta up">▲ 6pt this week</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Conversion Rate</div>
+          <div class="kpi-value mono">4.8%</div>
+          <div class="kpi-delta up">▲ 0.6pt</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Buying Confidence</div>
+          <div class="kpi-value mono">76</div>
+          <div class="kpi-delta down">▼ 3pt</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Lost Revenue</div>
+          <div class="kpi-value mono">₦92k</div>
+          <div class="kpi-delta down">▲ checkout drop-off</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">AI Health</div>
+          <div class="kpi-value mono">98%</div>
+          <div class="kpi-delta up">● nominal</div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY + INSIGHTS -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h3>Live Activity</h3>
+            <a href="#" class="view-all">View all →</a>
+          </div>
+
+          <div class="feed-item">
+            <div class="feed-dot teal"></div>
+            <div>
+              <div class="feed-text"><b>Chiamaka O.</b> completed a purchase — ClearGlow Routine Set, ₦24,500</div>
+              <div class="feed-time">2 min ago · Instagram</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-dot amber"></div>
+            <div>
+              <div class="feed-text">High-intent visitor browsing <b>Vitamin C Serum</b> for 6 minutes</div>
+              <div class="feed-time">5 min ago · Website</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-dot rust"></div>
+            <div>
+              <div class="feed-text"><b>Tunde A.</b> requested human assistance — 3 unanswered shipping questions</div>
+              <div class="feed-time">11 min ago · WhatsApp</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-dot teal"></div>
+            <div>
+              <div class="feed-text">Automation <b>"Abandoned Cart Recovery"</b> sent to 8 customers</div>
+              <div class="feed-time">22 min ago · Automation</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-dot teal"></div>
+            <div>
+              <div class="feed-text">New conversation started with <b>Funke B.</b> on Website</div>
+              <div class="feed-time">31 min ago · Website</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>AI Insights</h3>
+            <a href="#" class="view-all">View all →</a>
+          </div>
+
+          <div class="insight">
+            <div class="insight-tag">Revenue opportunity</div>
+            <p>9 customers asked about international shipping this week — there's no policy in your Knowledge Base to answer them.</p>
+            <button class="insight-action">Add shipping policy →</button>
+          </div>
+          <div class="insight">
+            <div class="insight-tag">Confidence drop</div>
+            <p>Buying confidence falls sharply after shipping costs appear at checkout for 3 products.</p>
+            <button class="insight-action">Review checkout flow →</button>
+          </div>
+          <div class="insight">
+            <div class="insight-tag">High-value visitor</div>
+            <p>A returning customer with ₦340k lifetime value needs assistance right now.</p>
+            <button class="insight-action">Join conversation →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- WIDGETS -->
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-head"><h3>Revenue, 7 Days</h3></div>
+          <div class="bars">
+            <div class="bar" style="height:42%;"></div>
+            <div class="bar" style="height:58%;"></div>
+            <div class="bar" style="height:50%;"></div>
+            <div class="bar" style="height:71%;"></div>
+            <div class="bar" style="height:64%;"></div>
+            <div class="bar peak" style="height:100%;"></div>
+            <div class="bar" style="height:78%;"></div>
+          </div>
+          <div class="bar-labels">
+            <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Conversation Funnel</h3></div>
+          <div class="funnel-row">
+            <div class="funnel-label">Visitors</div>
+            <div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:100%;"></div></div>
+            <div class="funnel-pct mono">100%</div>
+          </div>
+          <div class="funnel-row">
+            <div class="funnel-label">Engaged</div>
+            <div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:64%;"></div></div>
+            <div class="funnel-pct mono">64%</div>
+          </div>
+          <div class="funnel-row">
+            <div class="funnel-label">Recommended</div>
+            <div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:41%;"></div></div>
+            <div class="funnel-pct mono">41%</div>
+          </div>
+          <div class="funnel-row">
+            <div class="funnel-label">Checkout</div>
+            <div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:18%;"></div></div>
+            <div class="funnel-pct mono">18%</div>
+          </div>
+          <div class="funnel-row">
+            <div class="funnel-label">Purchased</div>
+            <div class="funnel-bar-track"><div class="funnel-bar-fill" style="width:12%; background:var(--rust);"></div></div>
+            <div class="funnel-pct mono">12%</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>AI Health Score</h3></div>
+          <div class="health-wrap">
+            <svg class="health-ring" viewBox="0 0 84 84">
+              <circle cx="42" cy="42" r="36" fill="none" stroke="#CBC3AF" stroke-width="8"/>
+              <circle cx="42" cy="42" r="36" fill="none" stroke="#1E6F64" stroke-width="8"
+                stroke-dasharray="226" stroke-dashoffset="5" stroke-linecap="round"
+                transform="rotate(-90 42 42)"/>
+            </svg>
+            <div class="health-text">
+              <div class="h-num mono">98%</div>
+              <div class="h-label">Response time, accuracy<br>& resolution nominal</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="card">
+        <div class="card-head"><h3>Quick Actions</h3></div>
+        <div class="quick-actions">
+          <button class="qa-btn"><span class="qa-ico">+</span> Add Product</button>
+          <button class="qa-btn"><span class="qa-ico">⇪</span> Import Catalog</button>
+          <button class="qa-btn"><span class="qa-ico">⚡</span> Launch Automation</button>
+          <button class="qa-btn"><span class="qa-ico">✉</span> Broadcast Campaign</button>
+          <button class="qa-btn"><span class="qa-ico">＋</span> Invite Team Member</button>
+          <button class="qa-btn"><span class="qa-ico">⇄</span> Connect Integration</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+</div>
+
+</body>
+</html>
