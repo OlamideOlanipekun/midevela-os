@@ -13,7 +13,7 @@ export function Button({ variant = 'primary', href, children, className = '', ..
 
   if (href) {
     return (
-      <Link href={href} className={combinedClass}>
+      <Link href={href} className={combinedClass} {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}>
         {children}
       </Link>
     );

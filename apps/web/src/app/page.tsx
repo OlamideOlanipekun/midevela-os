@@ -301,7 +301,7 @@ export default function Home() {
               </div>
 
               <div className="card-white" data-reveal style={{ gridColumn: 'span 8', border: '1px solid rgba(0,0,0,0.05)', ['--reveal-delay' as string]: '0.12s' }}>
-                <div style={{ display: 'flex', gap: '80px', alignItems: 'center' }}>
+                <div className="omni-row" style={{ display: 'flex', gap: '80px', alignItems: 'center' }}>
                   <div style={{ flex: 1 }}>
                     <div className="eyebrow" style={{ color: 'var(--pine-black)' }}>Omnichannel Intelligence</div>
                     <h3 style={{ marginTop: '20px', fontSize: '36px' }}>One brain, every counter.</h3>
@@ -363,7 +363,7 @@ export default function Home() {
           <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
             <div className="section-head" data-reveal style={{ textAlign: 'center', marginBottom: '120px' }}>
               <div className="eyebrow" style={{ color: 'var(--pop-sage)' }}>Precision Intelligence</div>
-              <h2 style={{ marginTop: '24px', fontSize: '72px', color: 'white' }}>The Command Center</h2>
+              <h2 style={{ marginTop: '24px', fontSize: 'clamp(2.25rem, 7vw, 4.5rem)', color: 'white' }}>The Command Center</h2>
             </div>
             <div className="card-white" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: 'white', padding: 'clamp(48px, 8vw, 120px) clamp(28px, 6vw, 80px)', borderRadius: '48px' }}>
               <div className="stat-grid">
@@ -428,10 +428,10 @@ export default function Home() {
           <div className="wrap">
             <div className="section-head" style={{ textAlign: 'center', marginBottom: '120px' }}>
               <div className="eyebrow">Investment</div>
-              <h2 style={{ marginTop: '24px', fontSize: '64px' }}>One counter. One price.</h2>
+              <h2 style={{ marginTop: '24px', fontSize: 'clamp(2rem, 6vw, 4rem)' }}>One counter. One price.</h2>
             </div>
             <div className="bento-grid" style={{ alignItems: 'center' }}>
-              <div className="card-white" style={{ gridColumn: 'span 4', padding: '64px', border: '1px solid rgba(0,0,0,0.05)' }}>
+              <div className="card-white" style={{ gridColumn: 'span 4', padding: 'clamp(32px, 6vw, 64px)', border: '1px solid rgba(0,0,0,0.05)' }}>
                 <div className="eyebrow">Starter</div>
                 <div className="serif" style={{ fontSize: '64px', marginTop: '32px', lineHeight: 1 }}>₦15k<span style={{ fontSize: '18px', fontWeight: 400, opacity: 0.6 }}>/mo</span></div>
                 <ul style={{ marginTop: '56px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -464,7 +464,7 @@ export default function Home() {
                 <Link href="/signup" className="btn primary" style={{ marginTop: '64px', width: '100%', justifyContent: 'center' }}>Start with Growth</Link>
               </div>
 
-              <div className="card-white" style={{ gridColumn: 'span 4', padding: '64px', border: '1px solid rgba(0,0,0,0.05)' }}>
+              <div className="card-white" style={{ gridColumn: 'span 4', padding: 'clamp(32px, 6vw, 64px)', border: '1px solid rgba(0,0,0,0.05)' }}>
                 <div className="eyebrow">Pro</div>
                 <div className="serif" style={{ fontSize: '64px', marginTop: '32px', lineHeight: 1 }}>₦150k<span style={{ fontSize: '18px', fontWeight: 400, opacity: 0.6 }}>/mo</span></div>
                 <ul style={{ marginTop: '56px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '20px' }}>

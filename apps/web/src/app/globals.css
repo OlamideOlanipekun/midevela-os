@@ -160,6 +160,57 @@ header {
   opacity: 1;
 }
 
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--pine-black);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.mobile-nav-panel {
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+  background: var(--bg-cream);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mobile-nav-panel.open {
+  max-height: 320px;
+}
+
+.mobile-navlinks {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 24px 12px;
+}
+
+.mobile-navlinks a {
+  padding: 14px 0;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mobile-navlinks a:last-child {
+  border-bottom: none;
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
@@ -320,6 +371,8 @@ header {
   .wrap { padding: 0 24px; }
   .nav { padding: 20px 24px; }
   .navlinks { display: none; }
+  .mobile-menu-btn { display: flex; }
+  .mobile-nav-panel { display: flex; }
 }
 
 .text-gold {
@@ -945,12 +998,22 @@ header {
   .logo .mark { width: 26px; height: 26px; font-size: 12px; }
   .navcta { gap: 8px !important; }
   .navcta .btn { padding: 10px 14px; font-size: 11px; letter-spacing: 0.04em; gap: 6px; }
+  /* Keep only the primary CTA + hamburger visible in the persistent header
+     on true phone widths — "Log in" moves into the mobile-nav-panel below
+     so logo + 2 buttons + hamburger don't fight for space on a 320px screen. */
+  .navcta-login { display: none; }
   .hero { padding: 64px 0 40px; }
   .hero-actions { flex-wrap: wrap; }
   .trust-bar { flex-direction: column; align-items: flex-start; gap: 40px; }
   .metrics { gap: 40px !important; flex-wrap: wrap; }
   .logos { flex-wrap: wrap; gap: 20px !important; }
   .card-white { padding: 32px; border-radius: 24px; }
+  /* "Omnichannel Intelligence" card: text column + 2x2 icon grid sit
+     side-by-side with an 80px inline gap on desktop. That combination
+     alone exceeds a phone's content width, squeezing the text into an
+     unreadable sliver — stack instead. */
+  .omni-row { flex-direction: column; gap: 32px !important; align-items: stretch !important; }
+  .omni-row .logos-cluster { width: 100%; }
   .form-card { padding: 40px 28px !important; }
   .price-card { padding: 36px 28px; }
   .footer-cols { grid-template-columns: 1fr; gap: 40px; }
