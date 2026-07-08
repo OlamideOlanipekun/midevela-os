@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSubscription } from "@/components/providers/SubscriptionProvider";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -109,9 +109,12 @@ const workspaceNavItems = [
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const { subscription } = useSubscription();
-  const { user } = useUser();
-  const { signOut: clerkSignOut } = useClerk();
-  const signOut = () => clerkSignOut({ redirectUrl: "/login" });
+  const { user, signOut: authSignOut } = useAuth();
+  const router = useRouter();
+  const signOut = async () => {
+    await authSignOut();
+    router.push("/login");
+  };
   const [orgName, setOrgName] = useState("Lumina Beauty Co.");
 
   useEffect(() => {
@@ -125,8 +128,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
   const currentPlan = subscription?.status === "active" ? `${subscription.plan.toUpperCase()} PLAN` : "EXPIRED PLAN";
 
-  const userName =
-    user?.fullName || user?.primaryEmailAddress?.emailAddress || "";
+  const userName = user?.name || user?.email || "";
   const userInitials = userName
     ? userName
         .split(" ")

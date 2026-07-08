@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 interface TopBarProps {
   onMenuToggle: () => void;
@@ -10,14 +10,13 @@ interface TopBarProps {
 export default function TopBar({ onMenuToggle }: TopBarProps) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [isMac, setIsMac] = useState(true);
-  const { user } = useUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     setIsMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
   }, []);
 
-  const userName =
-    user?.fullName || user?.primaryEmailAddress?.emailAddress || "";
+  const userName = user?.name || user?.email || "";
   const userInitials = userName ? userName[0].toUpperCase() : "O";
 
   return (

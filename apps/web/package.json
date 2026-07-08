@@ -9,12 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.10",
     "@prisma/client": "^6.19.3",
     "next": "^15.5.9",
     "react": "~19.2.3",
-    "react-dom": "~19.2.3",
-    "svix": "^1.96.1"
+    "react-dom": "~19.2.3"
   },
   "devDependencies": {
     "@types/node": "^20",

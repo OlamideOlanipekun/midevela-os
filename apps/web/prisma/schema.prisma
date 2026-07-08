@@ -97,7 +97,6 @@ enum IntegrationStatus {
 
 model Organization {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clerkOrgId String?  @unique @map("clerk_org_id")
   name       String
   slug       String   @unique
   websiteUrl String?  @map("website_url")
@@ -126,19 +125,35 @@ model Organization {
 }
 
 model User {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clerkUserId String        @unique @map("clerk_user_id")
-  orgId       String?       @map("org_id") @db.Uuid
-  email       String        @unique
-  name        String
-  role        UserRole      @default(AGENT)
-  avatarUrl   String?       @map("avatar_url")
-  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-  org         Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String?       @map("org_id") @db.Uuid
+  email         String        @unique
+  passwordHash  String        @map("password_hash")
+  name          String
+  role          UserRole      @default(AGENT)
+  avatarUrl     String?       @map("avatar_url")
+  emailVerified Boolean       @default(false) @map("email_verified")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  org           Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sessions      Session[]
 
   @@index([orgId])
   @@map("users")
+}
+
+model Session {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  // SHA-256 of the random session token — never store the raw token.
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
 }
 
 model WidgetKey {

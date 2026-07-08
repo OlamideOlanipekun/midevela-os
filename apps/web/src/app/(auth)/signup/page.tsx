@@ -1,18 +1,6 @@
-import React from "react";
-import { SignUp } from "@clerk/nextjs";
+import React from 'react';
+import AuthShell from '@/components/auth/AuthShell';
 
 export default function SignupPage() {
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#080C14",
-      }}
-    >
-      <SignUp routing="hash" signInUrl="/login" forceRedirectUrl="/onboarding" />
-    </div>
-  );
+  return <AuthShell initialMode="signup" />;
 }

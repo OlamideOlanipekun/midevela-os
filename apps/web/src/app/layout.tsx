@@ -1,7 +1,7 @@
 
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,7 +35,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body>
-        <ClerkProvider>{children}</ClerkProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

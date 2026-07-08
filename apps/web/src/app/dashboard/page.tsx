@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/providers/AuthProvider";
 import "./dashboard.css";
 
 const renderActivityText = (name: string, text: string) => {
@@ -23,11 +23,10 @@ const renderActivityText = (name: string, text: string) => {
 };
 
 export default function DashboardHome() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const router = useRouter();
 
-  const userName =
-    user?.fullName || user?.primaryEmailAddress?.emailAddress || "there";
+  const userName = user?.name || user?.email || "there";
   const firstName = userName.split(" ")[0];
   
   const [greeting, setGreeting] = useState(`Good afternoon, ${firstName}.`);

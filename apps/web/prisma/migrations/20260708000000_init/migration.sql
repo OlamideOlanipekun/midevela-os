@@ -43,7 +43,6 @@ CREATE TYPE "IntegrationStatus" AS ENUM ('PENDING', 'CONNECTED', 'ERROR', 'DISAB
 -- CreateTable
 CREATE TABLE "organizations" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "clerk_org_id" TEXT,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "website_url" TEXT,
@@ -61,16 +60,28 @@ CREATE TABLE "organizations" (
 -- CreateTable
 CREATE TABLE "users" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "clerk_user_id" TEXT NOT NULL,
     "org_id" UUID,
     "email" TEXT NOT NULL,
+    "password_hash" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "role" "UserRole" NOT NULL DEFAULT 'AGENT',
     "avatar_url" TEXT,
+    "email_verified" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "sessions" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "user_id" UUID NOT NULL,
+    "token_hash" TEXT NOT NULL,
+    "expires_at" TIMESTAMPTZ NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -265,19 +276,19 @@ CREATE TABLE "channel_integrations" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "organizations_clerk_org_id_key" ON "organizations"("clerk_org_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "organizations_slug_key" ON "organizations"("slug");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_clerk_user_id_key" ON "users"("clerk_user_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
 CREATE INDEX "users_org_id_idx" ON "users"("org_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "sessions_token_hash_key" ON "sessions"("token_hash");
+
+-- CreateIndex
+CREATE INDEX "sessions_user_id_idx" ON "sessions"("user_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "widget_keys_public_key_key" ON "widget_keys"("public_key");
@@ -338,6 +349,9 @@ CREATE UNIQUE INDEX "channel_integrations_org_id_channel_key" ON "channel_integr
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "widget_keys" ADD CONSTRAINT "widget_keys_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;

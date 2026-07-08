@@ -1,47 +1,20 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import type { Organization, User } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ApiError } from "@/server/http";
+import { getSessionUser } from "@/server/auth/session";
 
 export interface OrgContext {
   user: User;
   org: Organization;
 }
 
-/**
- * Resolves the Clerk session to a local User row, creating it on first
- * authenticated request (webhook sync is the primary path; this is the
- * fallback so a missed webhook never locks a user out).
- * Throws ApiError(401) when unauthenticated.
- */
+/** Resolves the session cookie to a User row. Throws ApiError(401) when unauthenticated. */
 export async function requireUser(): Promise<User> {
-  const { userId: clerkUserId } = await auth();
-  if (!clerkUserId) {
+  const user = await getSessionUser();
+  if (!user) {
     throw new ApiError(401, "Unauthorized");
   }
-
-  const existing = await prisma.user.findUnique({ where: { clerkUserId } });
-  if (existing) return existing;
-
-  const clerkUser = await currentUser();
-  const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
-  if (!email) {
-    throw new ApiError(401, "Unauthorized");
-  }
-
-  return prisma.user.upsert({
-    where: { email },
-    update: { clerkUserId },
-    create: {
-      clerkUserId,
-      email,
-      name:
-        [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") ||
-        email.split("@")[0],
-      avatarUrl: clerkUser?.imageUrl ?? null,
-      role: "OWNER",
-    },
-  });
+  return user;
 }
 
 /**
