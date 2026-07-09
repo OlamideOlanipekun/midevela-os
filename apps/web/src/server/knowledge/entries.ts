@@ -2,6 +2,7 @@ import type { KnowledgeEntry } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ApiError } from "@/server/http";
 import { syncKnowledgeEmbedding, deleteEmbedding } from "@/server/knowledge/sync";
+import { relativeTime } from "@/server/shared/time";
 
 /** Best-effort — see products.ts's safeSyncProductEmbedding for why. */
 async function safeSyncKnowledgeEmbedding(orgId: string, entry: KnowledgeEntry) {
@@ -29,20 +30,6 @@ interface DocumentMetadata {
   size?: string;
   chunks?: number;
   status?: string;
-}
-
-function relativeTime(date: Date): string {
-  const seconds = (Date.now() - date.getTime()) / 1000;
-  if (seconds < 90) return "Just now";
-  const minutes = seconds / 60;
-  if (minutes < 90) return `${Math.round(minutes)} minutes ago`;
-  const hours = minutes / 60;
-  if (hours < 36) return `${Math.round(hours)} hours ago`;
-  const days = hours / 24;
-  if (days < 10) return `${Math.round(days)} days ago`;
-  const weeks = days / 7;
-  if (weeks < 5) return `${Math.round(weeks)} weeks ago`;
-  return `${Math.round(days / 30)} months ago`;
 }
 
 /**
