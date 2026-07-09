@@ -91,9 +91,15 @@ function tryParseModelJson(raw: string): { reply?: unknown; intent?: unknown; re
   }
 }
 
+/** Exported so ai-performance analytics can identify these turns as a
+ *  real "the model's output couldn't be parsed" signal, rather than
+ *  duplicating this literal string elsewhere. */
+export const FALLBACK_REPLY_TEXT =
+  "Sorry, I'm having a little trouble right now — could you try rephrasing that, or ask again in a moment?";
+
 function safeFallback(inputTokens: number, outputTokens: number): ConversationTurnResult {
   return {
-    replyText: "Sorry, I'm having a little trouble right now — could you try rephrasing that, or ask again in a moment?",
+    replyText: FALLBACK_REPLY_TEXT,
     intent: "unknown",
     recommendations: [],
     inputTokens,
