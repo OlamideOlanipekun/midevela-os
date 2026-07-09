@@ -1,27 +1,7 @@
-import type { Customer, BuyingStage } from "@prisma/client";
+import type { Customer } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { relativeTime } from "@/server/shared/time";
-
-const STAGE_LABELS: Record<BuyingStage, string> = {
-  EXPLORING: "Exploring",
-  COMPARING: "Comparing",
-  PURCHASE_READY: "Purchase ready",
-  PURCHASED: "Purchased",
-};
-
-const STAGE_BADGE_CLASS: Record<BuyingStage, string> = {
-  EXPLORING: "badge-blue",
-  COMPARING: "badge-gold",
-  PURCHASE_READY: "badge-green",
-  PURCHASED: "badge-green",
-};
-
-function displayName(c: Pick<Customer, "name" | "email" | "externalId" | "id">): string {
-  if (c.name?.trim()) return c.name.trim();
-  if (c.email?.trim()) return c.email.trim();
-  const fallbackId = c.externalId?.trim() || c.id;
-  return `Visitor ${fallbackId.slice(-6)}`;
-}
+import { STAGE_LABELS, STAGE_BADGE_CLASS, displayName } from "@/server/customers/presenter";
 
 type CustomerWithConversations = Customer & {
   conversations: { aiConfidence: number }[];

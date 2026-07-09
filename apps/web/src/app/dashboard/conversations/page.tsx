@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./conversations.css";
 
 interface Message {
   role: "customer" | "ai";
   content: string;
-  time: string;
+  createdAt: string;
   recommendations?: Array<{
     name: string;
     price: string;
@@ -29,140 +29,56 @@ interface Conversation {
   messages: Message[];
 }
 
-const mockConversations: Conversation[] = [
-  {
-    id: "conv-1",
-    name: "Amaka O.",
-    email: "amaka.o@gmail.com",
-    stage: "Purchase ready",
-    badgeClass: "badge-green",
-    unread: true,
-    time: "2m",
-    preview: "Burgundy it is. Can it be delivered by Friday?",
-    aiConfidence: 94,
-    preferences: ["Ankara fabrics", "Burgundy", "Express delivery", "Lagos"],
-    viewedProducts: ["Ankara Co-ord Set (Burgundy)", "Ankara Flare Gown (Blue)"],
-    messages: [
-      {
-        role: "customer",
-        content: "Hi, do you have the Ankara co-ord set in size M? I need it for a wedding this Saturday, budget around 30k.",
-        time: "11:14 PM",
-      },
-      {
-        role: "ai",
-        content: "Good day! Yes, we have the Ankara co-ord set available in size M. It's priced at ₦28,500, well within your budget. It comes in 3 colors: Navy, Burgundy, and Emerald Green. Which would you like?",
-        time: "11:14 PM",
-      },
-      {
-        role: "customer",
-        content: "Burgundy please. Can it be delivered by Friday?",
-        time: "11:15 PM",
-      },
-      {
-        role: "ai",
-        content: "Burgundy it is. We can deliver within Lagos by Friday with our express option. Here is your payment link to secure it:",
-        time: "11:15 PM",
-        recommendations: [
-          {
-            name: "Ankara Co-ord Set (Burgundy)",
-            price: "₦28,500",
-            why: "Fits size M, burgundy preference, express dispatch available",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "conv-2",
-    name: "Tunde A.",
-    email: "tunde.a@yahoo.com",
-    stage: "Comparing",
-    badgeClass: "badge-gold",
-    unread: false,
-    time: "5m",
-    preview: "What is the battery life on the HP EliteBook compared to the XPS?",
-    aiConfidence: 82,
-    preferences: ["Developer laptops", "HP EliteBook", "Dell XPS", "Long battery"],
-    viewedProducts: ["HP EliteBook 840 G8", "Dell XPS 13 9310"],
-    messages: [
-      {
-        role: "customer",
-        content: "I'm looking for a laptop for software development. My budget is 600k.",
-        time: "11:05 PM",
-      },
-      {
-        role: "ai",
-        content: "Excellent! For programming, you'll want at least 16GB RAM and a fast processor. I highly recommend either the HP EliteBook 840 G8 or the Dell XPS 13. Would you like me to compare them?",
-        time: "11:06 PM",
-      },
-      {
-        role: "customer",
-        content: "What is the battery life on the HP EliteBook compared to the XPS?",
-        time: "11:08 PM",
-      },
-    ],
-  },
-  {
-    id: "conv-3",
-    name: "Chioma N.",
-    email: "chioma@outlook.com",
-    stage: "Exploring",
-    badgeClass: "badge-blue",
-    unread: false,
-    time: "8m",
-    preview: "How much is delivery to Port Harcourt?",
-    aiConfidence: 75,
-    preferences: ["Skincare", "Vitamin C serum", "Port Harcourt"],
-    viewedProducts: ["Vitamin C Brightening Serum", "Hydrating Facial Cleanser"],
-    messages: [
-      {
-        role: "customer",
-        content: "Hello, do you deliver to Port Harcourt?",
-        time: "11:01 PM",
-      },
-      {
-        role: "ai",
-        content: "Hi Chioma! Yes, we deliver nationwide across Nigeria, including Port Harcourt. Standard delivery takes 3–5 business days.",
-        time: "11:02 PM",
-      },
-      {
-        role: "customer",
-        content: "How much is delivery to Port Harcourt?",
-        time: "11:03 PM",
-      },
-    ],
-  },
-];
+function formatMessageTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
 export default function ConversationsPage() {
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
-  const [activeId, setActiveId] = useState("conv-1");
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [inputText, setInputText] = useState("");
   const [loadingTakeover, setLoadingTakeover] = useState(false);
   const [takeoverActive, setTakeoverActive] = useState<Record<string, boolean>>({});
 
-  const activeConv = conversations.find((c) => c.id === activeId) || conversations[0];
+  useEffect(() => {
+    fetch("/api/conversations")
+      .then((res) => res.json())
+      .then((data) => {
+        const list: Conversation[] = Array.isArray(data.conversations) ? data.conversations : [];
+        setConversations(list);
+        if (list.length > 0) setActiveId(list[0].id);
+      })
+      .catch(() => setConversations([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const activeConv = conversations.find((c) => c.id === activeId) ?? null;
   const unreadCount = conversations.filter((c) => c.unread).length;
 
   const visibleConversations = conversations
     .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     .filter((c) => filter === "all" || c.unread);
 
+  // Manual takeover / human reply have no backend yet (no
+  // human-vs-AI message distinction, no "paused" state on
+  // Conversation) — this stays a local-only interaction, same as
+  // before, until that's built. Not part of this data-wiring pass.
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !activeConv) return;
 
     const newMsg: Message = {
-      role: "ai", // sent by the merchant during manual takeover
+      role: "ai",
       content: inputText,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: new Date().toISOString(),
     };
 
     setConversations((prev) =>
       prev.map((c) =>
-        c.id === activeId
+        c.id === activeConv.id
           ? { ...c, preview: inputText, messages: [...c.messages, newMsg] }
           : c
       )
@@ -171,10 +87,11 @@ export default function ConversationsPage() {
   };
 
   const handleTakeover = () => {
+    if (!activeConv) return;
     setLoadingTakeover(true);
     setTimeout(() => {
       setLoadingTakeover(false);
-      setTakeoverActive((prev) => ({ ...prev, [activeId]: true }));
+      setTakeoverActive((prev) => ({ ...prev, [activeConv.id]: true }));
     }, 800);
   };
 
@@ -193,6 +110,13 @@ export default function ConversationsPage() {
         </div>
       </div>
 
+      {loading ? (
+        <div style={{ padding: 60, textAlign: "center", color: "var(--ink-soft)" }}>Loading conversations…</div>
+      ) : conversations.length === 0 || !activeConv ? (
+        <div className="card" style={{ padding: 60, textAlign: "center", color: "var(--ink-soft)" }}>
+          No conversations yet. Once visitors start chatting through your widget, they&apos;ll show up here.
+        </div>
+      ) : (
       <div className="conv-layout">
         {/* LEFT: QUEUE */}
         <div className="conv-panel conv-list-panel">
@@ -332,11 +256,11 @@ export default function ConversationsPage() {
                 <span className="conv-msg-meta">
                   {msg.role === "ai" ? (
                     <>
-                      <span>Midevela AI · {msg.time}</span>
+                      <span>Midevela AI · {formatMessageTime(msg.createdAt)}</span>
                       <span className="ticks">✓✓</span>
                     </>
                   ) : (
-                    <span>{msg.time}</span>
+                    <span>{formatMessageTime(msg.createdAt)}</span>
                   )}
                 </span>
               </div>
@@ -394,27 +318,36 @@ export default function ConversationsPage() {
           <div className="conv-profile-section">
             <span className="conv-profile-label">Preferences learned</span>
             <div className="conv-profile-pills">
-              {activeConv.preferences.map((p) => (
-                <span key={p} className="conv-profile-pill">
-                  {p}
-                </span>
-              ))}
+              {activeConv.preferences.length > 0 ? (
+                activeConv.preferences.map((p) => (
+                  <span key={p} className="conv-profile-pill">
+                    {p}
+                  </span>
+                ))
+              ) : (
+                <span style={{ color: "var(--ink-soft)", fontSize: 13 }}>Nothing learned yet.</span>
+              )}
             </div>
           </div>
 
           <div className="conv-profile-section">
             <span className="conv-profile-label">Viewed products</span>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {activeConv.viewedProducts.map((p) => (
-                <div key={p} className="conv-viewed-item">
-                  <span className="conv-viewed-thumb">{p[0]}</span>
-                  <span className="conv-viewed-name">{p}</span>
-                </div>
-              ))}
+              {activeConv.viewedProducts.length > 0 ? (
+                activeConv.viewedProducts.map((p) => (
+                  <div key={p} className="conv-viewed-item">
+                    <span className="conv-viewed-thumb">{p[0]}</span>
+                    <span className="conv-viewed-name">{p}</span>
+                  </div>
+                ))
+              ) : (
+                <span style={{ color: "var(--ink-soft)", fontSize: 13 }}>No product views tracked yet.</span>
+              )}
             </div>
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
