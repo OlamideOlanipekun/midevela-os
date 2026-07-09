@@ -262,6 +262,23 @@ header {
   align-items: center;
 }
 
+/* Grid/flex items default to min-width:auto, which floors their size at
+   their content's min-content width - so a track sized "1fr" (or a flex
+   child in a space-between row) still won't shrink below that, even
+   after a mobile breakpoint collapses the layout to one column. That's
+   the actual root cause behind several "card runs off the screen" bugs
+   here (the CTA form card, the intent-radar rows): the collapse rule
+   changed the column count, but content still refused to shrink to fit
+   it. min-width:0 removes that floor everywhere it matters. */
+.hero-grid > *,
+.sticky-wrapper > *,
+.bento-grid > .card-white,
+.stat-grid > *,
+.compare-grid > *,
+.footer-cols > * {
+  min-width: 0;
+}
+
 .hero-actions {
   display: flex;
   gap: 16px;
@@ -1011,6 +1028,12 @@ header {
   .metrics { gap: 40px !important; flex-wrap: wrap; }
   .logos { flex-wrap: wrap; gap: 20px !important; }
   .card-white { padding: 32px; border-radius: 24px; }
+  /* Intent-radar visitor list: the outer panel's 40px padding plus each
+     row's own 16/24px padding compounds with the card's own (already-
+     reduced) padding, leaving almost no room for the row's content —
+     the badge+score group then gets pushed past the edge. */
+  .radar-panel { padding: 20px !important; }
+  .radar-row { padding: 12px 14px !important; gap: 8px; }
   /* "Omnichannel Intelligence" card: text column + 2x2 icon grid sit
      side-by-side with an 80px inline gap on desktop. That combination
      alone exceeds a phone's content width, squeezing the text into an

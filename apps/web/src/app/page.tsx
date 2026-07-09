@@ -245,10 +245,10 @@ export default function Home() {
                     Our proprietary radar identifies visitors ready to buy, comparing products, or stuck in checkout—giving you the perfect window for intervention.
                   </p>
                 </div>
-                <div style={{ 
-                  marginTop: '48px', 
-                  background: 'var(--bg-cream)', 
-                  borderRadius: '24px', 
+                <div className="radar-panel" style={{
+                  marginTop: '48px',
+                  background: 'var(--bg-cream)',
+                  borderRadius: '24px',
                   flex: 1,
                   border: '1px solid rgba(0,0,0,0.05)',
                   padding: '40px',
@@ -261,17 +261,17 @@ export default function Home() {
                     { loc: 'Abuja, NG', act: 'Comparing 3 sets', score: 76, status: 'Comparing' },
                     { loc: 'London, UK', act: 'Needs delivery answer', score: 44, status: 'Stuck' }
                   ].map((visitor, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', background: 'white', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01)' }}>
-                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div key={i} className="radar-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', background: 'white', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01)' }}>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', minWidth: 0 }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--bg-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Globe size={18} strokeWidth={1.5} />
                         </div>
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: '14px', fontWeight: 600 }}>Visitor — {visitor.loc}</div>
                           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{visitor.act}</div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexShrink: 0 }}>
                         <span className="mono" style={{ fontSize: '10px', background: visitor.score > 80 ? 'rgba(197,255,74,0.2)' : 'var(--bg-cream)', padding: '4px 10px', borderRadius: '99px', color: 'var(--pine-black)' }}>{visitor.status}</span>
                         <div className="serif" style={{ fontSize: '24px', color: visitor.score > 80 ? 'var(--teal)' : 'inherit' }}>{visitor.score}</div>
                       </div>
@@ -394,7 +394,7 @@ export default function Home() {
           <div className="wrap">
             <div className="section-head" data-reveal style={{ textAlign: 'center', marginBottom: '100px' }}>
               <div className="eyebrow">The Evolution</div>
-              <h2 style={{ marginTop: '24px', fontSize: '56px' }}>Why standard bots fail.</h2>
+              <h2 style={{ marginTop: '24px', fontSize: 'clamp(2rem, 5.5vw, 3.5rem)' }}>Why standard bots fail.</h2>
             </div>
             <div className="compare-grid">
               <div className="card-white" data-reveal style={{ background: 'rgba(0,0,0,0.02)', borderStyle: 'dashed', border: '1px dashed rgba(0,0,0,0.1)' }}>
@@ -485,7 +485,7 @@ export default function Home() {
             <div className="hero-grid" style={{ alignItems: 'start', marginBottom: '160px' }}>
               <div>
                 <div className="eyebrow" style={{ color: 'var(--pop-sage)' }}>Ready to deploy?</div>
-                <h2 style={{ marginTop: '32px', fontSize: '80px', color: 'white' }}>Give your website<br />a salesperson.</h2>
+                <h2 style={{ marginTop: '32px', fontSize: 'clamp(2.25rem, 7vw, 5rem)', color: 'white' }}>Give your website<br />a salesperson.</h2>
                 <p style={{ marginTop: '40px', opacity: 0.6, maxWidth: '34ch', fontSize: '22px', lineHeight: '1.5' }}>
                   Connect your catalog, set your brand voice, and your AI counter is live in minutes.
                 </p>
