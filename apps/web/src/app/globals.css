@@ -1028,12 +1028,19 @@ header {
   .metrics { gap: 40px !important; flex-wrap: wrap; }
   .logos { flex-wrap: wrap; gap: 20px !important; }
   .card-white { padding: 32px; border-radius: 24px; }
-  /* Intent-radar visitor list: the outer panel's 40px padding plus each
-     row's own 16/24px padding compounds with the card's own (already-
-     reduced) padding, leaving almost no room for the row's content —
-     the badge+score group then gets pushed past the edge. */
+  /* Intent-radar visitor list: squeezing icon + two-line text + badge +
+     score into one row (even at reduced padding) just traded "overflows"
+     for "crammed" — "Visitor — Lagos, NG" was wrapping onto 3 lines
+     fighting the badge/score group for width. Stack each row into two
+     full-width blocks instead so nothing has to compete for horizontal
+     space; each block keeps its own internal row layout. */
   .radar-panel { padding: 20px !important; }
-  .radar-row { padding: 12px 14px !important; gap: 8px; }
+  .radar-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 16px 18px !important;
+    gap: 12px;
+  }
   /* "Omnichannel Intelligence" card: text column + 2x2 icon grid sit
      side-by-side with an 80px inline gap on desktop. That combination
      alone exceeds a phone's content width, squeezing the text into an
