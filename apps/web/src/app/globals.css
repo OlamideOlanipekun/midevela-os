@@ -163,20 +163,46 @@ header {
 
 .mobile-menu-btn {
   display: none;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   width: 40px;
   height: 40px;
+  padding: 0;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--pine-black);
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .mobile-menu-btn:hover {
   background: rgba(0, 0, 0, 0.03);
+}
+
+/* Three independent bars (not one SVG path) so the open state can
+   animate them into an X — gives real visual feedback that the menu
+   is open, not just a toggled aria-expanded attribute. */
+.menu-bar {
+  display: block;
+  width: 18px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--pine-black);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.mobile-menu-btn.open .menu-bar:nth-child(1) {
+  transform: translateY(5.5px) rotate(45deg);
+}
+
+.mobile-menu-btn.open .menu-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-btn.open .menu-bar:nth-child(3) {
+  transform: translateY(-5.5px) rotate(-45deg);
 }
 
 .mobile-nav-panel {

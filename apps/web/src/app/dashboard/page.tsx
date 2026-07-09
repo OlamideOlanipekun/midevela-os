@@ -44,10 +44,6 @@ export default function DashboardHome() {
 
   // State management for interactions
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isAskAIModalOpen, setIsAskAIModalOpen] = useState(false);
-  const [aiQuestion, setAiQuestion] = useState("");
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
 
   // Initial activities pool
   const initialActivities = [
@@ -123,33 +119,6 @@ export default function DashboardHome() {
     return () => clearInterval(interval);
   }, []);
 
-  // Listen to TopBar's Ask AI button event
-  useEffect(() => {
-    const handleOpenAskAI = () => {
-      setIsAskAIModalOpen(true);
-    };
-    window.addEventListener("open-ask-ai", handleOpenAskAI);
-    return () => window.removeEventListener("open-ask-ai", handleOpenAskAI);
-  }, []);
-
-  const handleAiSubmit = () => {
-    if (!aiQuestion.trim()) return;
-    setAiLoading(true);
-    setAiResponse(null);
-
-    setTimeout(() => {
-      setAiLoading(false);
-      const query = aiQuestion.toLowerCase();
-      if (query.includes("shipping")) {
-        setAiResponse("Based on visitor chat analysis, 9 unique customers requested international shipping details this week. I recommend creating a shipping policy in your Knowledge Base specifying rates for West Africa (Ghana, Senegal) and Europe. Estimated conversion uplift: +3.2%.");
-      } else if (query.includes("conversion") || query.includes("confidence")) {
-        setAiResponse("Your current checkout conversion rate is 4.8%. The primary drop-off occurs immediately after shipping calculations are presented. I recommend offering free shipping above ₦50,000 to recover approximately ₦68k in lost weekly revenue.");
-      } else {
-        setAiResponse("I have analyzed your store logs. Lumina Beauty Co. is currently seeing strong organic traffic (24 active visitors). The active conversation funnel shows a 12% purchase conversion. To optimize sales further, ensure your 'ClearGlow Routine Set' features automatic upsell recommendations during visitor checkout chats.");
-      }
-    }, 1200);
-  };
-
   const handleQuickAction = (actionName: string) => {
     if (actionName === "Add Product") {
       router.push("/dashboard/products?action=add");
@@ -174,8 +143,7 @@ export default function DashboardHome() {
     } else if (action.includes("Review checkout flow")) {
       router.push("/dashboard/analytics");
     } else if (action.includes("shipping policy")) {
-      setAiQuestion("How do I add an international shipping policy?");
-      setIsAskAIModalOpen(true);
+      window.dispatchEvent(new CustomEvent("open-ask-ai", { detail: { question: "How do I add an international shipping policy?" } }));
     }
   };
 
@@ -236,112 +204,6 @@ export default function DashboardHome() {
           animation: "fadeIn 0.2s ease"
         }}>
           ⚡ {toastMessage}
-        </div>
-      )}
-
-      {/* Ask AI Modal */}
-      {isAskAIModalOpen && (
-        <div style={{
-          position: "fixed",
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(19, 32, 27, 0.7)",
-          backdropFilter: "blur(6px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2000
-        }}>
-          <div style={{
-            background: "var(--paper-raised)",
-            border: "2px solid var(--ink)",
-            borderRadius: "var(--radius-lg)",
-            padding: "28px",
-            width: "100%",
-            maxWidth: "500px",
-            boxShadow: "0 20px 50px rgba(26,24,20,0.3)",
-            position: "relative"
-          }}>
-            <button 
-              onClick={() => {
-                setIsAskAIModalOpen(false);
-                setAiResponse(null);
-                setAiQuestion("");
-              }}
-              style={{
-                position: "absolute",
-                top: "16px",
-                right: "16px",
-                background: "none",
-                border: "none",
-                fontSize: "18px",
-                cursor: "pointer",
-                color: "var(--ink-soft)"
-              }}
-            >
-              ✕
-            </button>
-            
-            <h3 className="display" style={{ margin: "0 0 16px", fontSize: "20px", color: "var(--ink)" }}>Midevela AI Copilot</h3>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <label style={{ fontFamily: "var(--font-mono)", fontSize: "11px", textTransform: "uppercase", color: "var(--ink-soft)" }}>
-                What would you like to ask the commerce AI?
-              </label>
-              <input
-                type="text"
-                value={aiQuestion}
-                onChange={(e) => setAiQuestion(e.target.value)}
-                placeholder="Type e.g., 'shipping' or 'conversion'..."
-                style={{
-                  padding: "12px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius-sm)",
-                  fontSize: "13.5px",
-                  fontFamily: "var(--font-body)",
-                  color: "var(--ink)",
-                  background: "#fff",
-                  outline: "none"
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAiSubmit();
-                }}
-              />
-              
-              <button 
-                onClick={handleAiSubmit}
-                disabled={aiLoading}
-                style={{
-                  background: "var(--ink)",
-                  color: "var(--paper)",
-                  border: "none",
-                  borderRadius: "var(--radius-pill)",
-                  padding: "12px",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "12px",
-                  cursor: "pointer"
-                }}
-              >
-                {aiLoading ? "Consulting store logs..." : "✦ ASK AI"}
-              </button>
-            </div>
-
-            {aiResponse && (
-              <div style={{
-                marginTop: "20px",
-                padding: "14px",
-                background: "#fff",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                fontSize: "13px",
-                lineHeight: "1.5"
-              }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--teal)", textTransform: "uppercase", marginBottom: "6px", fontWeight: "bold" }}>
-                  AI Response
-                </div>
-                <p style={{ margin: 0, color: "var(--ink)" }}>{aiResponse}</p>
-              </div>
-            )}
-          </div>
         </div>
       )}
 

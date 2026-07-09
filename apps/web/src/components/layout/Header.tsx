@@ -32,9 +32,9 @@ export function Header() {
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((v) => !v)}
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M3 5H17M3 10H17M3 15H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          <span className="menu-bar" />
+          <span className="menu-bar" />
+          <span className="menu-bar" />
         </button>
       </div>
 
