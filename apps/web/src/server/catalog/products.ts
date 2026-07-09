@@ -1,6 +1,10 @@
-import type { Prisma, Product, Category, InventoryStatus } from "@prisma/client";
+import type { Product, Category, InventoryStatus } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ApiError } from "@/server/http";
+import { syncProductEmbedding, deleteEmbedding } from "@/server/knowledge/sync";
+import { formatMoney } from "@/server/catalog/money";
+
+export { formatMoney };
 
 type ProductWithCategory = Product & { category: Category | null };
 
@@ -16,18 +20,6 @@ const LABEL_TO_STATUS: Record<string, InventoryStatus> = {
   "Out of Stock": "OUT_OF_STOCK",
 };
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  NGN: "₦",
-  USD: "$",
-  GBP: "£",
-  EUR: "€",
-};
-
-export function formatMoney(amount: Prisma.Decimal | number, currency: string) {
-  const symbol = CURRENCY_SYMBOLS[currency] ?? `${currency} `;
-  return `${symbol}${Number(amount).toLocaleString()}`;
-}
-
 function completenessScore(description: string | null | undefined): number {
   if (!description) return 40;
   if (description.length > 120) return 95;
@@ -41,6 +33,27 @@ function iconFor(categoryName: string): string {
   if (c.includes("beauty") || c.includes("cosmetic")) return "🧴";
   if (c.includes("electronic")) return "💻";
   return "📦";
+}
+
+/**
+ * Embedding sync is best-effort here — a Voyage hiccup shouldn't block
+ * catalog management. Worst case the product is briefly unsearchable by
+ * the AI until the next successful write.
+ */
+async function safeSyncProductEmbedding(orgId: string, product: ProductWithCategory) {
+  try {
+    await syncProductEmbedding(orgId, product);
+  } catch (err) {
+    console.error("Product embedding sync failed:", err);
+  }
+}
+
+async function safeDeleteEmbedding(id: string) {
+  try {
+    await deleteEmbedding("PRODUCT", id);
+  } catch (err) {
+    console.error("Product embedding delete failed:", err);
+  }
 }
 
 /**
@@ -120,6 +133,7 @@ export async function createProduct(orgId: string, input: ProductInput) {
     },
     include: { category: true },
   });
+  await safeSyncProductEmbedding(orgId, product);
   return toProductResponse(product);
 }
 
@@ -145,6 +159,7 @@ export async function updateProduct(
     },
     include: { category: true },
   });
+  await safeSyncProductEmbedding(orgId, product);
   return toProductResponse(product);
 }
 
@@ -155,4 +170,5 @@ export async function deleteProduct(orgId: string, id: string) {
   });
   if (!existing) throw new ApiError(404, "Product not found.");
   await prisma.product.delete({ where: { id } });
+  await safeDeleteEmbedding(id);
 }

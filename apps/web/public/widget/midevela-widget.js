@@ -4,7 +4,7 @@
   window.__MIDEVELA_WIDGET_LOADED__ = true;
 
   // Configuration
-  const orgId = document.currentScript ? document.currentScript.getAttribute('data-org-id') : 'demo-org';
+  const widgetKey = document.currentScript ? document.currentScript.getAttribute('data-widget-key') : '';
   const themeColor = document.currentScript ? document.currentScript.getAttribute('data-theme-color') : '#1EE67A';
   // The widget is served from the Midevela app itself, so the API lives at the same origin as this script.
   const scriptSrc = document.currentScript ? document.currentScript.src : '';
@@ -562,10 +562,9 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        orgId,
+        widgetKey,
         customerId,
         messageText: text,
-        history: conversationHistory,
       }),
     })
       .then((res) => {

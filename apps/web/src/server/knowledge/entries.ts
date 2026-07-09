@@ -1,6 +1,24 @@
 import type { KnowledgeEntry } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ApiError } from "@/server/http";
+import { syncKnowledgeEmbedding, deleteEmbedding } from "@/server/knowledge/sync";
+
+/** Best-effort — see products.ts's safeSyncProductEmbedding for why. */
+async function safeSyncKnowledgeEmbedding(orgId: string, entry: KnowledgeEntry) {
+  try {
+    await syncKnowledgeEmbedding(orgId, entry);
+  } catch (err) {
+    console.error("Knowledge embedding sync failed:", err);
+  }
+}
+
+async function safeDeleteEmbedding(id: string) {
+  try {
+    await deleteEmbedding("KNOWLEDGE_ENTRY", id);
+  } catch (err) {
+    console.error("Knowledge embedding delete failed:", err);
+  }
+}
 
 interface FaqMetadata {
   category?: string;
@@ -91,6 +109,7 @@ export async function createFaq(
       metadata: { category: input.category ?? "General", usageCount: 0 },
     },
   });
+  await safeSyncKnowledgeEmbedding(orgId, entry);
   return toFaq(entry);
 }
 
@@ -117,6 +136,7 @@ export async function upsertPolicy(
     : await prisma.knowledgeEntry.create({
         data: { orgId, type: "POLICY", title: input.name, content: input.content },
       });
+  await safeSyncKnowledgeEmbedding(orgId, entry);
   return toPolicy(entry);
 }
 
@@ -137,4 +157,5 @@ export async function deleteFaq(
       });
   if (!entry) throw new ApiError(404, "FAQ not found.");
   await prisma.knowledgeEntry.delete({ where: { id: entry.id } });
+  await safeDeleteEmbedding(entry.id);
 }
