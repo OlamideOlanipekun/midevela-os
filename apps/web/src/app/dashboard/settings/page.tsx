@@ -10,12 +10,6 @@ interface TeamMember {
   role: string;
 }
 
-const mockTeam: TeamMember[] = [
-  { name: "Olamide Olanipekun", email: "olamide@luxestyle.ng", role: "Owner" },
-  { name: "Amaka Eze", email: "amaka@luxestyle.ng", role: "Manager" },
-  { name: "Tunde Bakare", email: "tunde@luxestyle.ng", role: "Agent" },
-];
-
 export default function SettingsPage() {
   const { isReadOnly } = useSubscription();
   const [activeTab, setActiveTab] = useState<"org" | "widget" | "team">("org");
@@ -28,10 +22,12 @@ export default function SettingsPage() {
   const [exitIntent, setExitIntent] = useState(true);
   const [showProductImages, setShowProductImages] = useState(true);
   const [playSounds, setPlaySounds] = useState(true);
+  const [widgetPublicKey, setWidgetPublicKey] = useState<string | null>(null);
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Agent");
-  const [teamList, setTeamList] = useState<TeamMember[]>(mockTeam);
+  const [teamList, setTeamList] = useState<TeamMember[]>([]);
+  const [teamLoading, setTeamLoading] = useState(true);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const showToast = (msg: string) => {
@@ -55,9 +51,16 @@ export default function SettingsPage() {
             setShowProductImages(data.settings.features.showProductImages);
             setPlaySounds(data.settings.features.playSounds);
           }
+          setWidgetPublicKey(data.settings.widgetPublicKey ?? null);
         }
       })
       .catch((err) => console.error("Error loading settings:", err));
+
+    fetch("/api/team")
+      .then((res) => res.json())
+      .then((data) => setTeamList(Array.isArray(data.team) ? data.team : []))
+      .catch(() => setTeamList([]))
+      .finally(() => setTeamLoading(false));
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -103,18 +106,22 @@ export default function SettingsPage() {
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
-    const newMem: TeamMember = { name: inviteEmail.split("@")[0], email: inviteEmail, role: inviteRole };
-    setTeamList([...teamList, newMem]);
+    // No invite backend exists yet - no user is created, nobody gains
+    // access. Say so plainly rather than pretending this succeeded,
+    // since "invited" implies someone now has real access to the
+    // dashboard.
+    showToast("Team invites aren't available yet — coming in a future update.");
     setInviteEmail("");
-    showToast(`Invitation sent to ${inviteEmail}.`);
   };
 
-  const snippet = `<script
+  const snippet = widgetPublicKey
+    ? `<script
   src="${typeof window !== "undefined" ? window.location.origin : "https://midevela.com"}/widget/midevela-widget.js"
-  data-org-id="demo-org"
+  data-widget-key="${widgetPublicKey}"
   data-theme-color="${accentColor}"
   async>
-</script>`;
+</script>`
+    : null;
 
   return (
     <div>
@@ -228,11 +235,13 @@ export default function SettingsPage() {
                 Paste this script before the closing <code>&lt;/body&gt;</code> tag of your store.
               </p>
               <div className="set-code-block">
-                <pre>{snippet}</pre>
+                <pre>{snippet ?? "Loading your widget key…"}</pre>
                 <button
                   type="button"
                   className="set-copy-btn"
+                  disabled={!snippet}
                   onClick={() => {
+                    if (!snippet) return;
                     navigator.clipboard.writeText(snippet);
                     showToast("Snippet copied to clipboard.");
                   }}
@@ -256,16 +265,20 @@ export default function SettingsPage() {
               <h3>Active team members</h3>
             </div>
             <div>
-              {teamList.map((m) => (
-                <div key={m.email} className="set-team-row">
-                  <div className="set-team-avatar">{m.name[0]}</div>
-                  <div className="set-team-info">
-                    <div className="set-team-name">{m.name}</div>
-                    <div className="set-team-email">{m.email}</div>
+              {teamLoading ? (
+                <div style={{ padding: 20, color: "var(--ink-soft)" }}>Loading…</div>
+              ) : (
+                teamList.map((m) => (
+                  <div key={m.email} className="set-team-row">
+                    <div className="set-team-avatar">{m.name[0]}</div>
+                    <div className="set-team-info">
+                      <div className="set-team-name">{m.name}</div>
+                      <div className="set-team-email">{m.email}</div>
+                    </div>
+                    <span className="badge badge-muted">{m.role}</span>
                   </div>
-                  <span className="badge badge-muted">{m.role}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -273,6 +286,9 @@ export default function SettingsPage() {
             <div className="card-head">
               <h3>Invite team member</h3>
             </div>
+            <p className="set-hint" style={{ marginBottom: 16 }}>
+              Team invites aren&apos;t built yet — every account is currently a single owner. This form doesn&apos;t grant anyone access.
+            </p>
             <form onSubmit={handleInvite} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <fieldset disabled={isReadOnly} style={{ border: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 16 }}>
                 <div className="set-field">
@@ -290,7 +306,6 @@ export default function SettingsPage() {
                   <label htmlFor="invite-role">Role</label>
                   <select id="invite-role" value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
                     <option value="Admin">Admin (full settings)</option>
-                    <option value="Manager">Manager (catalog & knowledge)</option>
                     <option value="Agent">Agent (manual takeover only)</option>
                   </select>
                 </div>

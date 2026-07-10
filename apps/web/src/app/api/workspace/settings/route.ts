@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { requireOrg } from "@/server/auth/context";
 import { withErrorHandling } from "@/server/http";
 import { toSettingsResponse, updateOrgSettings } from "@/server/tenancy/org";
@@ -6,7 +7,13 @@ import { toSettingsResponse, updateOrgSettings } from "@/server/tenancy/org";
 export async function GET() {
   return withErrorHandling(async () => {
     const { org } = await requireOrg();
-    return NextResponse.json({ settings: toSettingsResponse(org) });
+    const widgetKey = await prisma.widgetKey.findFirst({
+      where: { orgId: org.id, active: true },
+      select: { publicKey: true },
+    });
+    return NextResponse.json({
+      settings: { ...toSettingsResponse(org), widgetPublicKey: widgetKey?.publicKey ?? null },
+    });
   });
 }
 
