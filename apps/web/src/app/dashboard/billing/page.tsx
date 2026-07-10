@@ -1,18 +1,52 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSubscription } from "@/components/providers/SubscriptionProvider";
 import "./billing.css";
 
+interface Plan {
+  code: string;
+  name: string;
+  price: string;
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  trialing: "Trialing",
+  active: "Active",
+  past_due: "Past due",
+  cancelled: "Cancelled",
+  expired: "Expired",
+};
+
+function formatDate(iso: string | null): string | null {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" });
+}
+
 export default function BillingPage() {
   const { subscription, refresh } = useSubscription();
-  const currentPlan = subscription?.status === "active" ? subscription.plan : null;
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const plans = [
-    { id: "starter", name: "Starter", price: "₦15,000" },
-    { id: "growth", name: "Growth", price: "₦45,000" },
-    { id: "pro", name: "Pro", price: "₦150,000" },
-  ];
+  useEffect(() => {
+    fetch("/api/billing/plans")
+      .then((res) => res.json())
+      .then((data) => setPlans(Array.isArray(data.plans) ? data.plans : []))
+      .catch(() => setPlans([]));
+  }, []);
+
+  // After returning from Paystack's hosted checkout, the webhook may
+  // take a moment to land — refresh once so the new status shows up
+  // without a manual page reload.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "complete") {
+      refresh();
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [refresh]);
 
   const features = [
     { label: "AI conversations / month", starter: "1,000", growth: "5,000", pro: "Unlimited" },
@@ -22,18 +56,31 @@ export default function BillingPage() {
     { label: "Response latency", starter: "Standard", growth: "Priority reasoning", pro: "Dedicated model engine" },
   ];
 
-  const invoices = [
-    { id: "MIDE-2026-003", date: "June 1, 2026", amount: "₦150,000" },
-    { id: "MIDE-2026-002", date: "May 1, 2026", amount: "₦150,000" },
-    { id: "MIDE-2026-001", date: "April 1, 2026", amount: "₦15,000" },
-  ];
-
-  const handleSelectPlan = async (planId: string) => {
-    // Simulates a successful Paystack/Flutterwave checkout
-    document.cookie = `midevela_mock_status=active; path=/; max-age=86400`;
-    document.cookie = `midevela_mock_plan=${planId}; path=/; max-age=86400`;
-    await refresh();
+  const handleSelectPlan = async (planCode: string) => {
+    setError(null);
+    setCheckingOut(planCode);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planCode }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Couldn't start checkout. Please try again.");
+        setCheckingOut(null);
+        return;
+      }
+      const { authorizationUrl } = await res.json();
+      window.location.href = authorizationUrl;
+    } catch {
+      setError("Couldn't start checkout. Please check your connection and try again.");
+      setCheckingOut(null);
+    }
   };
+
+  const isCurrentPlan = (planCode: string) =>
+    subscription?.plan === planCode && ["trialing", "active", "past_due"].includes(subscription.status);
 
   return (
     <div>
@@ -44,20 +91,45 @@ export default function BillingPage() {
         <h1>Billing</h1>
       </div>
 
+      {subscription && (
+        <div className="card" style={{ padding: "18px 22px", marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, color: "var(--ink-soft)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current status</div>
+            <div style={{ fontSize: 18, fontWeight: 600, marginTop: 4 }}>{STATUS_LABELS[subscription.status] ?? subscription.status}</div>
+          </div>
+          {subscription.status === "trialing" && subscription.trialEndsAt && (
+            <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>Trial ends {formatDate(subscription.trialEndsAt)}</div>
+          )}
+          {subscription.status === "active" && subscription.currentPeriodEnd && (
+            <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>Renews {formatDate(subscription.currentPeriodEnd)}</div>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <div className="card" style={{ padding: "12px 18px", marginBottom: 22, borderColor: "var(--rust)", color: "var(--rust)" }}>
+          {error}
+        </div>
+      )}
+
       <div className="bill-plans">
         {plans.map((p) => {
-          const isActive = currentPlan === p.id;
+          const isActive = isCurrentPlan(p.code);
           return (
-            <div key={p.id} className={`bill-plan-card ${isActive ? "active" : ""}`}>
+            <div key={p.code} className={`bill-plan-card ${isActive ? "active" : ""}`}>
               <div className="bill-plan-top">
                 <span className="bill-plan-name">{p.name}</span>
-                {isActive && <span className="badge badge-green">Active</span>}
+                {isActive && <span className="badge badge-green">Current plan</span>}
               </div>
               <div className="bill-plan-price">
                 {p.price} <span>/ month</span>
               </div>
-              <button className="bill-plan-btn" onClick={() => handleSelectPlan(p.id)}>
-                {isActive ? "Manage subscription" : "Upgrade plan"}
+              <button
+                className="bill-plan-btn"
+                onClick={() => handleSelectPlan(p.code)}
+                disabled={checkingOut !== null}
+              >
+                {checkingOut === p.code ? "Redirecting to Paystack…" : isActive ? "Renew now" : "Choose plan"}
               </button>
             </div>
           );
@@ -93,29 +165,17 @@ export default function BillingPage() {
       <div className="grid-2">
         <div className="card">
           <div className="bill-card-title">Payment method</div>
-          <div className="bill-payment-row">
-            <span className="bill-card-icon">💳</span>
-            <div className="bill-payment-info">
-              <span className="bill-payment-name">Mastercard ending in 4242</span>
-              <span className="bill-payment-sub">Expires 12 / 2028</span>
-            </div>
-            <span className="badge badge-green">Default</span>
+          <div style={{ padding: "12px 0", color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.6 }}>
+            {subscription?.status === "active" || subscription?.status === "past_due"
+              ? "Payments are handled by Paystack at checkout — card details aren't stored or shown here."
+              : "No payment on file yet. Choose a plan above to check out with Paystack."}
           </div>
-          <button className="btn-outline" style={{ marginTop: 14 }}>Update card</button>
         </div>
 
         <div className="card">
           <div className="bill-card-title">Invoice history</div>
-          <div>
-            {invoices.map((inv) => (
-              <div key={inv.id} className="bill-invoice-row">
-                <div>
-                  <div className="bill-invoice-name">Invoice #{inv.id}</div>
-                  <div className="bill-invoice-sub">{inv.date} · {inv.amount}</div>
-                </div>
-                <span className="badge badge-green">Paid</span>
-              </div>
-            ))}
+          <div style={{ padding: "12px 0", color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.6 }}>
+            Not available yet — this needs invoice records synced from Paystack, which hasn&apos;t been built. Nothing shown here is invented.
           </div>
         </div>
       </div>

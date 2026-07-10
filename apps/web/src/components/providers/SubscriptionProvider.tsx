@@ -25,21 +25,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
   const fetchSubscription = async () => {
     try {
-      // Forward any mock query parameters in the address bar to the API to register cookies
-      let query = '';
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const mockStatus = urlParams.get('mock_status');
-        const mockPlan = urlParams.get('mock_plan');
-        const parts = [];
-        if (mockStatus) parts.push(`mock_status=${mockStatus}`);
-        if (mockPlan) parts.push(`mock_plan=${mockPlan}`);
-        if (parts.length > 0) {
-          query = '?' + parts.join('&');
-        }
-      }
-      
-      const res = await fetch(`/api/workspace/subscription${query}`);
+      const res = await fetch('/api/workspace/subscription');
       if (res.ok) {
         const data = await res.json();
         setSubscription(data);

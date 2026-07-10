@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import type { Organization } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { createTrialSubscription } from "@/server/billing/subscription";
 
 /**
  * Widget/behavior settings stored in Organization.settings (JSON).
@@ -126,6 +127,15 @@ export async function createOrganizationForUser(
       data: { orgId: org.id, publicKey, allowedDomains },
     }),
   ]);
+
+  // Best-effort: an org without a trial subscription just reads as
+  // "expired" (see subscription.ts) rather than crashing onboarding
+  // over it — the merchant can still be walked through picking a plan.
+  try {
+    await createTrialSubscription(org.id);
+  } catch (err) {
+    console.error("Failed to create trial subscription:", err);
+  }
 
   return { org, widgetPublicKey: publicKey };
 }
