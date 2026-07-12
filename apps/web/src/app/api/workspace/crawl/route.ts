@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { requireOrg } from "@/server/auth/context";
+import { requireActiveOrg } from "@/server/auth/context";
 import { withErrorHandling, jsonError } from "@/server/http";
 
 // ⚠️ Interim implementation: synchronous, max 3 pages, JSON-LD +
@@ -144,7 +144,7 @@ function internalLinks(html: string, origin: string): string[] {
 
 export async function POST(req: NextRequest) {
   return withErrorHandling(async () => {
-    const { org } = await requireOrg();
+    const { org } = await requireActiveOrg();
     const { url } = await req.json();
     if (!url) return jsonError(400, "URL is required.");
 

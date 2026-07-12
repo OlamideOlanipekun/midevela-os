@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireOrg } from "@/server/auth/context";
+import { requireOrg, requireActiveOrg } from "@/server/auth/context";
 import { withErrorHandling, jsonError } from "@/server/http";
 import {
   listProducts,
@@ -18,7 +18,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   return withErrorHandling(async () => {
-    const { org } = await requireOrg();
+    const { org } = await requireActiveOrg();
     const body = await req.json();
     const product = await createProduct(org.id, body);
     return NextResponse.json({ success: true, product });
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   return withErrorHandling(async () => {
-    const { org } = await requireOrg();
+    const { org } = await requireActiveOrg();
     const body = await req.json();
     if (!body.id) return jsonError(400, "Product id is required.");
     const product = await updateProduct(org.id, body.id, body);
@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   return withErrorHandling(async () => {
-    const { org } = await requireOrg();
+    const { org } = await requireActiveOrg();
     const id = new URL(req.url).searchParams.get("id");
     if (!id) return jsonError(400, "Product ID is required.");
     await deleteProduct(org.id, id);

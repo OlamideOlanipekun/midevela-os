@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireOrg } from "@/server/auth/context";
+import { requireOrg, requireActiveOrg } from "@/server/auth/context";
 import { withErrorHandling, jsonError } from "@/server/http";
 import {
   listKnowledge,
@@ -17,7 +17,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   return withErrorHandling(async () => {
-    const { org } = await requireOrg();
+    const { org } = await requireActiveOrg();
     const body = await req.json();
 
     if (body.type === "policy") {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   return withErrorHandling(async () => {
-    const { org } = await requireOrg();
+    const { org } = await requireActiveOrg();
     const params = new URL(req.url).searchParams;
     const id = params.get("id") ?? undefined;
     const question = params.get("question") ?? undefined;

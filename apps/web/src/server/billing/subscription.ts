@@ -25,6 +25,22 @@ export interface SubscriptionResponse {
 
 const GRACE_PERIOD_DAYS = 7;
 
+/**
+ * What a given (already effective) status is allowed to do. The single
+ * place the access rule lives — routes and the widget must consult this
+ * rather than re-deriving "is this org allowed" from raw status strings.
+ *   full      → trialing / active: unrestricted
+ *   read_only → past_due: reads allowed, writes blocked (dunning grace)
+ *   locked    → expired / cancelled: no access
+ */
+export type AccessLevel = "full" | "read_only" | "locked";
+
+export function accessLevelFor(status: string): AccessLevel {
+  if (status === "past_due") return "read_only";
+  if (status === "expired" || status === "cancelled") return "locked";
+  return "full";
+}
+
 function daysRemaining(from: Date): number {
   const ms = from.getTime() - Date.now();
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
@@ -43,9 +59,20 @@ export async function getSubscriptionForOrg(orgId: string): Promise<Subscription
     return { plan: "starter", status: "expired", gracePeriodDaysRemaining: 0, trialEndsAt: null, currentPeriodEnd: null };
   }
 
+  const now = Date.now();
   let effectiveStatus = sub.status;
-  if (sub.status === "TRIALING" && sub.trialEndsAt && sub.trialEndsAt.getTime() < Date.now()) {
+
+  // A trial that has run out reads as expired.
+  if (sub.status === "TRIALING" && sub.trialEndsAt && sub.trialEndsAt.getTime() < now) {
     effectiveStatus = "EXPIRED";
+  }
+
+  // A paid period that has lapsed with no renewal is not "active" — it
+  // drops into the past-due grace window first, then hard-expires. Without
+  // this a single successful payment would read as active forever.
+  if (sub.status === "ACTIVE" && sub.currentPeriodEnd && sub.currentPeriodEnd.getTime() < now) {
+    const graceEnd = sub.currentPeriodEnd.getTime() + GRACE_PERIOD_DAYS * 86400000;
+    effectiveStatus = now < graceEnd ? "PAST_DUE" : "EXPIRED";
   }
 
   return {

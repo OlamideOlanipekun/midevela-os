@@ -4,10 +4,17 @@ import prisma from "@/lib/prisma";
 import { resolveWidgetKey, isOriginAllowed } from "@/server/conversation/widgetAuth";
 import { processConversationTurn } from "@/server/conversation/engine";
 import { defaultOrgSettings, type OrgSettings } from "@/server/tenancy/org";
+import { getSubscriptionForOrg, accessLevelFor } from "@/server/billing/subscription";
 import type { ChatMessage } from "@/server/conversation/llm";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
+
+// Shown to a shopper when the merchant's subscription is inactive. The
+// assistant simply goes quiet — we never spend Groq/Voyage on an org that
+// isn't paying, but a shopper must never see a billing error.
+const ASSISTANT_UNAVAILABLE_REPLY =
+  "Thanks for your message! Our assistant is unavailable right now — please reach out to us directly and we'll be happy to help.";
 
 function corsHeaders(origin: string | null) {
   return {
@@ -54,6 +61,20 @@ export async function POST(req: NextRequest) {
     }
 
     const org = key.org;
+
+    // Billing gate: a locked (expired/cancelled) org's widget must not
+    // reach the LLM. past_due stays live through the grace window — we
+    // don't cut off a shopper mid-conversation over a late renewal.
+    // Short-circuit *before* any customer/conversation/message writes so
+    // an inactive org generates neither cost nor data.
+    const subscription = await getSubscriptionForOrg(org.id);
+    if (accessLevelFor(subscription.status) === "locked") {
+      return NextResponse.json(
+        { replyText: ASSISTANT_UNAVAILABLE_REPLY, intent: null, recommendations: [] },
+        { headers }
+      );
+    }
+
     const externalId = typeof customerId === "string" && customerId.trim() ? customerId.trim() : "anonymous";
 
     const customer = await prisma.customer.upsert({
