@@ -3,9 +3,24 @@ import prisma from "@/lib/prisma";
 import { withErrorHandling, jsonError } from "@/server/http";
 import { hashPassword, validatePasswordStrength } from "@/server/auth/password";
 import { createSession } from "@/server/auth/session";
+import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
+
+const SIGNUP_WINDOW_SEC = 60 * 60;
+const SIGNUP_PER_IP = 5;
 
 export async function POST(req: NextRequest) {
   return withErrorHandling(async () => {
+    // Throttle account-creation spam (and the scrypt CPU cost each attempt
+    // incurs) by source IP.
+    const ip = clientIp(req.headers);
+    const ipLimit = await rateLimit(`signup:ip:${ip}`, SIGNUP_PER_IP, SIGNUP_WINDOW_SEC);
+    if (!ipLimit.ok) {
+      return NextResponse.json(
+        { error: "Too many sign-up attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(SIGNUP_WINDOW_SEC) } }
+      );
+    }
+
     const body = await req.json();
     const email = String(body?.email ?? "").trim().toLowerCase();
     const password = String(body?.password ?? "");
