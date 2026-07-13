@@ -40,6 +40,21 @@
     return typeof value === 'string' && /^#[0-9a-f]{3,8}$/i.test(value);
   }
 
+  // Pick black or white for text sitting on top of the accent colour, so a
+  // filled accent button/bubble stays readable whatever accent the merchant
+  // configures (bright green -> dark text; a dark accent -> white text).
+  function contrastText(hex) {
+    const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(hex || '').trim());
+    if (!m) return '#08120a';
+    let h = m[1];
+    if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.6 ? '#08120a' : '#ffffff';
+  }
+
   function makeVisitorId() {
     return 'visitor-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
   }
@@ -119,16 +134,21 @@
     });
 
   function init(config) {
+    // Best-on-accent text colour, so filled accent buttons/bubbles stay
+    // readable whatever accent the merchant configures.
+    const onPrimary = contrastText(config.accentColor);
+
     // Stylesheet to inject into the Shadow DOM
     const styleText = `
     :host {
       --primary: ${config.accentColor};
-      --bg: #111827;
-      --bg-header: linear-gradient(135deg, #0c3e21 0%, #0b2d18 100%);
-      --text: #F0F4FF;
-      --muted: #8892A4;
-      --border: rgba(255, 255, 255, 0.08);
-      --card: rgba(255, 255, 255, 0.04);
+      --on-primary: ${onPrimary};
+      --bg: #ffffff;
+      --bg-soft: #f6f7f9;
+      --text: #14181f;
+      --muted: #6b7280;
+      --border: #e9ebee;
+      --card: #ffffff;
       --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
@@ -143,35 +163,37 @@
       position: fixed;
       bottom: 24px;
       right: 24px;
-      width: 56px;
-      height: 56px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
       background: var(--primary);
-      box-shadow: 0 4px 16px rgba(30, 230, 122, 0.3);
+      box-shadow: 0 8px 24px rgba(20, 24, 31, 0.18);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 999999;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
       border: none;
       outline: none;
     }
 
     .fab:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 24px rgba(30, 230, 122, 0.4);
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 12px 30px rgba(20, 24, 31, 0.26);
     }
 
+    .fab:active { transform: scale(0.96); }
+
     .fab svg {
-      width: 24px;
-      height: 24px;
-      fill: #080C14;
+      width: 26px;
+      height: 26px;
+      fill: var(--on-primary);
       transition: transform 0.3s;
     }
 
     .fab.open svg {
-      transform: rotate(90deg);
+      transform: rotate(90deg) scale(0.9);
     }
 
     .fab-pulse-ring {
@@ -179,13 +201,13 @@
       inset: -4px;
       border-radius: 50%;
       border: 2px solid var(--primary);
-      animation: pulseRing 2s infinite;
+      animation: pulseRing 2.4s infinite;
       pointer-events: none;
     }
 
     @keyframes pulseRing {
-      0% { transform: scale(1); opacity: 0.4; }
-      100% { transform: scale(1.6); opacity: 0; }
+      0% { transform: scale(1); opacity: 0.35; }
+      100% { transform: scale(1.7); opacity: 0; }
     }
 
     /* No page-blocking backdrop — this is a docked sidebar. The page stays
@@ -205,7 +227,7 @@
       max-width: 100vw;
       background: var(--bg);
       border-left: 1px solid var(--border);
-      box-shadow: -12px 0 48px rgba(0, 0, 0, 0.45);
+      box-shadow: -14px 0 50px rgba(20, 24, 31, 0.14);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -213,7 +235,7 @@
       font-family: var(--font);
       transform: translateX(100%);
       pointer-events: none;
-      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .chat-panel.open {
@@ -223,54 +245,56 @@
 
     /* Header */
     .header {
-      background: var(--bg-header);
-      padding: 16px 20px;
+      background: var(--bg);
+      padding: 15px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
-      color: #fff;
     }
 
     .header-info {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 11px;
     }
 
     .header-avatar {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       background: var(--primary);
-      color: #080C14;
+      color: var(--on-primary);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 15px;
+      flex-shrink: 0;
     }
 
     .header-title {
-      font-size: 14px;
+      font-size: 14.5px;
       font-weight: 600;
+      color: var(--text);
       line-height: 1.2;
     }
 
     .header-status {
       font-size: 11px;
-      color: var(--primary);
+      color: var(--muted);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
+      margin-top: 2px;
     }
 
     .header-status-dot {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 8px var(--primary);
+      background: #22c55e;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
     }
 
     .close-btn {
@@ -278,73 +302,117 @@
       border: none;
       color: var(--muted);
       cursor: pointer;
-      font-size: 16px;
-      transition: color 0.2s;
+      font-size: 18px;
+      line-height: 1;
+      padding: 4px 6px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
     }
 
     .close-btn:hover {
-      color: #fff;
+      color: var(--text);
+      background: var(--bg-soft);
     }
 
     /* Messages List */
     .msg-list {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
+      padding: 18px 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
+      background: var(--bg-soft);
     }
 
-    .msg-group {
+    .msg-list::-webkit-scrollbar { width: 6px; }
+    .msg-list::-webkit-scrollbar-thumb { background: rgba(20, 24, 31, 0.14); border-radius: 3px; }
+
+    .msg-row {
       display: flex;
-      flex-direction: column;
-      max-width: 80%;
+      gap: 8px;
+      max-width: 88%;
+      animation: msgIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .msg-group.customer {
+    .msg-row.ai { align-self: flex-start; }
+    .msg-row.customer { align-self: flex-end; }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--on-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      flex-shrink: 0;
       align-self: flex-end;
     }
 
-    .msg-group.ai {
-      align-self: flex-start;
-    }
-
-    .msg-badge {
-      font-size: 10px;
-      color: var(--primary);
-      background: rgba(30, 230, 122, 0.1);
-      padding: 2px 8px;
-      border-radius: 100px;
-      align-self: flex-start;
-      margin-bottom: 4px;
-      font-weight: 600;
-    }
+    .msg-col { display: flex; flex-direction: column; min-width: 0; }
+    .customer .msg-col { align-items: flex-end; }
 
     .msg-bubble {
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 13.5px;
       line-height: 1.5;
       color: var(--text);
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
     }
 
     .customer .msg-bubble {
-      background: rgba(255, 255, 255, 0.06);
-      border-bottom-right-radius: 3px;
+      background: var(--primary);
+      color: var(--on-primary);
+      border-bottom-right-radius: 5px;
     }
 
     .ai .msg-bubble {
-      background: #0c3e21;
-      border-bottom-left-radius: 3px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 5px;
     }
 
     .msg-time {
       font-size: 10px;
       color: var(--muted);
       margin-top: 4px;
-      align-self: flex-end;
     }
+
+    /* Quick-reply chips */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 2px 0 2px 36px;
+      animation: msgIn 0.3s ease;
+    }
+
+    .chip {
+      background: var(--bg);
+      border: 1px solid var(--primary);
+      color: var(--text);
+      border-radius: 100px;
+      padding: 7px 13px;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: background 0.18s, transform 0.18s;
+    }
+
+    .chip:hover { background: var(--bg-soft); transform: translateY(-1px); }
+    .chip:active { transform: scale(0.97); }
 
     /* Product recommendation cards inside chat flow */
     .reco-container {
@@ -362,23 +430,29 @@
 
     .reco-card {
       flex-shrink: 0;
-      width: 160px;
+      width: 158px;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .reco-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(20, 24, 31, 0.1);
     }
 
     .reco-img {
       width: 100%;
-      height: 90px;
-      background: rgba(255, 255, 255, 0.02);
+      height: 96px;
+      background: var(--bg-soft);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
+      font-size: 26px;
       overflow: hidden;
     }
 
@@ -389,15 +463,15 @@
     }
 
     .reco-body {
-      padding: 8px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
       flex: 1;
     }
 
     .reco-name {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text);
       white-space: nowrap;
@@ -406,86 +480,101 @@
     }
 
     .reco-price {
-      font-size: 12px;
-      color: var(--primary);
-      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 700;
     }
 
     .reco-why {
-      font-size: 9px;
+      font-size: 10px;
       color: var(--muted);
-      line-height: 1.3;
+      line-height: 1.35;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      margin-bottom: 2px;
     }
 
     .reco-btn {
       display: block;
       text-align: center;
-      padding: 7px 8px;
-      font-size: 11px;
+      padding: 8px;
+      font-size: 11.5px;
       font-weight: 600;
-      color: #080C14;
+      color: var(--on-primary);
       background: var(--primary);
       text-decoration: none;
       cursor: pointer;
+      transition: filter 0.18s;
     }
+
+    .reco-btn:hover { filter: brightness(0.95); }
 
     /* Chat Input */
     .input-area {
-      padding: 12px 20px;
+      padding: 12px 14px;
       border-top: 1px solid var(--border);
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
+      background: var(--bg);
     }
 
     .input-field {
       flex: 1;
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--bg-soft);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
+      border-radius: 100px;
+      padding: 11px 16px;
       color: var(--text);
-      font-size: 13px;
+      font-size: 13.5px;
       outline: none;
       font-family: var(--font);
+      transition: border-color 0.18s, background 0.18s;
     }
+
+    .input-field::placeholder { color: var(--muted); }
 
     .input-field:focus {
       border-color: var(--primary);
+      background: var(--bg);
     }
 
     .send-btn {
       background: var(--primary);
       border: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.18s, filter 0.18s;
     }
 
+    .send-btn:hover { filter: brightness(0.96); }
+    .send-btn:active { transform: scale(0.92); }
+
     .send-btn svg {
-      width: 16px;
-      height: 16px;
-      fill: #080C14;
+      width: 17px;
+      height: 17px;
+      fill: var(--on-primary);
     }
 
     .footer-brand {
       text-align: center;
-      padding: 6px 0;
-      font-size: 9px;
+      padding: 8px 0;
+      font-size: 10px;
       color: var(--muted);
-      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      background: var(--bg);
+      border-top: 1px solid var(--border);
     }
 
     .footer-brand a {
-      color: var(--primary);
+      color: var(--text);
       text-decoration: none;
       font-weight: 600;
     }
@@ -494,25 +583,29 @@
     .typing {
       display: flex;
       gap: 4px;
-      padding: 8px 12px;
+      padding: 12px 14px;
       align-self: flex-start;
-      background: #0c3e21;
-      border-radius: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      border-bottom-left-radius: 5px;
+      margin-left: 36px;
+      animation: msgIn 0.28s ease;
     }
 
     .typing span {
-      width: 6px;
-      height: 6px;
-      background: var(--primary);
+      width: 7px;
+      height: 7px;
+      background: var(--muted);
       border-radius: 50%;
-      animation: dotPulse 1.5s infinite ease-in-out;
+      animation: dotPulse 1.4s infinite ease-in-out;
     }
 
     .typing span:nth-child(2) { animation-delay: 0.2s; }
     .typing span:nth-child(3) { animation-delay: 0.4s; }
 
     @keyframes dotPulse {
-      0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+      0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; }
       40% { transform: scale(1); opacity: 1; }
     }
 
@@ -565,7 +658,7 @@
             <div class="header-title">${escapeHtml(aiName)}</div>
             <div class="header-status">
               <span class="header-status-dot"></span>
-              AI Active
+              Online
             </div>
           </div>
         </div>
@@ -573,15 +666,18 @@
       </div>
 
       <div class="msg-list" id="midevela-msg-list">
-        <div class="msg-group ai">
-          <span class="msg-badge">⚡ ${escapeHtml(aiName)}</span>
-          <div class="msg-bubble">${escapeHtml(greeting)}</div>
-          <span class="msg-time">${nowTime()}</span>
+        <div class="msg-row ai">
+          <div class="msg-avatar">${escapeHtml(avatarLetter)}</div>
+          <div class="msg-col">
+            <div class="msg-bubble">${escapeHtml(greeting)}</div>
+            <span class="msg-time">${nowTime()}</span>
+          </div>
         </div>
+        <div class="chips" id="midevela-chips"></div>
       </div>
 
       <div class="input-area">
-        <input type="text" class="input-field" id="midevela-input" maxlength="2000" placeholder="Ask me anything...">
+        <input type="text" class="input-field" id="midevela-input" maxlength="2000" placeholder="Ask anything…">
         <button class="send-btn" id="midevela-send">
           <svg viewBox="0 0 24 24">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -603,6 +699,7 @@
     const input = shadow.getElementById('midevela-input');
     const send = shadow.getElementById('midevela-send');
     const msgList = shadow.getElementById('midevela-msg-list');
+    const chipsEl = shadow.getElementById('midevela-chips');
 
     // Toggle chat panel open state. Only a deliberate user open should
     // focus the input — the proactive auto-open must never steal focus
@@ -620,19 +717,19 @@
     close.addEventListener('click', () => toggleChat(true));
     backdrop.addEventListener('click', () => toggleChat(true));
 
-    // Send message
-    const handleSend = () => {
-      const text = input.value.trim();
+    // Quick-reply chips disappear once the conversation actually starts.
+    const hideChips = () => {
+      if (chipsEl && chipsEl.parentNode) chipsEl.remove();
+    };
+
+    // Send a message — shared by the input box and the quick-reply chips.
+    const sendMessage = (raw) => {
+      const text = String(raw || '').trim();
       if (!text) return;
 
-      // Add customer message
+      hideChips();
       appendMessage(text, 'customer');
-      input.value = '';
-
-      // Scroll to bottom
       scrollToBottom();
-
-      // Trigger typing state
       appendTyping();
       scrollToBottom();
 
@@ -660,6 +757,27 @@
         });
     };
 
+    const handleSend = () => {
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      sendMessage(text);
+    };
+
+    // Starter prompts so the shopper has an obvious first move instead of a
+    // blank box. They map to things the assistant can actually answer.
+    const QUICK_REPLIES = ['What do you sell?', 'Recommend something for me', 'Shipping & delivery', 'Payment options'];
+    if (chipsEl) {
+      QUICK_REPLIES.forEach((q) => {
+        const chip = document.createElement('button');
+        chip.className = 'chip';
+        chip.type = 'button';
+        chip.textContent = q;
+        chip.addEventListener('click', () => sendMessage(q));
+        chipsEl.appendChild(chip);
+      });
+    }
+
     send.addEventListener('click', handleSend);
     input.addEventListener('keydown', (e) => {
       // isComposing: Enter during IME composition (e.g. Japanese input)
@@ -668,17 +786,20 @@
     });
 
     const appendMessage = (text, role, extraHTML = '') => {
-      const msg = document.createElement('div');
-      msg.className = `msg-group ${role}`;
+      const row = document.createElement('div');
+      row.className = `msg-row ${role}`;
 
-      msg.innerHTML = `
-      ${role === 'ai' ? `<span class="msg-badge">⚡ ${escapeHtml(aiName)}</span>` : ''}
-      <div class="msg-bubble">${escapeHtml(text)}</div>
-      ${extraHTML}
-      <span class="msg-time">${nowTime()}</span>
+      const avatar = role === 'ai' ? `<div class="msg-avatar">${escapeHtml(avatarLetter)}</div>` : '';
+      row.innerHTML = `
+      ${avatar}
+      <div class="msg-col">
+        <div class="msg-bubble">${escapeHtml(text)}</div>
+        ${extraHTML}
+        <span class="msg-time">${nowTime()}</span>
+      </div>
     `;
 
-      msgList.appendChild(msg);
+      msgList.appendChild(row);
     };
 
     const appendTyping = () => {
