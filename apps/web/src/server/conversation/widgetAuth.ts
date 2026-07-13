@@ -1,5 +1,16 @@
 import prisma from "@/lib/prisma";
 
+/** CORS headers for the public widget endpoints. Auth is the widget key,
+ *  never cookies, so reflecting the caller's origin is safe. */
+export function corsHeaders(origin: string | null) {
+  return {
+    "Access-Control-Allow-Origin": origin ?? "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    Vary: "Origin",
+  };
+}
+
 export async function resolveWidgetKey(publicKey: string) {
   const key = await prisma.widgetKey.findUnique({
     where: { publicKey },

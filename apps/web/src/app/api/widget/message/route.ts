@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { resolveWidgetKey, isOriginAllowed } from "@/server/conversation/widgetAuth";
+import { resolveWidgetKey, isOriginAllowed, corsHeaders } from "@/server/conversation/widgetAuth";
 import { processConversationTurn } from "@/server/conversation/engine";
 import { defaultOrgSettings, type OrgSettings } from "@/server/tenancy/org";
 import { getSubscriptionForOrg, accessLevelFor } from "@/server/billing/subscription";
@@ -30,15 +30,6 @@ const ASSISTANT_UNAVAILABLE_REPLY =
 // a raw 429 — the widget never surfaces an error to an end shopper.
 const RATE_LIMITED_REPLY =
   "You're sending messages a little too quickly — please wait a moment and try again.";
-
-function corsHeaders(origin: string | null) {
-  return {
-    "Access-Control-Allow-Origin": origin ?? "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    Vary: "Origin",
-  };
-}
 
 export async function OPTIONS(req: NextRequest) {
   return new NextResponse(null, { status: 204, headers: corsHeaders(req.headers.get("origin")) });
@@ -118,7 +109,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const externalId = typeof customerId === "string" && customerId.trim() ? customerId.trim() : "anonymous";
+    // Client-supplied visitor id, bounded. When absent (storage-blocked
+    // browsers, scripted callers) mint a fresh one per request — a shared
+    // "anonymous" bucket would merge strangers into one conversation and
+    // leak their history to each other through the LLM context window.
+    const trimmedCustomerId =
+      typeof customerId === "string" && customerId.trim().length <= 128 ? customerId.trim() : "";
+    const externalId = trimmedCustomerId || `anon-${crypto.randomUUID()}`;
 
     const customer = await prisma.customer.upsert({
       where: { orgId_externalId: { orgId: org.id, externalId } },

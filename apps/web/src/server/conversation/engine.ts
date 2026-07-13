@@ -23,6 +23,8 @@ interface RecommendationOut {
   name: string;
   price: string;
   whyThis: string;
+  url: string | null;
+  imageUrl: string | null;
 }
 
 export interface ConversationTurnInput {
@@ -170,6 +172,8 @@ export async function processConversationTurn(
       name: product.name,
       price: product.price,
       whyThis: typeof reason === "string" && reason.trim() ? reason.trim() : "Matches what you're looking for.",
+      url: product.url,
+      imageUrl: product.imageUrl,
     });
   }
 

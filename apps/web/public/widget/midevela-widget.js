@@ -3,13 +3,25 @@
   if (window.__MIDEVELA_WIDGET_LOADED__) return;
   window.__MIDEVELA_WIDGET_LOADED__ = true;
 
-  // Configuration
-  const widgetKey = document.currentScript ? document.currentScript.getAttribute('data-widget-key') : '';
-  const themeColor = document.currentScript ? document.currentScript.getAttribute('data-theme-color') : '#1EE67A';
+  // Locate our own <script> tag. document.currentScript is null when the
+  // tag is injected dynamically (e.g. via Google Tag Manager), so fall
+  // back to finding it by its data attribute.
+  const scriptEl =
+    document.currentScript ||
+    document.querySelector('script[data-widget-key][src*="midevela-widget"]');
+  const widgetKey = scriptEl ? scriptEl.getAttribute('data-widget-key') : '';
+  const attrThemeColor = scriptEl ? scriptEl.getAttribute('data-theme-color') : '';
+  const scriptSrc = scriptEl ? scriptEl.src : '';
   // The widget is served from the Midevela app itself, so the API lives at the same origin as this script.
-  const scriptSrc = document.currentScript ? document.currentScript.src : '';
   const apiBase = scriptSrc ? new URL(scriptSrc).origin : '';
-  const messageApiUrl = `${apiBase}/api/widget/message`;
+
+  if (!widgetKey || !apiBase) {
+    console.warn('Midevela widget: could not find the embed <script> tag with a data-widget-key — widget not loaded.');
+    return;
+  }
+
+  const messageApiUrl = apiBase + '/api/widget/message';
+  const configApiUrl = apiBase + '/api/widget/config?key=' + encodeURIComponent(widgetKey);
 
   function escapeHtml(str) {
     return String(str)
@@ -20,34 +32,104 @@
       .replace(/'/g, '&#39;');
   }
 
+  function isHttpUrl(value) {
+    return typeof value === 'string' && /^https?:\/\//i.test(value);
+  }
+
+  function isHexColor(value) {
+    return typeof value === 'string' && /^#[0-9a-f]{3,8}$/i.test(value);
+  }
+
+  function makeVisitorId() {
+    return 'visitor-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+  }
+
   function getOrCreateCustomerId() {
     try {
       const key = 'midevela_customer_id';
       let id = window.localStorage.getItem(key);
       if (!id) {
-        id = 'visitor-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+        id = makeVisitorId();
         window.localStorage.setItem(key, id);
       }
       return id;
     } catch (e) {
-      return 'anonymous-shopper';
+      // Storage blocked (private mode, cookie settings). Use a fresh id for
+      // this page load — a constant shared by every such visitor would merge
+      // strangers into one conversation on the server.
+      return makeVisitorId();
     }
   }
 
   const customerId = getOrCreateCustomerId();
-  let conversationHistory = [];
 
-  // Stylesheet to inject into the Shadow DOM
-  const styleText = `
+  // Once-per-session guard for the proactive auto-open.
+  const AUTO_OPEN_FLAG = 'midevela_auto_opened';
+  let autoOpenedInMemory = false;
+  function hasAutoOpened() {
+    try {
+      return window.sessionStorage.getItem(AUTO_OPEN_FLAG) === '1';
+    } catch (e) {
+      return autoOpenedInMemory;
+    }
+  }
+  function markAutoOpened() {
+    autoOpenedInMemory = true;
+    try {
+      window.sessionStorage.setItem(AUTO_OPEN_FLAG, '1');
+    } catch (e) {
+      /* in-memory flag already set */
+    }
+  }
+
+  function nowTime() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Per-org presentation config, fetched from the app. The widget must
+  // still work if this fetch fails, so everything has a neutral fallback.
+  const fallbackConfig = {
+    orgName: '',
+    aiName: 'AI Sales Assistant',
+    greeting: 'Good day! How can I help you today?',
+    accentColor: '',
+    engagementDelay: 0,
+    showProductImages: true,
+  };
+
+  fetch(configApiUrl)
+    .then(function (res) {
+      return res.ok ? res.json() : null;
+    })
+    .catch(function () {
+      return null;
+    })
+    .then(function (remote) {
+      const config = Object.assign({}, fallbackConfig, remote || {});
+      if (!isHexColor(config.accentColor)) {
+        config.accentColor = isHexColor(attrThemeColor) ? attrThemeColor : '#1EE67A';
+      }
+      if (document.body) {
+        init(config);
+      } else {
+        document.addEventListener('DOMContentLoaded', function () {
+          init(config);
+        });
+      }
+    });
+
+  function init(config) {
+    // Stylesheet to inject into the Shadow DOM
+    const styleText = `
     :host {
-      --primary: ${themeColor};
+      --primary: ${config.accentColor};
       --bg: #111827;
       --bg-header: linear-gradient(135deg, #0c3e21 0%, #0b2d18 100%);
       --text: #F0F4FF;
       --muted: #8892A4;
       --border: rgba(255, 255, 255, 0.08);
       --card: rgba(255, 255, 255, 0.04);
-      --font: 'Outfit', sans-serif;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     * {
@@ -106,51 +188,36 @@
       100% { transform: scale(1.6); opacity: 0; }
     }
 
-    /* ─── BACKDROP OVERLAY ─── */
+    /* No page-blocking backdrop — this is a docked sidebar. The page stays
+       fully visible and interactive while the assistant is open, so a
+       shopper can keep browsing products while they chat. */
     .backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      z-index: 999998;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
+      display: none;
     }
 
-    .backdrop.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    /* ─── CHAT PANEL (Centered Modal) ─── */
+    /* ─── CHAT PANEL (Right-docked sidebar) ─── */
     .chat-panel {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0.95);
-      width: 520px;
-      height: 640px;
-      max-width: 90vw;
-      max-height: 85vh;
-      border-radius: 24px;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 400px;
+      max-width: 100vw;
       background: var(--bg);
-      border: 1px solid var(--border);
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6), 0 0 40px rgba(30, 230, 122, 0.1);
+      border-left: 1px solid var(--border);
+      box-shadow: -12px 0 48px rgba(0, 0, 0, 0.45);
       display: flex;
       flex-direction: column;
       overflow: hidden;
       z-index: 999999;
       font-family: var(--font);
-      opacity: 0;
+      transform: translateX(100%);
       pointer-events: none;
-      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .chat-panel.open {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
+      transform: translateX(0);
       pointer-events: all;
     }
 
@@ -312,6 +379,13 @@
       align-items: center;
       justify-content: center;
       font-size: 24px;
+      overflow: hidden;
+    }
+
+    .reco-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .reco-body {
@@ -319,6 +393,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      flex: 1;
     }
 
     .reco-name {
@@ -344,6 +419,18 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+    }
+
+    .reco-btn {
+      display: block;
+      text-align: center;
+      padding: 7px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #080C14;
+      background: var(--primary);
+      text-decoration: none;
+      cursor: pointer;
     }
 
     /* Chat Input */
@@ -429,46 +516,38 @@
       40% { transform: scale(1); opacity: 1; }
     }
 
-    /* Mobile responsive override */
+    /* Mobile: the sidebar becomes a full-width sheet, still sliding in from
+       the right. The base translateX transitions already handle open/close. */
     @media (max-width: 480px) {
       .chat-panel {
-        bottom: 0;
-        right: 0;
         width: 100%;
-        height: 100%;
-        border-radius: 0;
-        border: none;
+        border-left: none;
       }
     }
   `;
 
-  // Create Shadow Host & Attach Shadow Root
-  const container = document.createElement('div');
-  container.id = 'midevela-widget-container';
-  document.body.appendChild(container);
+    // Create Shadow Host & Attach Shadow Root
+    const container = document.createElement('div');
+    container.id = 'midevela-widget-container';
+    document.body.appendChild(container);
 
-  const shadow = container.attachShadow({ mode: 'open' });
+    const shadow = container.attachShadow({ mode: 'open' });
 
-  // Add Outfit font link inside head of main document so it loads correctly
-  if (!document.getElementById('midevela-font-link')) {
-    const link = document.createElement('link');
-    link.id = 'midevela-font-link';
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap';
-    document.head.appendChild(link);
-  }
+    // Create Wrapper
+    const wrapper = document.createElement('div');
 
-  // Create Wrapper
-  const wrapper = document.createElement('div');
+    // Insert styling rules
+    const style = document.createElement('style');
+    style.textContent = styleText;
+    shadow.appendChild(style);
+    shadow.appendChild(wrapper);
 
-  // Insert styling rules
-  const style = document.createElement('style');
-  style.textContent = styleText;
-  shadow.appendChild(style);
-  shadow.appendChild(wrapper);
+    const aiName = String(config.aiName || fallbackConfig.aiName);
+    const greeting = String(config.greeting || fallbackConfig.greeting);
+    const avatarLetter = aiName.charAt(0).toUpperCase() || 'A';
 
-  // Template HTML
-  wrapper.innerHTML = `
+    // Template HTML
+    wrapper.innerHTML = `
     <button class="fab" id="midevela-fab">
       <div class="fab-pulse-ring"></div>
       <svg viewBox="0 0 24 24">
@@ -481,9 +560,9 @@
     <div class="chat-panel" id="midevela-chat">
       <div class="header">
         <div class="header-info">
-          <div class="header-avatar">M</div>
+          <div class="header-avatar">${escapeHtml(avatarLetter)}</div>
           <div>
-            <div class="header-title">LuxeStyle Sales Assistant</div>
+            <div class="header-title">${escapeHtml(aiName)}</div>
             <div class="header-status">
               <span class="header-status-dot"></span>
               AI Active
@@ -495,16 +574,14 @@
 
       <div class="msg-list" id="midevela-msg-list">
         <div class="msg-group ai">
-          <span class="msg-badge">⚡ Midevela AI</span>
-          <div class="msg-bubble">
-            Good day! Welcome to LuxeStyle. How can I help you find the perfect outfit today?
-          </div>
-          <span class="msg-time">11:15 PM</span>
+          <span class="msg-badge">⚡ ${escapeHtml(aiName)}</span>
+          <div class="msg-bubble">${escapeHtml(greeting)}</div>
+          <span class="msg-time">${nowTime()}</span>
         </div>
       </div>
 
       <div class="input-area">
-        <input type="text" class="input-field" id="midevela-input" placeholder="Ask me anything...">
+        <input type="text" class="input-field" id="midevela-input" maxlength="2000" placeholder="Ask me anything...">
         <button class="send-btn" id="midevela-send">
           <svg viewBox="0 0 24 24">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -518,145 +595,160 @@
     </div>
   `;
 
-  // UI Event bindings
-  const fab = shadow.getElementById('midevela-fab');
-  const chat = shadow.getElementById('midevela-chat');
-  const close = shadow.getElementById('midevela-close');
-  const backdrop = shadow.getElementById('midevela-backdrop');
-  const input = shadow.getElementById('midevela-input');
-  const send = shadow.getElementById('midevela-send');
-  const msgList = shadow.getElementById('midevela-msg-list');
+    // UI Event bindings
+    const fab = shadow.getElementById('midevela-fab');
+    const chat = shadow.getElementById('midevela-chat');
+    const close = shadow.getElementById('midevela-close');
+    const backdrop = shadow.getElementById('midevela-backdrop');
+    const input = shadow.getElementById('midevela-input');
+    const send = shadow.getElementById('midevela-send');
+    const msgList = shadow.getElementById('midevela-msg-list');
 
-  // Toggle chat panel open state
-  const toggleChat = () => {
-    const isOpen = chat.classList.toggle('open');
-    backdrop.classList.toggle('open', isOpen);
-    fab.classList.toggle('open', isOpen);
-    if (isOpen) {
-      input.focus();
-    }
-  };
+    // Toggle chat panel open state. Only a deliberate user open should
+    // focus the input — the proactive auto-open must never steal focus
+    // from whatever the shopper is doing on the page.
+    const toggleChat = (focusInput) => {
+      const isOpen = chat.classList.toggle('open');
+      backdrop.classList.toggle('open', isOpen);
+      fab.classList.toggle('open', isOpen);
+      if (isOpen && focusInput) {
+        input.focus();
+      }
+    };
 
-  fab.addEventListener('click', toggleChat);
-  close.addEventListener('click', toggleChat);
-  backdrop.addEventListener('click', toggleChat);
+    fab.addEventListener('click', () => toggleChat(true));
+    close.addEventListener('click', () => toggleChat(true));
+    backdrop.addEventListener('click', () => toggleChat(true));
 
-  // Send message
-  const handleSend = () => {
-    const text = input.value.trim();
-    if (!text) return;
+    // Send message
+    const handleSend = () => {
+      const text = input.value.trim();
+      if (!text) return;
 
-    // Add customer message
-    appendMessage(text, 'customer');
-    conversationHistory.push({ role: 'customer', content: text });
-    input.value = '';
+      // Add customer message
+      appendMessage(text, 'customer');
+      input.value = '';
 
-    // Scroll to bottom
-    scrollToBottom();
+      // Scroll to bottom
+      scrollToBottom();
 
-    // Trigger typing state
-    appendTyping();
-    scrollToBottom();
+      // Trigger typing state
+      appendTyping();
+      scrollToBottom();
 
-    fetch(messageApiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        widgetKey,
-        customerId,
-        messageText: text,
-      }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Widget API request failed with status ' + res.status);
-        return res.json();
+      fetch(messageApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          widgetKey,
+          customerId,
+          messageText: text,
+        }),
       })
-      .then((data) => {
-        removeTyping();
-        handleAIResponse(data);
-      })
-      .catch((err) => {
-        console.error('Midevela widget error:', err);
-        removeTyping();
-        appendMessage("Sorry, I'm having trouble connecting right now. Please try again in a moment.", 'ai');
-      });
-  };
+        .then((res) => {
+          if (!res.ok) throw new Error('Widget API request failed with status ' + res.status);
+          return res.json();
+        })
+        .then((data) => {
+          removeTyping();
+          handleAIResponse(data);
+        })
+        .catch((err) => {
+          console.error('Midevela widget error:', err);
+          removeTyping();
+          appendMessage("Sorry, I'm having trouble connecting right now. Please try again in a moment.", 'ai');
+        });
+    };
 
-  send.addEventListener('click', handleSend);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleSend();
-  });
+    send.addEventListener('click', handleSend);
+    input.addEventListener('keydown', (e) => {
+      // isComposing: Enter during IME composition (e.g. Japanese input)
+      // confirms the composition, not the message.
+      if (e.key === 'Enter' && !e.isComposing) handleSend();
+    });
 
-  const appendMessage = (text, role, extraHTML = '') => {
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const msg = document.createElement('div');
-    msg.className = `msg-group ${role}`;
+    const appendMessage = (text, role, extraHTML = '') => {
+      const msg = document.createElement('div');
+      msg.className = `msg-group ${role}`;
 
-    msg.innerHTML = `
-      ${role === 'ai' ? '<span class="msg-badge">⚡ Midevela AI</span>' : ''}
+      msg.innerHTML = `
+      ${role === 'ai' ? `<span class="msg-badge">⚡ ${escapeHtml(aiName)}</span>` : ''}
       <div class="msg-bubble">${escapeHtml(text)}</div>
       ${extraHTML}
-      <span class="msg-time">${time}</span>
+      <span class="msg-time">${nowTime()}</span>
     `;
 
-    msgList.appendChild(msg);
-  };
+      msgList.appendChild(msg);
+    };
 
-  const appendTyping = () => {
-    const typeIndicator = document.createElement('div');
-    typeIndicator.id = 'midevela-typing';
-    typeIndicator.className = 'typing';
-    typeIndicator.innerHTML = '<span></span><span></span><span></span>';
-    msgList.appendChild(typeIndicator);
-  };
+    const appendTyping = () => {
+      const typeIndicator = document.createElement('div');
+      typeIndicator.id = 'midevela-typing';
+      typeIndicator.className = 'typing';
+      typeIndicator.innerHTML = '<span></span><span></span><span></span>';
+      msgList.appendChild(typeIndicator);
+    };
 
-  const removeTyping = () => {
-    const typeIndicator = shadow.getElementById('midevela-typing');
-    if (typeIndicator) typeIndicator.remove();
-  };
+    const removeTyping = () => {
+      const typeIndicator = shadow.getElementById('midevela-typing');
+      if (typeIndicator) typeIndicator.remove();
+    };
 
-  const scrollToBottom = () => {
-    msgList.scrollTop = msgList.scrollHeight;
-  };
+    const scrollToBottom = () => {
+      msgList.scrollTop = msgList.scrollHeight;
+    };
 
-  const handleAIResponse = (data) => {
-    const replyText = (data && data.replyText) || "Sorry, I didn't quite catch that. Could you rephrase?";
-    const recommendations = Array.isArray(data && data.recommendations) ? data.recommendations : [];
-
-    let recoHTML = '';
-    if (recommendations.length > 0) {
-      recoHTML = `
-        <div class="reco-container">
-          ${recommendations
-            .map(
-              (r) => `
-            <div class="reco-card">
-              <div class="reco-img">🛍️</div>
-              <div class="reco-body">
-                <span class="reco-name">${escapeHtml(r.name)}</span>
-                <span class="reco-price">${escapeHtml(r.price)}</span>
-                <span class="reco-why">${escapeHtml(r.whyThis || '')}</span>
-              </div>
-              <div class="reco-btn">View Product</div>
-            </div>
-          `
-            )
-            .join('')}
+    const renderRecoCard = (r) => {
+      const url = isHttpUrl(r && r.url) ? r.url : '';
+      const imageUrl = config.showProductImages && isHttpUrl(r && r.imageUrl) ? r.imageUrl : '';
+      return `
+        <div class="reco-card">
+          <div class="reco-img">${
+            imageUrl
+              ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(r.name)}" loading="lazy">`
+              : '🛍️'
+          }</div>
+          <div class="reco-body">
+            <span class="reco-name">${escapeHtml(r.name)}</span>
+            <span class="reco-price">${escapeHtml(r.price)}</span>
+            <span class="reco-why">${escapeHtml(r.whyThis || '')}</span>
+          </div>
+          ${
+            url
+              ? `<a class="reco-btn" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">View Product</a>`
+              : ''
+          }
         </div>
       `;
+    };
+
+    const handleAIResponse = (data) => {
+      const replyText = (data && data.replyText) || "Sorry, I didn't quite catch that. Could you rephrase?";
+      const recommendations = Array.isArray(data && data.recommendations) ? data.recommendations : [];
+
+      let recoHTML = '';
+      if (recommendations.length > 0) {
+        recoHTML = `
+        <div class="reco-container">
+          ${recommendations.map(renderRecoCard).join('')}
+        </div>
+      `;
+      }
+
+      appendMessage(replyText, 'ai', recoHTML);
+      scrollToBottom();
+    };
+
+    // Proactive engagement: open once per browser session after the
+    // merchant-configured delay. 0 (or unset) disables it entirely.
+    const delaySec = Number(config.engagementDelay);
+    if (Number.isFinite(delaySec) && delaySec > 0 && !hasAutoOpened()) {
+      setTimeout(() => {
+        if (!chat.classList.contains('open') && !hasAutoOpened()) {
+          markAutoOpened();
+          toggleChat(false);
+        }
+      }, delaySec * 1000);
     }
-
-    appendMessage(replyText, 'ai', recoHTML);
-    conversationHistory.push({ role: 'ai', content: replyText });
-    scrollToBottom();
-  };
-
-  // Proactive trigger mockup based on config delay
-  setTimeout(() => {
-    // Only open if the user hasn't interacted yet
-    if (!chat.classList.contains('open')) {
-      toggleChat();
-    }
-  }, 1000 * 10); // 10s delay
-
+  }
 })();

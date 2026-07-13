@@ -8,6 +8,10 @@ export interface RetrievedProduct {
   price: string;
   category: string | null;
   description: string | null;
+  /** Merchant product page (sourceUrl), http(s) only. */
+  url: string | null;
+  /** First product image, http(s) only. */
+  imageUrl: string | null;
   similarity: number;
 }
 
@@ -28,6 +32,25 @@ interface EmbeddingHit {
 }
 
 const SIMILARITY_FLOOR = 0.5;
+
+/** Only ever hand the widget an http(s) URL — these end up in href/src. */
+function safeHttpUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  return /^https?:\/\//i.test(value.trim()) ? value.trim() : null;
+}
+
+/** Product.images is loose JSON — entries may be "https://…" strings or
+ *  objects like { url: "…" } depending on the import path. */
+function firstImageUrl(images: unknown): string | null {
+  if (!Array.isArray(images)) return null;
+  for (const entry of images) {
+    const candidate =
+      typeof entry === "string" ? entry : (entry as Record<string, unknown> | null)?.url;
+    const url = safeHttpUrl(candidate);
+    if (url) return url;
+  }
+  return null;
+}
 
 /**
  * Cosine-similarity search over the org's embeddings, then re-fetches the
@@ -84,6 +107,8 @@ export async function retrieveContext(
         price: formatMoney(p.price, p.currency),
         category: p.category?.name ?? null,
         description: p.description,
+        url: safeHttpUrl(p.sourceUrl),
+        imageUrl: firstImageUrl(p.images),
         similarity: hit.similarity,
       });
     } else {
