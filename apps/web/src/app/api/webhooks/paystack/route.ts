@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/server/billing/paystack";
 import { activateSubscriptionFromPayment } from "@/server/billing/subscription";
+import { alert } from "@/server/observability/notify";
 
 /**
  * Public endpoint — Paystack calls this directly, there's no logged-in
@@ -45,7 +46,15 @@ export async function POST(req: NextRequest) {
       paidAt: data.paid_at ? new Date(data.paid_at) : new Date(),
     });
   } catch (err) {
-    console.error("Paystack webhook: failed to activate subscription.", err);
+    // A customer paid but activation failed — this must page a human, not
+    // just log. Paystack will retry on the 500, but if it keeps failing
+    // someone needs to reconcile it manually.
+    await alert("Paystack webhook: subscription activation FAILED (customer may have paid)", {
+      reference: data.reference,
+      orgId,
+      planCode,
+      error: err instanceof Error ? err.message : String(err),
+    });
     // 500 so Paystack retries — this one really did fail to apply.
     return NextResponse.json({ error: "Internal error." }, { status: 500 });
   }

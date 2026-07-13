@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { alert } from "@/server/observability/notify";
 
 export class ApiError extends Error {
   constructor(
@@ -26,7 +27,10 @@ export async function withErrorHandling<T>(
     if (err instanceof ApiError) {
       return jsonError(err.status, err.message);
     }
-    console.error("API error:", err);
+    // Unexpected error = a real bug worth surfacing, not just logging.
+    await alert("Unhandled API error (500)", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return jsonError(500, "Internal server error");
   }
 }
