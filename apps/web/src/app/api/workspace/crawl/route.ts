@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { requireActiveOrg } from "@/server/auth/context";
 import { withErrorHandling, jsonError } from "@/server/http";
+import { assertPublicUrl } from "@/server/net/ssrfGuard";
 
 // ⚠️ Interim implementation: synchronous, max 3 pages, JSON-LD +
 // heuristic extraction. Phase 2 moves this into a background job chain
@@ -151,12 +152,10 @@ export async function POST(req: NextRequest) {
     let targetUrl = String(url).trim();
     if (!/^https?:\/\//i.test(targetUrl)) targetUrl = `https://${targetUrl}`;
 
-    let origin: string;
-    try {
-      origin = new URL(targetUrl).origin;
-    } catch {
-      return jsonError(400, "Invalid URL format.");
-    }
+    // SSRF guard: the seed URL must resolve to a public address before we
+    // make any server-side fetch. Throws ApiError(400) on private/invalid.
+    const parsedTarget = await assertPublicUrl(targetUrl);
+    const origin = parsedTarget.origin;
 
     const crawledPages: string[] = [];
     const foundProducts: CrawledProduct[] = [];
@@ -166,6 +165,14 @@ export async function POST(req: NextRequest) {
     while (queue.length > 0 && crawledPages.length < MAX_PAGES) {
       const pageUrl = queue.shift()!;
       if (crawledPages.includes(pageUrl)) continue;
+
+      // Re-check every followed link, not just the seed — a public page can
+      // link to an internal host. Skip (don't abort the crawl) on failure.
+      try {
+        await assertPublicUrl(pageUrl);
+      } catch {
+        continue;
+      }
       crawledPages.push(pageUrl);
 
       const html = await fetchPage(pageUrl);
