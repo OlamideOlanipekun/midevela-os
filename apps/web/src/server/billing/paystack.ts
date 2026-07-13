@@ -19,6 +19,12 @@ export interface InitializeTransactionInput {
   amountKobo: number;
   metadata: Record<string, unknown>;
   callbackUrl: string;
+  /**
+   * Paystack plan code (PLN_...). When set, this checkout creates a
+   * recurring subscription that Paystack auto-charges each interval —
+   * the amount is taken from the plan. Omit for a one-time charge.
+   */
+  planCode?: string;
 }
 
 export interface InitializeTransactionResult {
@@ -30,19 +36,24 @@ export interface InitializeTransactionResult {
 export async function initializeTransaction(
   input: InitializeTransactionInput
 ): Promise<InitializeTransactionResult> {
+  const body: Record<string, unknown> = {
+    email: input.email,
+    amount: input.amountKobo,
+    currency: "NGN",
+    metadata: input.metadata,
+    callback_url: input.callbackUrl,
+  };
+  // Passing `plan` turns this into a subscription sign-up; Paystack then
+  // charges the plan amount on its interval automatically.
+  if (input.planCode) body.plan = input.planCode;
+
   const res = await fetch(`${PAYSTACK_API}/transaction/initialize`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${secretKey()}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      email: input.email,
-      amount: input.amountKobo,
-      currency: "NGN",
-      metadata: input.metadata,
-      callback_url: input.callbackUrl,
-    }),
+    body: JSON.stringify(body),
   });
 
   const data = await res.json();
@@ -55,6 +66,61 @@ export async function initializeTransaction(
     accessCode: data.data.access_code,
     reference: data.data.reference,
   };
+}
+
+export interface CreatePlanInput {
+  name: string;
+  amountKobo: number;
+  /** Paystack billing interval, e.g. "monthly". */
+  interval: string;
+}
+
+/**
+ * Creates a Paystack Plan and returns its plan_code (PLN_...). Used once
+ * per pricing tier to back recurring subscriptions. Idempotency is the
+ * caller's job — Paystack will happily create duplicate plans with the
+ * same name.
+ */
+export async function createPlan(input: CreatePlanInput): Promise<{ planCode: string }> {
+  const res = await fetch(`${PAYSTACK_API}/plan`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: input.name,
+      amount: input.amountKobo,
+      interval: input.interval,
+      currency: "NGN",
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data?.status) {
+    throw new Error(`Paystack createPlan failed: ${data?.message ?? res.status}`);
+  }
+  return { planCode: data.data.plan_code };
+}
+
+/**
+ * Disables a Paystack subscription so it stops auto-renewing. Paystack's
+ * disable endpoint requires both the subscription code and its current
+ * email token. Best-effort: used when a customer cancels from our side.
+ */
+export async function disableSubscription(subscriptionCode: string, emailToken: string): Promise<void> {
+  const res = await fetch(`${PAYSTACK_API}/subscription/disable`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ code: subscriptionCode, token: emailToken }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data?.status) {
+    throw new Error(`Paystack disableSubscription failed: ${data?.message ?? res.status}`);
+  }
 }
 
 /**

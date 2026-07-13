@@ -17,6 +17,10 @@ export async function POST(req: NextRequest) {
     if (!plan || !plan.active) {
       return jsonError(404, "Plan not found.");
     }
+    // Recurring billing requires the tier to be backed by a Paystack Plan.
+    if (!plan.paystackPlanCode) {
+      return jsonError(409, "This plan isn't available for checkout yet. Please contact support.");
+    }
 
     const origin = new URL(req.url).origin;
     const result = await initializeTransaction({
@@ -24,6 +28,8 @@ export async function POST(req: NextRequest) {
       amountKobo: Math.round(Number(plan.priceMonthly) * 100),
       metadata: { orgId: org.id, planCode: plan.code },
       callbackUrl: `${origin}/dashboard/billing?checkout=complete`,
+      // Subscription-backed: Paystack auto-charges this plan each interval.
+      planCode: plan.paystackPlanCode,
     });
 
     return NextResponse.json({ authorizationUrl: result.authorizationUrl });

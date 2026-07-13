@@ -98,38 +98,87 @@ export async function createTrialSubscription(orgId: string) {
   });
 }
 
+const PERIOD_DAYS = 30;
+
+function periodEndFrom(paidAt: Date): Date {
+  return new Date(paidAt.getTime() + PERIOD_DAYS * 86400000);
+}
+
 /**
- * Called only from the verified Paystack webhook handler — never from
- * a client-facing route. currentPeriodEnd is derived from the
- * transaction's own paidAt timestamp (not wall-clock "now") so a
- * duplicate webhook delivery for the same charge is idempotent rather
- * than silently extending the period twice.
+ * First payment of a subscription (the checkout carries metadata.orgId +
+ * planCode). Activates the org's subscription and links the Paystack
+ * customer/subscription codes so later lifecycle events — which do NOT
+ * carry our metadata — can be matched back by customer code.
+ *
+ * currentPeriodEnd is derived from the payment's own paidAt (not wall
+ * clock), so a duplicate delivery of the same charge is idempotent.
+ * Called only from the verified webhook handler.
  */
 export async function activateSubscriptionFromPayment(params: {
   orgId: string;
   planCode: string;
   paystackCustomerCode: string | null;
+  paystackSubscriptionCode?: string | null;
   paidAt: Date;
 }) {
   const plan = await prisma.plan.findUnique({ where: { code: params.planCode } });
   if (!plan) throw new Error(`Unknown plan code from webhook metadata: ${params.planCode}`);
 
-  const currentPeriodEnd = new Date(params.paidAt.getTime() + 30 * 86400000);
+  const currentPeriodEnd = periodEndFrom(params.paidAt);
+  const shared = {
+    planId: plan.id,
+    status: "ACTIVE" as const,
+    paystackCustomerCode: params.paystackCustomerCode ?? undefined,
+    paystackSubscriptionCode: params.paystackSubscriptionCode ?? undefined,
+    currentPeriodEnd,
+  };
 
   await prisma.subscription.upsert({
     where: { orgId: params.orgId },
-    update: {
-      planId: plan.id,
-      status: "ACTIVE",
-      paystackCustomerCode: params.paystackCustomerCode ?? undefined,
-      currentPeriodEnd,
-    },
-    create: {
-      orgId: params.orgId,
-      planId: plan.id,
-      status: "ACTIVE",
-      paystackCustomerCode: params.paystackCustomerCode ?? undefined,
-      currentPeriodEnd,
-    },
+    update: shared,
+    create: { orgId: params.orgId, ...shared },
   });
+}
+
+/**
+ * Recurring charge.success (Paystack auto-renewal). These carry no
+ * metadata, so the org is resolved by its stored Paystack customer code.
+ * Extends the paid period and clears any past_due. No-op if we can't
+ * match the customer (logged by the caller).
+ */
+export async function extendSubscriptionByCustomer(paystackCustomerCode: string, paidAt: Date): Promise<boolean> {
+  const sub = await prisma.subscription.findFirst({ where: { paystackCustomerCode } });
+  if (!sub) return false;
+  await prisma.subscription.update({
+    where: { id: sub.id },
+    data: { status: "ACTIVE", currentPeriodEnd: periodEndFrom(paidAt) },
+  });
+  return true;
+}
+
+/** subscription.create — store the subscription code against the org. */
+export async function linkSubscriptionCode(paystackCustomerCode: string, paystackSubscriptionCode: string): Promise<boolean> {
+  const sub = await prisma.subscription.findFirst({ where: { paystackCustomerCode } });
+  if (!sub) return false;
+  await prisma.subscription.update({
+    where: { id: sub.id },
+    data: { paystackSubscriptionCode },
+  });
+  return true;
+}
+
+/** invoice.payment_failed — a renewal charge failed; enter the dunning window. */
+export async function markPastDueByCustomer(paystackCustomerCode: string): Promise<boolean> {
+  const sub = await prisma.subscription.findFirst({ where: { paystackCustomerCode } });
+  if (!sub) return false;
+  await prisma.subscription.update({ where: { id: sub.id }, data: { status: "PAST_DUE" } });
+  return true;
+}
+
+/** subscription.disable / not_renew — the subscription is cancelled. */
+export async function cancelByCustomer(paystackCustomerCode: string): Promise<boolean> {
+  const sub = await prisma.subscription.findFirst({ where: { paystackCustomerCode } });
+  if (!sub) return false;
+  await prisma.subscription.update({ where: { id: sub.id }, data: { status: "CANCELLED" } });
+  return true;
 }

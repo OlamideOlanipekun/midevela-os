@@ -383,6 +383,20 @@ model UsageRecord {
   @@map("usage_records")
 }
 
+// Idempotency ledger for inbound provider webhooks. Paystack retries
+// deliver the identical body (and therefore identical HMAC signature), so
+// the signature is a perfect per-delivery key: insert-on-receipt, and a
+// unique-constraint violation means "already processed — skip".
+model WebhookEvent {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider  String // "paystack"
+  signature String   @unique // HMAC of the raw body
+  eventType String   @map("event_type")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("webhook_events")
+}
+
 // ─────────────────────────────────────────────────────────────
 // Channels (schema early; used from Phase 4)
 // ─────────────────────────────────────────────────────────────

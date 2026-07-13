@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { verifyWebhookSignature } from "@/server/billing/paystack";
-import { activateSubscriptionFromPayment } from "@/server/billing/subscription";
+import {
+  activateSubscriptionFromPayment,
+  extendSubscriptionByCustomer,
+  linkSubscriptionCode,
+  markPastDueByCustomer,
+  cancelByCustomer,
+} from "@/server/billing/subscription";
 import { alert } from "@/server/observability/notify";
 
 /**
  * Public endpoint — Paystack calls this directly, there's no logged-in
- * user. The signature check IS the auth boundary here; nothing below
- * it should ever run without it passing first.
+ * user. The signature check IS the auth boundary here; nothing below it
+ * runs without it passing first.
+ *
+ * Idempotency: Paystack retries deliver the identical body (identical
+ * HMAC signature), so we record each processed signature and skip
+ * replays. We record AFTER successful processing — a failed event must
+ * NOT be marked processed, or the retry that would fix it gets skipped.
+ * The state transitions below are all idempotent, so the small window
+ * where two identical deliveries process concurrently is harmless.
  */
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -16,7 +30,10 @@ export async function POST(req: NextRequest) {
     console.error("Paystack webhook: signature verification failed.");
     return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
+  // Signature is verified above, so it's non-null here.
+  const sig = signature as string;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let event: any;
   try {
     event = JSON.parse(rawBody);
@@ -24,39 +41,88 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
-  if (event?.event !== "charge.success") {
-    // Acknowledge anything we don't act on so Paystack doesn't retry it.
-    return NextResponse.json({ received: true });
+  // Replay? Already fully processed — ack without re-applying.
+  const seen = await prisma.webhookEvent.findUnique({ where: { signature: sig } });
+  if (seen) {
+    return NextResponse.json({ received: true, duplicate: true });
   }
 
-  const data = event.data ?? {};
-  const orgId = data.metadata?.orgId;
-  const planCode = data.metadata?.planCode;
-
-  if (typeof orgId !== "string" || typeof planCode !== "string") {
-    console.error("Paystack webhook: charge.success missing orgId/planCode metadata.", data.reference);
-    return NextResponse.json({ received: true });
-  }
+  const eventType: string = event?.event ?? "unknown";
+  const data = event?.data ?? {};
+  const customerCode: string | null = data.customer?.customer_code ?? null;
 
   try {
-    await activateSubscriptionFromPayment({
-      orgId,
-      planCode,
-      paystackCustomerCode: data.customer?.customer_code ?? null,
-      paidAt: data.paid_at ? new Date(data.paid_at) : new Date(),
-    });
+    switch (eventType) {
+      case "charge.success": {
+        const orgId = data.metadata?.orgId;
+        const planCode = data.metadata?.planCode;
+        const paidAt = data.paid_at ? new Date(data.paid_at) : new Date();
+
+        if (typeof orgId === "string" && typeof planCode === "string") {
+          // First payment of a subscription — carries our metadata.
+          await activateSubscriptionFromPayment({
+            orgId,
+            planCode,
+            paystackCustomerCode: customerCode,
+            paystackSubscriptionCode: data.subscription_code ?? null,
+            paidAt,
+          });
+        } else if (customerCode) {
+          // Recurring auto-renewal — no metadata, match by customer code.
+          const matched = await extendSubscriptionByCustomer(customerCode, paidAt);
+          if (!matched) {
+            console.error("Paystack webhook: recurring charge for unknown customer.", customerCode, data.reference);
+          }
+        } else {
+          console.error("Paystack webhook: charge.success with no metadata and no customer code.", data.reference);
+        }
+        break;
+      }
+
+      case "subscription.create": {
+        const subCode = data.subscription_code;
+        if (customerCode && typeof subCode === "string") {
+          await linkSubscriptionCode(customerCode, subCode);
+        }
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        // A renewal charge failed — enter the dunning (past_due) window.
+        if (customerCode) await markPastDueByCustomer(customerCode);
+        break;
+      }
+
+      case "subscription.disable":
+      case "subscription.not_renew": {
+        if (customerCode) await cancelByCustomer(customerCode);
+        break;
+      }
+
+      default:
+        // Acknowledge anything we don't act on so Paystack doesn't retry it.
+        break;
+    }
   } catch (err) {
-    // A customer paid but activation failed — this must page a human, not
-    // just log. Paystack will retry on the 500, but if it keeps failing
-    // someone needs to reconcile it manually.
-    await alert("Paystack webhook: subscription activation FAILED (customer may have paid)", {
+    // Processing failed — do NOT record the signature, so Paystack's retry
+    // reprocesses it. Alert on the money-critical activation case.
+    await alert("Paystack webhook: processing FAILED", {
+      eventType,
       reference: data.reference,
-      orgId,
-      planCode,
+      customerCode,
       error: err instanceof Error ? err.message : String(err),
     });
-    // 500 so Paystack retries — this one really did fail to apply.
     return NextResponse.json({ error: "Internal error." }, { status: 500 });
+  }
+
+  // Mark processed only after success. Guard the insert against a race
+  // where a concurrent duplicate already recorded it.
+  try {
+    await prisma.webhookEvent.create({
+      data: { provider: "paystack", signature: sig, eventType },
+    });
+  } catch {
+    // Unique-violation from a concurrent duplicate — the work is done.
   }
 
   return NextResponse.json({ received: true });
