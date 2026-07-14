@@ -88,11 +88,11 @@ export default function AuthShell({ initialMode = 'login' }: { initialMode?: 'lo
             <div className="pass-fields">
               <div className="pass-field">
                 <div className="pf-label">Plan</div>
-                <div className="pf-value">Starter</div>
+                <div className="pf-value">14-day free trial</div>
               </div>
               <div className="pass-field">
                 <div className="pf-label">Channel</div>
-                <div className="pf-value">Website + WhatsApp</div>
+                <div className="pf-value">Website widget</div>
               </div>
             </div>
 
@@ -210,7 +210,12 @@ export default function AuthShell({ initialMode = 'login' }: { initialMode?: 'lo
             {!isSignup && (
               <div className="row-between">
                 <span />
-                <Link href="/login" className="link-rust">Forgot password?</Link>
+                {/* Self-serve password reset isn't built yet (needs email
+                    infrastructure) — point to support rather than a dead
+                    link that implies a reset flow exists. */}
+                <a href="mailto:support@midevela.com?subject=Password reset" className="link-rust">
+                  Forgot password? Contact support
+                </a>
               </div>
             )}
 

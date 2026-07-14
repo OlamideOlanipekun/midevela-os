@@ -14,12 +14,53 @@ const toneGreetings: Record<string, string> = {
   "Custom": "Hi! I'm here to help. What can I do for you today?"
 };
 
+// UI channel code → canonical channel name stored on the org.
+const CHANNEL_NAMES: Record<string, string> = { web: "website", wa: "whatsapp", ig: "instagram", fb: "facebook" };
+// Only Website is actually built today; the rest are honestly "coming soon".
+const LIVE_CHANNELS = new Set(["web"]);
+
+// Minimal, dependency-free CSV parser. Handles quoted fields, embedded
+// commas, and escaped double-quotes ("") — enough for exported catalogs.
+function parseCsv(text: string): Record<string, string>[] {
+  const rows: string[][] = [];
+  let field = "";
+  let row: string[] = [];
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false;
+      } else field += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); field = "";
+      if (row.some((f) => f.trim() !== "")) rows.push(row);
+      row = [];
+    } else field += c;
+  }
+  if (field !== "" || row.length) { row.push(field); if (row.some((f) => f.trim() !== "")) rows.push(row); }
+  if (rows.length < 2) return [];
+  const headers = rows[0].map((h) => h.trim().toLowerCase());
+  return rows.slice(1).map((r) => {
+    const obj: Record<string, string> = {};
+    headers.forEach((h, idx) => { obj[h] = (r[idx] ?? "").trim(); });
+    return obj;
+  });
+}
+
+interface AddedProduct { name: string; price: string; category: string }
+interface ImportResult { imported: number; skipped: { row: number; name: string; reason: string }[]; warnings: { row: number; name: string; reason: string }[] }
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(2);
   const [loading, setLoading] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [embedCode, setEmbedCode] = useState<string | null>(null);
+  const [widgetKey, setWidgetKey] = useState<string | null>(null);
   const [orgReady, setOrgReady] = useState(false);
 
   // Form states
@@ -30,19 +71,33 @@ export default function OnboardingPage() {
   const [closingTime, setClosingTime] = useState("8:00 PM");
   const [currency, setCurrency] = useState("Nigerian Naira (₦)");
 
-  // Channels
-  const [channels, setChannels] = useState<string[]>(["wa"]);
+  // Channels — default to Website (the only channel that actually works today).
+  const [channels, setChannels] = useState<string[]>(["web"]);
   const [waNumber, setWaNumber] = useState("");
 
   // Catalog
-  const [catalogSource, setCatalogSource] = useState("crawl");
-  const [websiteUrl, setWebsiteUrl] = useState("https://luxestyle.ng");
+  const [catalogSource, setCatalogSource] = useState("manual");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+
+  // Real catalog progress
+  const [addedProducts, setAddedProducts] = useState<AddedProduct[]>([]);
+  const [manualName, setManualName] = useState("");
+  const [manualPrice, setManualPrice] = useState("");
+  const [manualCategory, setManualCategory] = useState("");
+  const [catalogBusy, setCatalogBusy] = useState(false);
+  const [catalogMsg, setCatalogMsg] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [waitlisted, setWaitlisted] = useState(false);
+  const [servicesOnlyAck, setServicesOnlyAck] = useState(false);
 
   // AI voice
   const [aiName, setAiName] = useState("Lumi");
   const [selectedTone, setSelectedTone] = useState("Friendly & warm");
   const [neverSay, setNeverSay] = useState("");
   const [greeting, setGreeting] = useState("Hey! 👋 Welcome to Lumina Beauty Co.. What are you looking for today?");
+
+  // Readiness (step 6)
+  const [readiness, setReadiness] = useState<any>(null);
 
   // Update live preview values when states change
   useEffect(() => {
@@ -52,11 +107,8 @@ export default function OnboardingPage() {
   }, [selectedTone, businessName]);
 
   const handleToggleChannel = (ch: string) => {
-    if (channels.includes(ch)) {
-      setChannels(channels.filter((c) => c !== ch));
-    } else {
-      setChannels([...channels, ch]);
-    }
+    if (!LIVE_CHANNELS.has(ch)) return; // coming-soon channels aren't selectable
+    setChannels(channels.includes(ch) ? channels.filter((c) => c !== ch) : [...channels, ch]);
   };
 
   const handleCopySnippet = () => {
@@ -74,8 +126,9 @@ export default function OnboardingPage() {
     return "NGN";
   };
 
-  // Creates the org (idempotent server-side) and receives the real
-  // widget key + embed snippet. Runs when the user reaches step 6.
+  // Creates/updates the org (idempotent server-side) and captures the real
+  // widget key + embed snippet. Called early (leaving step 2) so catalog
+  // operations in step 4 have an org to attach to, and again at the end.
   const completeOnboarding = async (): Promise<boolean> => {
     setLoading(true);
     try {
@@ -88,10 +141,10 @@ export default function OnboardingPage() {
           industry,
           currency: currencyCode(currency),
           aiName,
-          tone: selectedTone.toLowerCase(),
+          tone: selectedTone.toLowerCase().replace(/\s*&\s*/g, " ").split(" ")[0],
           greeting,
           neverSay,
-          channels,
+          channels: channels.map((c) => CHANNEL_NAMES[c] ?? c),
           whatsappNumber: waNumber,
           sellsDescription: sellsDesc,
           businessHours: { open: openingTime, close: closingTime },
@@ -104,6 +157,7 @@ export default function OnboardingPage() {
       }
       const data = await res.json();
       if (data.embedSnippet) setEmbedCode(data.embedSnippet);
+      if (data.widgetPublicKey) setWidgetKey(data.widgetPublicKey);
       setOrgReady(true);
       return true;
     } catch (err) {
@@ -115,6 +169,99 @@ export default function OnboardingPage() {
     }
   };
 
+  // Ensure the org exists before any catalog operation.
+  const ensureOrg = async (): Promise<boolean> => (orgReady ? true : completeOnboarding());
+
+  const addManualProduct = async () => {
+    const name = manualName.trim();
+    const price = manualPrice.trim();
+    if (!name || !price) { setCatalogMsg("Enter a product name and price."); return; }
+    setCatalogBusy(true);
+    setCatalogMsg(null);
+    try {
+      if (!(await ensureOrg())) { setCatalogBusy(false); return; }
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, price, category: manualCategory.trim() || undefined }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setCatalogMsg(d.error || "Couldn't add that product.");
+      } else {
+        setAddedProducts((prev) => [{ name, price, category: manualCategory.trim() }, ...prev]);
+        setManualName(""); setManualPrice(""); setManualCategory("");
+      }
+    } finally {
+      setCatalogBusy(false);
+    }
+  };
+
+  const handleCsvFile = async (file: File) => {
+    setCatalogBusy(true);
+    setCatalogMsg(null);
+    setImportResult(null);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) { setCatalogMsg("Couldn't read any rows — check the file has a header row and data."); return; }
+      if (!(await ensureOrg())) return;
+      const res = await fetch("/api/products/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setCatalogMsg(data.error || "Import failed."); return; }
+      setImportResult(data);
+      if (data.imported > 0) {
+        setAddedProducts((prev) => [
+          ...Array.from({ length: data.imported }, () => ({ name: "(imported)", price: "", category: "" })),
+          ...prev,
+        ]);
+      }
+    } catch {
+      setCatalogMsg("Couldn't read that file.");
+    } finally {
+      setCatalogBusy(false);
+    }
+  };
+
+  const startCrawl = async () => {
+    const url = websiteUrl.trim();
+    if (!url) { setCatalogMsg("Enter your website URL first."); return; }
+    setCatalogBusy(true);
+    setCatalogMsg(null);
+    try {
+      if (!(await ensureOrg())) return;
+      const res = await fetch("/api/workspace/crawl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setCatalogMsg(data.error || "Crawl failed. Try CSV or manual instead."); return; }
+      const found = data.productsFoundCount ?? 0;
+      if (found > 0) {
+        setCatalogMsg(`Found ${found} product${found === 1 ? "" : "s"} on your site.`);
+        setAddedProducts((prev) => [...Array.from({ length: found }, () => ({ name: "(crawled)", price: "", category: "" })), ...prev]);
+      } else {
+        setCatalogMsg("We couldn't find structured product data on your site (many sites don't publish it). Try CSV upload or add products manually — both work in seconds.");
+      }
+    } finally {
+      setCatalogBusy(false);
+    }
+  };
+
+  const fetchReadiness = async () => {
+    try {
+      const res = await fetch("/api/health/readiness");
+      if (res.ok) setReadiness(await res.json());
+    } catch { /* non-blocking */ }
+  };
+
+  const productCount = readiness?.counts?.products ?? addedProducts.length;
+
   const handleLaunch = async () => {
     if (!orgReady) {
       const ok = await completeOnboarding();
@@ -124,25 +271,27 @@ export default function OnboardingPage() {
   };
 
   const handleSkip = async () => {
-    if (await completeOnboarding()) setCurrentStep(6);
+    if (await completeOnboarding()) { setCurrentStep(6); fetchReadiness(); }
   };
 
   const handleNext = async () => {
-    if (currentStep === 5) {
-      // Entering the install step — persist everything and mint the
-      // real widget key so the snippet shown is the live one.
-      if (await completeOnboarding()) setCurrentStep(6);
+    // Leaving business info — create the org now so steps 4/6 have one.
+    if (currentStep === 2) {
+      if (!businessName.trim()) { alert("Please enter your business name."); return; }
+      if (!(await ensureOrg())) return;
+      setCurrentStep(3);
       return;
     }
-    if (currentStep < 6) {
-      setCurrentStep(currentStep + 1);
+    if (currentStep === 5) {
+      // Persist final voice/settings + refresh readiness for the install step.
+      if (await completeOnboarding()) { setCurrentStep(6); fetchReadiness(); }
+      return;
     }
+    if (currentStep < 6) setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => {
-    if (currentStep > 2) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 2) setCurrentStep(currentStep - 1);
   };
 
   return (
@@ -336,62 +485,32 @@ export default function OnboardingPage() {
 
               <div className="channel-grid">
                 <div
-                  className={`channel-card whatsapp ${channels.includes("wa") ? "selected" : ""}`}
-                  onClick={() => handleToggleChannel("wa")}
-                >
-                  <div className="ch-icon">💬</div>
-                  <div className="ch-name">WhatsApp</div>
-                  <div className="ch-desc">Most used in Nigeria — high conversion</div>
-                </div>
-                <div
                   className={`channel-card website ${channels.includes("web") ? "selected" : ""}`}
                   onClick={() => handleToggleChannel("web")}
                 >
                   <div className="ch-icon">🌐</div>
                   <div className="ch-name">Website widget</div>
-                  <div className="ch-desc">Embed on your site in one line</div>
+                  <div className="ch-desc">Embed on your site in one line — live now</div>
                 </div>
-                <div
-                  className={`channel-card instagram ${channels.includes("ig") ? "selected" : ""}`}
-                  onClick={() => handleToggleChannel("ig")}
-                >
-                  <div className="ch-icon">📸</div>
-                  <div className="ch-name">Instagram DMs</div>
-                  <div className="ch-desc">Auto-reply to product enquiries</div>
-                </div>
-                <div
-                  className={`channel-card facebook ${channels.includes("fb") ? "selected" : ""}`}
-                  onClick={() => handleToggleChannel("fb")}
-                >
-                  <div className="ch-icon">👍</div>
-                  <div className="ch-name">Facebook Messenger</div>
-                  <div className="ch-desc">Page DMs and ad click-throughs</div>
-                </div>
+                {[
+                  { code: "wa", icon: "💬", name: "WhatsApp", desc: "Most used in Nigeria" },
+                  { code: "ig", icon: "📸", name: "Instagram DMs", desc: "Auto-reply to enquiries" },
+                  { code: "fb", icon: "👍", name: "Facebook Messenger", desc: "Page DMs & ad clicks" },
+                ].map((ch) => (
+                  <div key={ch.code} className="channel-card" style={{ opacity: 0.6, cursor: "not-allowed", position: "relative" }}>
+                    <span style={{ position: "absolute", top: 10, right: 10, fontSize: 9, fontFamily: "var(--font-mono)", textTransform: "uppercase", background: "var(--paper-raised)", border: "1px solid var(--line)", borderRadius: 100, padding: "2px 7px", color: "var(--ink-soft)" }}>
+                      Coming soon
+                    </span>
+                    <div className="ch-icon">{ch.icon}</div>
+                    <div className="ch-name">{ch.name}</div>
+                    <div className="ch-desc">{ch.desc}</div>
+                  </div>
+                ))}
               </div>
 
-              {/* WhatsApp QR Connect sub-panel */}
-              <div className={`wa-panel ${channels.includes("wa") ? "visible" : ""}`}>
-                <h4>Connect your WhatsApp Business number</h4>
-                <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", flexWrap: "wrap" }}>
-                  <div className="wa-qr"></div>
-                  <div className="wa-instructions">
-                    <b>1.</b> Open WhatsApp on your phone<br />
-                    <b>2.</b> Tap ⋮ → Linked Devices<br />
-                    <b>3.</b> Tap "Link a Device"<br />
-                    <b>4.</b> Scan this QR code<br /><br />
-                    Or enter your WhatsApp Business API credentials manually below.
-                  </div>
-                </div>
-                <div className="field" style={{ marginTop: "16px" }}>
-                  <label htmlFor="wa-phone">WhatsApp phone number</label>
-                  <input
-                    type="tel"
-                    id="wa-phone"
-                    placeholder="+234…"
-                    value={waNumber}
-                    onChange={(e) => setWaNumber(e.target.value)}
-                  />
-                </div>
+              <div style={{ background: "var(--paper-raised)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", padding: "14px 16px", fontSize: "13px", color: "var(--ink-soft)", lineHeight: 1.5, marginTop: 4 }}>
+                Your website widget is live and included. WhatsApp, Instagram, and Facebook are in active development —
+                you can add them from your dashboard the moment they ship.
               </div>
 
               <div className="step-nav">
@@ -417,101 +536,102 @@ export default function OnboardingPage() {
               </p>
 
               <div className="catalog-grid">
-                <div
-                  className={`catalog-card ${catalogSource === "crawl" ? "selected" : ""}`}
-                  onClick={() => setCatalogSource("crawl")}
-                >
-                  <div className="cat-ico">🌐</div>
+                <div className={`catalog-card ${catalogSource === "manual" ? "selected" : ""}`} onClick={() => setCatalogSource("manual")}>
+                  <div className="cat-ico">✏️</div>
                   <div>
-                    <div className="cat-name">Crawl my website</div>
-                    <div className="cat-desc">We read your site and pull products automatically</div>
+                    <div className="cat-name">Add manually</div>
+                    <div className="cat-desc">Enter products one by one — great for small stores</div>
                   </div>
                 </div>
-                <div
-                  className={`catalog-card ${catalogSource === "shopify" ? "selected" : ""}`}
-                  onClick={() => setCatalogSource("shopify")}
-                >
-                  <div className="cat-ico">📦</div>
-                  <div>
-                    <div className="cat-name">Shopify / WooCommerce</div>
-                    <div className="cat-desc">Connect your store in one click</div>
-                  </div>
-                </div>
-                <div
-                  className={`catalog-card ${catalogSource === "csv" ? "selected" : ""}`}
-                  onClick={() => setCatalogSource("csv")}
-                >
+                <div className={`catalog-card ${catalogSource === "csv" ? "selected" : ""}`} onClick={() => setCatalogSource("csv")}>
                   <div className="cat-ico">CSV</div>
                   <div>
                     <div className="cat-name">Upload CSV or Excel</div>
                     <div className="cat-desc">Import a spreadsheet of your products</div>
                   </div>
                 </div>
-                <div
-                  className={`catalog-card ${catalogSource === "manual" ? "selected" : ""}`}
-                  onClick={() => setCatalogSource("manual")}
-                >
-                  <div className="cat-ico">✏️</div>
+                <div className={`catalog-card ${catalogSource === "crawl" ? "selected" : ""}`} onClick={() => setCatalogSource("crawl")}>
+                  <div className="cat-ico">🌐</div>
                   <div>
-                    <div className="cat-name">Add manually</div>
-                    <div className="cat-desc">Enter products one by one (great for small stores)</div>
+                    <div className="cat-name">Crawl my website</div>
+                    <div className="cat-desc">Works if your site publishes structured product data</div>
+                  </div>
+                </div>
+                <div className={`catalog-card ${catalogSource === "shopify" ? "selected" : ""}`} onClick={() => setCatalogSource("shopify")} style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", top: 8, right: 8, fontSize: 9, fontFamily: "var(--font-mono)", textTransform: "uppercase", background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 100, padding: "2px 6px", color: "var(--ink-soft)" }}>Soon</span>
+                  <div className="cat-ico">📦</div>
+                  <div>
+                    <div className="cat-name">Shopify / WooCommerce</div>
+                    <div className="cat-desc">One-click store sync — coming soon</div>
                   </div>
                 </div>
               </div>
 
-              {catalogSource === "crawl" && (
-                <div className="field animate-fade-up">
-                  <label htmlFor="ob-crawl-url">Your website URL</label>
-                  <input
-                    type="url"
-                    id="ob-crawl-url"
-                    placeholder="https://yourbusiness.com"
-                    value={websiteUrl}
-                    onChange={(e) => setWebsiteUrl(e.target.value)}
-                  />
-                </div>
-              )}
-
-              {catalogSource === "shopify" && (
-                <div className="field animate-fade-up">
-                  <label htmlFor="ob-shopify-domain">Shopify Store Domain</label>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      type="text"
-                      id="ob-shopify-domain"
-                      placeholder="your-store.myshopify.com"
-                      className="input"
-                      style={{ flex: 1 }}
-                    />
-                    <button type="button" className="btn-next" style={{ height: "auto", margin: 0, padding: "0 20px" }}>Connect</button>
+              {catalogSource === "manual" && (
+                <div className="field animate-fade-up" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <label>Quick add a product</label>
+                  <div className="field-row" style={{ margin: 0 }}>
+                    <input type="text" className="input" placeholder="Product name" value={manualName} onChange={(e) => setManualName(e.target.value)} />
+                    <input type="text" className="input" placeholder="Price (e.g. 25000)" value={manualPrice} onChange={(e) => setManualPrice(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addManualProduct(); }} />
+                  </div>
+                  <div className="field-row" style={{ margin: 0 }}>
+                    <input type="text" className="input" placeholder="Category (optional, e.g. Laptops)" value={manualCategory} onChange={(e) => setManualCategory(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addManualProduct(); }} />
+                    <button type="button" className="btn-next" style={{ height: "auto", margin: 0, padding: "0 20px" }} disabled={catalogBusy} onClick={addManualProduct}>
+                      {catalogBusy ? "Adding…" : "+ Add"}
+                    </button>
                   </div>
                 </div>
               )}
 
               {catalogSource === "csv" && (
-                <div className="field animate-fade-up" style={{ border: "2px dashed var(--line)", borderRadius: "var(--radius-md)", padding: "20px", textAlign: "center", cursor: "pointer", background: "var(--paper-raised)" }}>
-                  <span style={{ fontSize: "2rem" }}>📁</span>
-                  <div style={{ fontWeight: 600, fontSize: "14px", marginTop: "8px" }}>Drag & drop your CSV file here</div>
-                  <div style={{ fontSize: "12px", color: "var(--ink-soft)", marginTop: "2px" }}>or click to browse your computer</div>
+                <div className="field animate-fade-up" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <label htmlFor="ob-csv">Upload a CSV of your products</label>
+                  <input id="ob-csv" type="file" accept=".csv,text/csv" disabled={catalogBusy}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCsvFile(f); }} />
+                  <a href="/midevela-product-template.csv" download style={{ fontSize: 12.5, color: "var(--teal)", fontWeight: 600 }}>↓ Download the starter template</a>
+                  {importResult && (
+                    <div style={{ background: "var(--paper-raised)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", padding: 14, fontSize: 13 }}>
+                      <b>{importResult.imported} imported</b>
+                      {importResult.skipped.length > 0 && <> · {importResult.skipped.length} skipped</>}
+                      {importResult.warnings.length > 0 && <> · {importResult.warnings.length} warning{importResult.warnings.length === 1 ? "" : "s"}</>}
+                      {[...importResult.skipped.map((s) => ({ ...s, kind: "Skipped" })), ...importResult.warnings.map((w) => ({ ...w, kind: "Warning" }))].slice(0, 8).map((r, i) => (
+                        <div key={i} style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 6 }}>Row {r.row} · {r.name || "—"}: {r.kind} — {r.reason}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {catalogSource === "manual" && (
+              {catalogSource === "crawl" && (
                 <div className="field animate-fade-up" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <label>Quick Add Product</label>
+                  <label htmlFor="ob-crawl-url">Your website URL</label>
                   <div className="field-row" style={{ margin: 0 }}>
-                    <input type="text" className="input" placeholder="Product name" />
-                    <input type="text" className="input" placeholder="Price (e.g. 25000)" />
+                    <input type="url" id="ob-crawl-url" placeholder="https://yourbusiness.com" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} style={{ flex: 1 }} />
+                    <button type="button" className="btn-next" style={{ height: "auto", margin: 0, padding: "0 20px" }} disabled={catalogBusy} onClick={startCrawl}>
+                      {catalogBusy ? "Scanning…" : "Scan site"}
+                    </button>
                   </div>
                 </div>
               )}
 
-              <div style={{ background: "var(--paper-raised)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", padding: "16px", fontSize: "13.5px", color: "var(--ink-soft)", lineHeight: 1.5 }}>
-                {catalogSource === "crawl" && "We'll scan your site and pull product names, descriptions, prices, and images into your AI catalog. This usually takes under 2 minutes. You can edit everything before it goes live."}
-                {catalogSource === "shopify" && "Connect your Shopify/WooCommerce store to automatically sync products, descriptions, inventory, and pricing in real time."}
-                {catalogSource === "csv" && "Upload a CSV, XLSX, or Google Sheets export of your inventory. Download our starter template to format your columns correctly."}
-                {catalogSource === "manual" && "Enter your products one by one. Best for services, custom creations, or testing Midevela with a small catalog before syncing."}
-              </div>
+              {catalogSource === "shopify" && (
+                <div className="field animate-fade-up" style={{ background: "var(--paper-raised)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", padding: 16, fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.5 }}>
+                  Shopify & WooCommerce sync is in development. {waitlisted ? <b style={{ color: "var(--teal)" }}>You&apos;re on the waitlist — we&apos;ll email you when it&apos;s ready.</b> : <button type="button" onClick={() => setWaitlisted(true)} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, cursor: "pointer", padding: 0 }}>Join the waitlist →</button>} In the meantime, CSV import brings a full store in seconds.
+                </div>
+              )}
+
+              {catalogMsg && (
+                <div style={{ fontSize: 13, color: "var(--ink-soft)", background: "var(--paper-raised)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", padding: "12px 14px", lineHeight: 1.5 }}>{catalogMsg}</div>
+              )}
+
+              {addedProducts.length > 0 && (
+                <div style={{ background: "#E7F3F0", border: "1px solid var(--teal)", borderRadius: "var(--radius-md)", padding: "12px 16px", fontSize: 13.5 }}>
+                  ✅ <b>{addedProducts.length} product{addedProducts.length === 1 ? "" : "s"}</b> in your catalog so far.
+                  {addedProducts.filter((p) => p.name !== "(imported)" && p.name !== "(crawled)").slice(0, 5).map((p, i) => (
+                    <span key={i} style={{ display: "inline-block", background: "#fff", border: "1px solid var(--line)", borderRadius: 100, padding: "2px 10px", fontSize: 12, margin: "6px 6px 0 0" }}>{p.name}{p.price ? ` · ₦${p.price}` : ""}</span>
+                  ))}
+                </div>
+              )}
 
               <div className="step-nav">
                 <button className="btn-back" onClick={handleBack}>
@@ -611,29 +731,56 @@ export default function OnboardingPage() {
               </div>
 
               <div className="install-options">
-                <button className="install-btn primary">📦 Install Shopify App</button>
-                <button className="install-btn">🔌 WordPress Plugin</button>
-                <button className="install-btn">📧 Email to developer</button>
+                <a
+                  className="install-btn"
+                  href={`mailto:?subject=${encodeURIComponent("Install our Midevela AI assistant")}&body=${encodeURIComponent(`Please paste this snippet before the closing </body> tag on our website:\n\n${embedCode ?? ""}`)}`}
+                >
+                  📧 Email snippet to my developer
+                </a>
               </div>
 
-              <div style={{ marginTop: "24px", background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", padding: "18px", display: "flex", alignItems: "center", gap: "14px" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#E7F3F0", display: "flex", alignItems: "center", fontSize: "18px", flexShrink: 0, justifyContent: "center" }}>
-                  ✅
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: "14px" }}>Widget already installed?</div>
-                  <div style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: "2px" }}>
-                    If you installed the snippet on a previous account, your counter is already active.
+              {/* AI Readiness — real signals, no fabricated stats */}
+              {readiness && (
+                <div style={{ marginTop: "24px", background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", padding: "18px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>AI readiness</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 24, color: readiness.ready ? "var(--teal)" : "var(--amber)" }}>{readiness.score}%</div>
                   </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {readiness.items.map((it: any) => (
+                      <div key={it.key} style={{ display: "flex", gap: 10, fontSize: 13, alignItems: "flex-start" }}>
+                        <span>{it.status === "pass" ? "✅" : it.status === "warn" ? "⚠️" : "⛔"}</span>
+                        <span><b>{it.label}</b> <span style={{ color: "var(--ink-soft)" }}>— {it.detail}</span></span>
+                      </div>
+                    ))}
+                  </div>
+                  {productCount === 0 && (
+                    <div style={{ marginTop: 12, fontSize: 13, color: "var(--rust)" }}>
+                      Your catalog is empty — add at least one product before going live.{" "}
+                      <button type="button" onClick={() => setCurrentStep(4)} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, cursor: "pointer", padding: 0 }}>Add products →</button>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
+
+              {productCount === 0 && (
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 12.5, color: "var(--ink-soft)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={servicesOnlyAck} onChange={(e) => setServicesOnlyAck(e.target.checked)} style={{ marginTop: 2 }} />
+                  <span>I run a services business with no product catalog to add right now — let me launch anyway. (You can add products anytime from the dashboard.)</span>
+                </label>
+              )}
 
               <div className="step-nav">
                 <button className="btn-back" onClick={handleBack}>
                   ← Back
                 </button>
-                <button className="btn-next teal" onClick={handleLaunch} disabled={loading}>
-                  {loading ? "Launching..." : "🚀 Launch my counter →"}
+                <button
+                  className="btn-next teal"
+                  onClick={handleLaunch}
+                  disabled={loading || (productCount === 0 && !servicesOnlyAck)}
+                  title={productCount === 0 && !servicesOnlyAck ? "Add at least one product, or check the box above" : ""}
+                >
+                  {loading ? "Launching..." : productCount === 0 && !servicesOnlyAck ? "Add a product to launch" : "🚀 Launch my counter →"}
                 </button>
               </div>
             </div>
@@ -694,56 +841,25 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 4 preview: progress */}
+          {/* Step 4 preview: real catalog count */}
           {currentStep === 4 && (
             <div id="preview-4">
-              <div style={{ background: "var(--paper-raised)", border: "1px solid var(--line-dark)", borderRadius: "var(--radius-lg)", padding: "18px" }}>
+              <div style={{ background: "var(--paper-raised)", border: "1px solid var(--line-dark)", borderRadius: "var(--radius-lg)", padding: "18px", textAlign: "center" }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: "10.5px", textTransform: "uppercase", letterSpacing: "0.08em", color: "#5E7268", marginBottom: "14px" }}>
-                  Catalog import progress
+                  Your catalog
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px", marginBottom: "5px" }}>
-                      <span>Scanning pages</span>
-                      <span style={{ color: "var(--teal-bright)" }}>Done ✓</span>
-                    </div>
-                    <div style={{ height: "5px", background: "var(--line-dark)", borderRadius: "4px", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: "100%", background: "var(--teal)", borderRadius: "4px" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px", marginBottom: "5px" }}>
-                      <span>Extracting products</span>
-                      <span style={{ color: "var(--teal-bright)" }}>Done ✓</span>
-                    </div>
-                    <div style={{ height: "5px", background: "var(--line-dark)", borderRadius: "4px", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: "100%", background: "var(--teal)", borderRadius: "4px" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px", marginBottom: "5px" }}>
-                      <span>AI enrichment</span>
-                      <span style={{ color: "var(--amber)", fontFamily: "var(--font-mono)", fontSize: "11px" }}>In progress…</span>
-                    </div>
-                    <div style={{ height: "5px", background: "var(--line-dark)", borderRadius: "4px", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: "68%", background: "var(--amber)", borderRadius: "4px" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px", marginBottom: "5px", color: "var(--ink-soft)" }}>
-                      <span>Building knowledge</span>
-                      <span>—</span>
-                    </div>
-                    <div style={{ height: "5px", background: "var(--line-dark)", borderRadius: "4px", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: "0%", background: "var(--teal)", borderRadius: "4px" }}></div>
-                    </div>
-                  </div>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 44, lineHeight: 1, color: addedProducts.length > 0 ? "var(--teal)" : "var(--ink-soft)" }}>
+                  {addedProducts.length}
                 </div>
-                <div style={{ marginTop: "16px", fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--teal-bright)" }}>
-                  24 products found so far…
+                <div style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: 6 }}>
+                  {addedProducts.length === 0 ? "products added yet" : `product${addedProducts.length === 1 ? "" : "s"} in your AI catalog`}
                 </div>
               </div>
-              <p className="preview-note">Import runs in the background — you can continue setup while it processes.</p>
+              <p className="preview-note">
+                {addedProducts.length === 0
+                  ? "Add at least one product — the AI can only recommend what's in your catalog."
+                  : "Each product is instantly indexed so the AI can recommend it. Add more, or continue."}
+              </p>
             </div>
           )}
 
@@ -770,36 +886,45 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 6 preview: go-live */}
+          {/* Step 6 preview: real widget test + real stats */}
           {currentStep === 6 && (
             <div id="preview-6">
               <div style={{ background: "var(--paper-raised)", border: "1px solid var(--line-dark)", borderRadius: "var(--radius-lg)", padding: "20px", textAlign: "center" }}>
                 <div style={{ fontSize: "36px", marginBottom: "12px" }}>🚀</div>
                 <div className="display" style={{ fontSize: "22px", color: "var(--panel)", marginBottom: "8px" }}>Ready to go live</div>
                 <div style={{ fontSize: "13px", color: "var(--ink-soft)", lineHeight: 1.5 }}>
-                  Once installed, your AI counter starts engaging visitors immediately — 24/7, across every connected channel.
+                  Try your AI below — this is the exact widget your customers will see.
                 </div>
                 <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid var(--line)", display: "flex", justifyContent: "space-around" }}>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px" }}>{channels.length}</div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--ink-soft)", textTransform: "uppercase" }}>
-                      Channels
-                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--ink-soft)", textTransform: "uppercase" }}>Channels</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px" }}>24</div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--ink-soft)", textTransform: "uppercase" }}>
-                      Products
-                    </div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px" }}>{productCount}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--ink-soft)", textTransform: "uppercase" }}>Products</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px" }}>24/7</div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--ink-soft)", textTransform: "uppercase" }}>
-                      AI uptime
-                    </div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "22px" }}>{readiness ? `${readiness.score}%` : "—"}</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--ink-soft)", textTransform: "uppercase" }}>AI ready</div>
                   </div>
                 </div>
               </div>
+
+              {widgetKey && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 8, fontFamily: "var(--font-mono)", textTransform: "uppercase" }}>
+                    Test your assistant — click the chat button below
+                  </div>
+                  <div style={{ border: "1px solid var(--line-dark)", borderRadius: "var(--radius-lg)", overflow: "hidden", height: 420, background: "#fff" }}>
+                    <iframe
+                      src={`/widget-preview?key=${encodeURIComponent(widgetKey)}`}
+                      title="Widget preview"
+                      style={{ width: "100%", height: "100%", border: "none" }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

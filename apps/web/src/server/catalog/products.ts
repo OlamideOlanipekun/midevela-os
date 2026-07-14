@@ -161,3 +161,111 @@ export async function deleteProduct(orgId: string, id: string) {
   await prisma.product.delete({ where: { id } });
   await safeDeleteEmbedding(id);
 }
+
+// ─── Bulk import (CSV → products) ──────────────────────────────────────
+
+const MAX_IMPORT_ROWS = 500;
+
+export interface ImportRow {
+  name?: string;
+  price?: unknown;
+  category?: string;
+  brand?: string;
+  description?: string;
+  imageUrl?: string;
+  stockStatus?: string;
+}
+
+export interface ImportResult {
+  imported: number;
+  skipped: Array<{ row: number; name: string; reason: string }>;
+  warnings: Array<{ row: number; name: string; reason: string }>;
+}
+
+function isHttpUrl(value: unknown): boolean {
+  return typeof value === "string" && /^https?:\/\/\S+$/i.test(value.trim());
+}
+
+/**
+ * Bulk-create products from parsed CSV rows. Three-way outcome per row:
+ * skipped (hard error — no name or no valid price), imported-with-warning
+ * (created anyway, but something's off), or clean import. Never silently
+ * drops a row. Reuses createProduct's building blocks (parsePrice,
+ * getOrCreateCategoryByName which auto-seeds the category's qualification
+ * flow, embedding sync) so imported products are RAG-ready immediately.
+ */
+export async function importProducts(orgId: string, rows: ImportRow[]): Promise<ImportResult> {
+  if (!Array.isArray(rows)) throw new ApiError(400, "Expected an array of product rows.");
+  if (rows.length === 0) throw new ApiError(400, "No rows to import.");
+  if (rows.length > MAX_IMPORT_ROWS) {
+    throw new ApiError(400, `Too many rows (${rows.length}). Import up to ${MAX_IMPORT_ROWS} at a time.`);
+  }
+
+  const result: ImportResult = { imported: 0, skipped: [], warnings: [] };
+  // Dedupe by name — the schema has no SKU. Seed with existing catalog names
+  // so a re-import doesn't create duplicates of products already in the DB.
+  const existing = await prisma.product.findMany({ where: { orgId }, select: { name: true } });
+  const seenNames = new Set(existing.map((p) => p.name.trim().toLowerCase()));
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] ?? {};
+    const rowNum = i + 1; // 1-based for human-facing reasons
+    const name = String(row.name ?? "").trim();
+
+    if (!name) {
+      result.skipped.push({ row: rowNum, name: "", reason: "Missing product name." });
+      continue;
+    }
+
+    let price: number;
+    try {
+      if (row.price === undefined || row.price === null || String(row.price).trim() === "") {
+        throw new ApiError(400, "empty");
+      }
+      price = parsePrice(row.price);
+    } catch {
+      result.skipped.push({ row: rowNum, name, reason: "Missing or invalid price." });
+      continue;
+    }
+
+    // Non-fatal warnings — the row still imports.
+    const key = name.toLowerCase();
+    if (seenNames.has(key)) {
+      result.warnings.push({ row: rowNum, name, reason: "Duplicate name (a product with this name already exists)." });
+    }
+    seenNames.add(key);
+
+    const imageProvided = row.imageUrl !== undefined && String(row.imageUrl).trim() !== "";
+    const validImage = imageProvided && isHttpUrl(row.imageUrl);
+    if (imageProvided && !validImage) {
+      result.warnings.push({ row: rowNum, name, reason: "Image URL isn't a valid http(s) link — skipped the image." });
+    }
+    const description = String(row.description ?? "").trim();
+    if (description.length > 0 && description.length < 20) {
+      result.warnings.push({ row: rowNum, name, reason: "Very short description — the AI recommends better with detail." });
+    }
+    if (!String(row.category ?? "").trim()) {
+      result.warnings.push({ row: rowNum, name, reason: "No category — product won't appear in the widget's category grid." });
+    }
+
+    const category = await getOrCreateCategoryByName(orgId, row.category);
+    const product = await prisma.product.create({
+      data: {
+        orgId,
+        name,
+        price,
+        categoryId: category?.id ?? null,
+        brand: String(row.brand ?? "").trim() || null,
+        description: description || null,
+        images: validImage ? [String(row.imageUrl).trim()] : [],
+        inventoryStatus: LABEL_TO_STATUS[String(row.stockStatus ?? "")] ?? "IN_STOCK",
+        source: "IMPORT",
+      },
+      include: { category: true },
+    });
+    await safeSyncProductEmbedding(orgId, product);
+    result.imported++;
+  }
+
+  return result;
+}

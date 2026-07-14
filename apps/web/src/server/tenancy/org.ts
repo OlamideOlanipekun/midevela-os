@@ -93,19 +93,12 @@ export async function createOrganizationForUser(
   const slug = await uniqueSlug(input.name);
   const publicKey = generateWidgetPublicKey();
 
+  // New widget keys start with an EMPTY allowlist = permissive (isOriginAllowed
+  // treats [] as "allow all"). Deriving it from the onboarding website field
+  // was a silent footgun: if the merchant's real store domain differed from
+  // what they typed, the widget would 403 and render nothing. Merchants lock
+  // this down later in Settings → Widget once they know their real domain.
   const allowedDomains: string[] = [];
-  if (input.websiteUrl) {
-    try {
-      const host = new URL(
-        /^https?:\/\//.test(input.websiteUrl)
-          ? input.websiteUrl
-          : `https://${input.websiteUrl}`
-      ).hostname;
-      allowedDomains.push(host, `www.${host.replace(/^www\./, "")}`);
-    } catch {
-      // Invalid URL — leave the allowlist empty; the dashboard can fix it.
-    }
-  }
 
   const [org] = await prisma.$transaction([
     prisma.organization.create({

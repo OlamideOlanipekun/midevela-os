@@ -16,6 +16,13 @@ interface Overview {
   insights: Array<{ tag: string; text: string; action: string; href: string }>;
 }
 
+interface Readiness {
+  score: number;
+  ready: boolean;
+  items: Array<{ key: string; label: string; status: "pass" | "warn" | "missing"; detail: string }>;
+  counts: { products: number; categories: number; conversations: number };
+}
+
 const DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
 export default function DashboardHome() {
@@ -29,6 +36,7 @@ export default function DashboardHome() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [readiness, setReadiness] = useState<Readiness | null>(null);
 
   useEffect(() => {
     const hours = new Date().getHours();
@@ -50,6 +58,14 @@ export default function DashboardHome() {
       })
       .finally(() => {
         if (active) setLoading(false);
+      });
+    fetch("/api/health/readiness")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (active) setReadiness(json);
+      })
+      .catch(() => {
+        if (active) setReadiness(null);
       });
     return () => {
       active = false;
@@ -177,6 +193,58 @@ export default function DashboardHome() {
           </div>
         </div>
       </div>
+
+      {/* Widget Health & Launch Checklist — same real readiness signals used in onboarding */}
+      {readiness && (
+        <div className="grid-2">
+          <div className="card">
+            <div className="card-head">
+              <h3>Widget health</h3>
+              <span className="view-all" style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: readiness.ready ? "var(--teal)" : "var(--amber)" }}>
+                {readiness.score}%
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {readiness.items.map((it) => (
+                <div key={it.key} style={{ display: "flex", gap: 10, fontSize: 13, alignItems: "flex-start" }}>
+                  <span>{it.status === "pass" ? "✅" : it.status === "warn" ? "⚠️" : "⛔"}</span>
+                  <span><b>{it.label}</b> <span style={{ color: "var(--ink-soft)" }}>— {it.detail}</span></span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-head">
+              <h3>Launch checklist</h3>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { label: "Products added", done: readiness.counts.products > 0, href: "/dashboard/products" },
+                { label: "Categories set up", done: readiness.counts.categories > 0, href: "/dashboard/categories" },
+                { label: "First conversation", done: readiness.counts.conversations > 0, href: "/dashboard/conversations" },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, cursor: item.done ? "default" : "pointer" }}
+                  onClick={() => !item.done && router.push(item.href)}
+                >
+                  <span style={{
+                    width: 18, height: 18, borderRadius: 4, border: `1.5px solid ${item.done ? "var(--teal)" : "var(--line)"}`,
+                    background: item.done ? "var(--teal)" : "transparent", color: "#fff", display: "flex",
+                    alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0,
+                  }}>
+                    {item.done ? "✓" : ""}
+                  </span>
+                  <span style={{ color: item.done ? "var(--ink)" : "var(--ink-soft)", textDecoration: item.done ? "none" : "underline" }}>
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Grid 3 Widgets */}
       <div className="grid-3">

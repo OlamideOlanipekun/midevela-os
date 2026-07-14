@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [showProductImages, setShowProductImages] = useState(true);
   const [playSounds, setPlaySounds] = useState(true);
   const [widgetPublicKey, setWidgetPublicKey] = useState<string | null>(null);
+  const [allowedDomains, setAllowedDomains] = useState("");
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Agent");
@@ -52,6 +53,7 @@ export default function SettingsPage() {
             setPlaySounds(data.settings.features.playSounds);
           }
           setWidgetPublicKey(data.settings.widgetPublicKey ?? null);
+          setAllowedDomains(Array.isArray(data.settings.allowedDomains) ? data.settings.allowedDomains.join("\n") : "");
         }
       })
       .catch((err) => console.error("Error loading settings:", err));
@@ -94,6 +96,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           accentColor,
           engagementDelay,
+          allowedDomains,
           features: { exitIntent, showProductImages, playSounds },
         }),
       });
@@ -227,6 +230,21 @@ export default function SettingsPage() {
                   Play sound on incoming message
                 </label>
               </div>
+            </div>
+
+            <div className="set-field">
+              <label>Allowed website domains</label>
+              <textarea
+                rows={3}
+                value={allowedDomains}
+                onChange={(e) => setAllowedDomains(e.target.value)}
+                placeholder="Leave empty to allow the widget on any site&#10;e.g. mystore.com&#10;e.g. shop.mystore.com"
+                style={{ fontFamily: "var(--font-mono)", fontSize: 13 }}
+              />
+              <p className="set-hint">
+                Leave empty to let the widget load on any site (recommended while testing). Add one domain per
+                line to restrict it — subdomains of a listed domain are allowed automatically.
+              </p>
             </div>
 
             <div className="set-field">
