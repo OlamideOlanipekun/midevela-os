@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { SubscriptionProvider, useSubscription } from "@/components/providers/SubscriptionProvider";
 import Sidebar from "@/components/dashboard/Sidebar";
 import TopBar from "@/components/dashboard/TopBar";
-import AskAIModal from "@/components/dashboard/AskAIModal";
 import "./dashboard.css";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
@@ -66,7 +65,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-      <AskAIModal />
     </div>
   );
 }
