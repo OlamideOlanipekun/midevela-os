@@ -6,21 +6,17 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import "./dashboard.css";
 
-const renderActivityText = (name: string, text: string) => {
-  const nameNode = name ? <strong style={{ fontWeight: 600 }}>{name} </strong> : null;
-  const parts = text.split(/(<b>.*?<\/b>)/g);
-  return (
-    <span>
-      {nameNode}
-      {parts.map((part, i) => {
-        if (part.startsWith("<b>") && part.endsWith("</b>")) {
-          return <strong key={i} style={{ fontWeight: 600 }}>{part.slice(3, -4)}</strong>;
-        }
-        return part;
-      })}
-    </span>
-  );
-};
+interface Overview {
+  kpis: Array<{ label: string; value: string; sub: string }>;
+  activeConversations: number;
+  funnel: Array<{ label: string; count: number; widthPct: number }>;
+  dailyConversations: number[];
+  avgConfidence: number;
+  recentActivity: Array<{ id: string; name: string; text: string; meta: string; color: string }>;
+  insights: Array<{ tag: string; text: string; action: string; href: string }>;
+}
+
+const DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
 export default function DashboardHome() {
   const { user } = useAuth();
@@ -28,95 +24,36 @@ export default function DashboardHome() {
 
   const userName = user?.name || user?.email || "there";
   const firstName = userName.split(" ")[0];
-  
+
   const [greeting, setGreeting] = useState(`Good afternoon, ${firstName}.`);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [data, setData] = useState<Overview | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const hours = new Date().getHours();
     let greet = "Good morning";
-    if (hours >= 12 && hours < 17) {
-      greet = "Good afternoon";
-    } else if (hours >= 17) {
-      greet = "Good evening";
-    }
+    if (hours >= 12 && hours < 17) greet = "Good afternoon";
+    else if (hours >= 17) greet = "Good evening";
     setGreeting(`${greet}, ${firstName}.`);
   }, [firstName]);
 
-  // State management for interactions
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Initial activities pool
-  const initialActivities = [
-    {
-      id: "act-1",
-      name: "Chiamaka O.",
-      text: "completed a purchase — ClearGlow Routine Set, ₦24,500",
-      time: "2 min ago · Instagram",
-      color: "teal",
-    },
-    {
-      id: "act-2",
-      name: "",
-      text: "High-intent visitor browsing <b>Vitamin C Serum</b> for 6 minutes",
-      time: "5 min ago · Website",
-      color: "amber",
-    },
-    {
-      id: "act-3",
-      name: "Tunde A.",
-      text: "requested human assistance — 3 unanswered shipping questions",
-      time: "11 min ago · WhatsApp",
-      color: "rust",
-    },
-    {
-      id: "act-4",
-      name: "",
-      text: 'Automation <b>"Abandoned Cart Recovery"</b> sent to 8 customers',
-      time: "22 min ago · Automation",
-      color: "teal",
-    },
-    {
-      id: "act-5",
-      name: "Funke B.",
-      text: "started new conversation on Website",
-      time: "31 min ago · Website",
-      color: "teal",
-    },
-  ];
-
-  const [activities, setActivities] = useState(initialActivities);
-
-  // Live simulator for activity feed
   useEffect(() => {
-    const simulationPool = [
-      { name: "Funmi O.", text: "completed a purchase — Brightening C-Serum, ₦18,500", time: "Just now · Instagram", color: "teal" },
-      { name: "", text: "New conversation started with <b>Kelechi E.</b> on WhatsApp", time: "Just now · WhatsApp", color: "teal" },
-      { name: "", text: "High-intent visitor added <b>ClearGlow Routine Set</b> to cart", time: "Just now · Website", color: "amber" },
-      { name: "", text: "Automation <b>\"Cart Abandonment SMS\"</b> sent to Yusuf A.", time: "Just now · Automation", color: "teal" },
-      { name: "Bolanle A.", text: "completed a purchase — HydraSoothe Moisturizer, ₦12,000", time: "Just now · Website", color: "teal" },
-      { name: "", text: "High-intent visitor browsing <b>Shipping Policy</b> for 4 minutes", time: "Just now · Website", color: "amber" }
-    ];
-
-    const interval = setInterval(() => {
-      const randomChoice = simulationPool[Math.floor(Math.random() * simulationPool.length)];
-      const randomActivity = { ...randomChoice, id: `sim-${Date.now()}-${Math.random()}` };
-      setActivities(prev => {
-        const updatedPrev = prev.map(act => {
-          if (act.time.startsWith("Just now")) return { ...act, time: "1 min ago" };
-          const minMatch = act.time.match(/^(\d+) min ago/);
-          if (minMatch) {
-            const nextMin = parseInt(minMatch[1]) + 1;
-            return { ...act, time: `${nextMin} min ago` };
-          }
-          return act;
-        });
-        return [randomActivity, ...updatedPrev.slice(0, 4)];
+    let active = true;
+    fetch("/api/dashboard/overview")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (active) setData(json);
+      })
+      .catch(() => {
+        if (active) setData(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
-      setToastMessage("Live feed updated with new customer activity!");
-      setTimeout(() => setToastMessage(null), 2500);
-    }, 15000);
-
-    return () => clearInterval(interval);
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleQuickAction = (actionName: string) => {
@@ -125,83 +62,31 @@ export default function DashboardHome() {
     } else if (actionName === "Import Catalog") {
       router.push("/dashboard/knowledge?tab=docs");
     } else if (actionName === "Launch Automation" || actionName === "Broadcast Campaign") {
-      setToastMessage(`Quick Action: ${actionName} is coming soon in the next update!`);
+      setToastMessage(`${actionName} isn't available yet — it's on the roadmap, not built.`);
       setTimeout(() => setToastMessage(null), 3500);
     } else if (actionName === "Invite Team Member") {
       router.push("/dashboard/settings?tab=team");
     } else if (actionName === "Connect Integration") {
       router.push("/dashboard/settings?tab=org");
-    } else {
-      setToastMessage(`Quick Action Triggered: ${actionName}`);
-      setTimeout(() => setToastMessage(null), 3000);
     }
   };
 
-  const handleInsightAction = (action: string) => {
-    if (action.includes("Join conversation")) {
-      router.push("/dashboard/conversations");
-    } else if (action.includes("Review checkout flow")) {
-      router.push("/dashboard/analytics");
-    } else if (action.includes("shipping policy")) {
-      window.dispatchEvent(new CustomEvent("open-ask-ai", { detail: { question: "How do I add an international shipping policy?" } }));
-    }
-  };
+  // 7-day bars scaled to the busiest day; a flat/empty week reads as empty.
+  const daily = data?.dailyConversations ?? [];
+  const dailyMax = Math.max(1, ...daily);
 
-  const kpis = [
-    { label: "Revenue Today", value: "₦486k", delta: "▲ 14% vs yesterday", type: "up" },
-    { label: "AI Revenue", value: "68%", delta: "▲ 6pt this week", type: "up" },
-    { label: "Conversion Rate", value: "4.8%", delta: "▲ 0.6pt", type: "up" },
-    { label: "Buying Confidence", value: "76", delta: "▼ 3pt", type: "down" },
-    { label: "Lost Revenue", value: "₦92k", delta: "▼ checkout drop-off", type: "down" },
-    { label: "AI Health", value: "98%", delta: "● nominal", type: "up" },
-  ];
-
-  const insights = [
-    {
-      tag: "Revenue opportunity",
-      text: "9 customers asked about international shipping this week — there's no policy in your Knowledge Base to answer them.",
-      action: "Add shipping policy →",
-    },
-    {
-      tag: "Confidence drop",
-      text: "Buying confidence falls sharply after shipping costs appear at checkout for 3 products.",
-      action: "Review checkout flow →",
-    },
-    {
-      tag: "High-value visitor",
-      text: "A returning customer with ₦340k lifetime value needs assistance right now.",
-      action: "Join conversation →",
-    },
-  ];
-
-  const barChartHeights = [42, 58, 50, 71, 64, 100, 78];
-
-  const funnelStages = [
-    { label: "Visitors", pct: "100%", fillWidth: "100%", isHighlight: false },
-    { label: "Engaged", pct: "64%", fillWidth: "64%", isHighlight: false },
-    { label: "Recommended", pct: "41%", fillWidth: "41%", isHighlight: false },
-    { label: "Checkout", pct: "18%", fillWidth: "18%", isHighlight: false },
-    { label: "Purchased", pct: "12%", fillWidth: "12%", isHighlight: true },
-  ];
+  // AI-confidence ring geometry (r=36 → circumference ≈ 226).
+  const ringCirc = 226;
+  const ringOffset = ringCirc * (1 - (data?.avgConfidence ?? 0) / 100);
 
   return (
     <div className="flex flex-col gap-xl" style={{ position: "relative" }}>
-      {/* Toast Alert */}
       {toastMessage && (
         <div style={{
-          position: "fixed",
-          bottom: "24px",
-          right: "24px",
-          background: "var(--ink)",
-          color: "var(--paper)",
-          padding: "12px 24px",
-          borderRadius: "var(--radius-pill)",
-          border: "1px solid var(--border)",
-          fontFamily: "var(--font-mono)",
-          fontSize: "12px",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-          zIndex: 1000,
-          animation: "fadeIn 0.2s ease"
+          position: "fixed", bottom: "24px", right: "24px", background: "var(--ink)",
+          color: "var(--paper)", padding: "12px 24px", borderRadius: "var(--radius-pill)",
+          border: "1px solid var(--border)", fontFamily: "var(--font-mono)", fontSize: "12px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.15)", zIndex: 1000, animation: "fadeIn 0.2s ease",
         }}>
           ⚡ {toastMessage}
         </div>
@@ -215,132 +100,145 @@ export default function DashboardHome() {
           </div>
           <h1 className="display">{greeting}</h1>
         </div>
-        <div className="live-pill">
-          <span className="pulse"></span> 24 visitors active right now
-        </div>
+        {data && (
+          <div className="live-pill">
+            <span className="pulse"></span>
+            {data.activeConversations} active conversation{data.activeConversations === 1 ? "" : "s"}
+          </div>
+        )}
       </div>
 
       {/* KPI STRIP */}
       <div className="kpi-strip">
-        {kpis.map((kpi, idx) => (
-          <div key={idx} className="kpi-card">
-            <div className="kpi-label">{kpi.label}</div>
-            <div className="kpi-value mono">{kpi.value}</div>
-            <div className={`kpi-delta ${kpi.type}`}>
-              {kpi.delta}
+        {(loading ? Array.from({ length: 6 }) : data?.kpis ?? []).map((kpi, idx) => {
+          const k = kpi as Overview["kpis"][number] | undefined;
+          return (
+            <div key={idx} className="kpi-card">
+              <div className="kpi-label">{k ? k.label : "—"}</div>
+              <div className="kpi-value mono">{k ? k.value : "…"}</div>
+              <div className="kpi-delta" style={{ color: "var(--ink-soft)" }}>{k ? k.sub : ""}</div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Two Column Section */}
       <div className="grid-2">
-        {/* Live Activity Feed */}
+        {/* Live Activity Feed — real recent conversations */}
         <div className="card">
           <div className="card-head">
-            <h3>Live Activity</h3>
-            <Link href="/dashboard/conversations" className="view-all">
-              View all →
-            </Link>
+            <h3>Recent Activity</h3>
+            <Link href="/dashboard/conversations" className="view-all">View all →</Link>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {activities.map((activity) => (
-              <div key={activity.id} className="feed-item" style={{ cursor: "pointer" }} onClick={() => router.push("/dashboard/conversations")}>
-                <div className={`feed-dot ${activity.color}`}></div>
-                <div>
-                  <div className="feed-text">
-                    {renderActivityText(activity.name, activity.text)}
+          {loading ? (
+            <div style={{ padding: "20px 0", color: "var(--ink-soft)", fontSize: 13 }}>Loading…</div>
+          ) : data && data.recentActivity.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {data.recentActivity.map((activity) => (
+                <div key={activity.id} className="feed-item" style={{ cursor: "pointer" }} onClick={() => router.push("/dashboard/conversations")}>
+                  <div className={`feed-dot ${activity.color}`}></div>
+                  <div>
+                    <div className="feed-text">
+                      <strong style={{ fontWeight: 600 }}>{activity.name} </strong>
+                      {activity.text}
+                    </div>
+                    <div className="feed-time">{activity.meta}</div>
                   </div>
-                  <div className="feed-time">{activity.time}</div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: "24px 0", color: "var(--ink-soft)", fontSize: 13, lineHeight: 1.6 }}>
+              No conversations yet. Once shoppers start chatting with your widget, their activity shows up here.
+            </div>
+          )}
         </div>
 
-        {/* AI Actionable Insights */}
+        {/* AI Insights — derived from real signals */}
         <div className="card">
           <div className="card-head">
-            <h3>AI Insights</h3>
+            <h3>Insights</h3>
             <span className="view-all" style={{ cursor: "pointer" }} onClick={() => router.push("/dashboard/analytics")}>View all →</span>
           </div>
 
           <div>
-            {insights.map((insight, idx) => (
-              <div key={idx} className="insight">
-                <div className="insight-tag">{insight.tag}</div>
-                <p>{insight.text}</p>
-                <button className="insight-action" onClick={() => handleInsightAction(insight.action)}>{insight.action}</button>
-              </div>
-            ))}
+            {loading ? (
+              <div style={{ padding: "20px 0", color: "var(--ink-soft)", fontSize: 13 }}>Loading…</div>
+            ) : (
+              (data?.insights ?? []).map((insight, idx) => (
+                <div key={idx} className="insight">
+                  <div className="insight-tag">{insight.tag}</div>
+                  <p>{insight.text}</p>
+                  <button className="insight-action" onClick={() => router.push(insight.href)}>{insight.action}</button>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
 
       {/* Grid 3 Widgets */}
       <div className="grid-3">
-        {/* Revenue 7 Days */}
+        {/* Conversations, 7 Days */}
         <div className="card">
           <div className="card-head">
-            <h3>Revenue, 7 Days</h3>
+            <h3>Conversations, 7 Days</h3>
           </div>
           <div className="bars">
-            {barChartHeights.map((h, idx) => (
-              <div 
-                key={idx} 
-                className={`bar ${h === 100 ? "peak" : ""}`} 
-                style={{ height: `${h}%` }}
-              />
-            ))}
+            {daily.map((count, idx) => {
+              const h = Math.round((count / dailyMax) * 100);
+              return (
+                <div
+                  key={idx}
+                  className={`bar ${count > 0 && count === dailyMax ? "peak" : ""}`}
+                  style={{ height: `${count > 0 ? Math.max(h, 6) : 2}%` }}
+                  title={`${count} conversation${count === 1 ? "" : "s"}`}
+                />
+              );
+            })}
           </div>
           <div className="bar-labels">
-            <span>MON</span>
-            <span>TUE</span>
-            <span>WED</span>
-            <span>THU</span>
-            <span>FRI</span>
-            <span>SAT</span>
-            <span>SUN</span>
+            {DAY_LABELS.map((d) => <span key={d}>{d}</span>)}
           </div>
         </div>
 
-        {/* Conversation Funnel */}
+        {/* Buying-stage Funnel */}
         <div className="card">
           <div className="card-head">
-            <h3>Conversation Funnel</h3>
+            <h3>Buying-stage Funnel</h3>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "6px" }}>
-            {funnelStages.map((stage, idx) => (
+            {(data?.funnel ?? []).map((stage, idx) => (
               <div key={idx} className="funnel-row">
                 <div className="funnel-label">{stage.label}</div>
                 <div className="funnel-bar-track">
                   <div
-                    className={`funnel-bar-fill ${stage.isHighlight ? "final" : ""}`}
-                    style={{ width: stage.fillWidth }}
+                    className={`funnel-bar-fill ${idx === (data?.funnel.length ?? 0) - 1 ? "final" : ""}`}
+                    style={{ width: `${stage.widthPct}%` }}
                   />
                 </div>
-                <div className="funnel-pct mono">{stage.pct}</div>
+                <div className="funnel-pct mono">{stage.count}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* AI Health Score Ring */}
+        {/* AI Confidence Ring */}
         <div className="card">
           <div className="card-head">
-            <h3>AI Health Score</h3>
+            <h3>AI Confidence</h3>
           </div>
           <div className="health-wrap">
             <svg className="health-ring" viewBox="0 0 84 84">
-              <circle cx="42" cy="42" r="36" fill="none" stroke="var(--line)" strokeWidth="8"/>
+              <circle cx="42" cy="42" r="36" fill="none" stroke="var(--line)" strokeWidth="8" />
               <circle cx="42" cy="42" r="36" fill="none" stroke="var(--teal)" strokeWidth="8"
-                strokeDasharray="226" strokeDashoffset="5" strokeLinecap="round"
-                transform="rotate(-90 42 42)"/>
+                strokeDasharray={ringCirc} strokeDashoffset={ringOffset} strokeLinecap="round"
+                transform="rotate(-90 42 42)" />
             </svg>
             <div className="health-text">
-              <div className="h-num mono">98%</div>
-              <div className="h-label">Response time, accuracy<br/>& resolution nominal</div>
+              <div className="h-num mono">{data ? `${data.avgConfidence}%` : "—"}</div>
+              <div className="h-label">Average AI confidence<br />across conversations</div>
             </div>
           </div>
         </div>
@@ -353,36 +251,12 @@ export default function DashboardHome() {
         </div>
         <div className="quick-actions">
           {[
-            {
-              label: "Add product",
-              action: "Add Product",
-              icon: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
-            },
-            {
-              label: "Import catalog",
-              action: "Import Catalog",
-              icon: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></>,
-            },
-            {
-              label: "Launch automation",
-              action: "Launch Automation",
-              icon: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
-            },
-            {
-              label: "Broadcast campaign",
-              action: "Broadcast Campaign",
-              icon: <><path d="M4 4h16v12H7l-3 3z" /></>,
-            },
-            {
-              label: "Invite team member",
-              action: "Invite Team Member",
-              icon: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></>,
-            },
-            {
-              label: "Connect integration",
-              action: "Connect Integration",
-              icon: <><path d="M18 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" /><path d="M6 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" /><path d="M8.6 16.4 15.4 7.6" /></>,
-            },
+            { label: "Add product", action: "Add Product", icon: <><path d="M12 5v14" /><path d="M5 12h14" /></> },
+            { label: "Import catalog", action: "Import Catalog", icon: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></> },
+            { label: "Launch automation", action: "Launch Automation", icon: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /> },
+            { label: "Broadcast campaign", action: "Broadcast Campaign", icon: <><path d="M4 4h16v12H7l-3 3z" /></> },
+            { label: "Invite team member", action: "Invite Team Member", icon: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></> },
+            { label: "Connect integration", action: "Connect Integration", icon: <><path d="M18 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" /><path d="M6 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" /><path d="M8.6 16.4 15.4 7.6" /></> },
           ].map((qa) => (
             <button key={qa.action} className="qa-btn" onClick={() => handleQuickAction(qa.action)}>
               <span className="qa-ico">
