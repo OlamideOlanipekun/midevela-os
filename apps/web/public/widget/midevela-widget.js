@@ -1272,15 +1272,23 @@
     });
 
     // ─── Boot: fresh welcome, or resume a saved funnel/conversation ───
+    // A shopper who never picked a category (used "Ask anything" straight
+    // away) still has a real conversation going — resuming must not
+    // require categoryId, or every page reload/navigation would re-show
+    // the full welcome card and repeat the opening line verbatim, which
+    // reads as robotic rather than a salesperson picking up where they
+    // left off.
     const saved = loadFunnelState();
-    if (saved && saved.categoryId && (saved.view === 'recommendations' || saved.view === 'conversation')) {
-      funnel.categoryId = saved.categoryId;
-      funnel.categoryName = saved.categoryName;
+    if (saved && (saved.view === 'recommendations' || saved.view === 'conversation')) {
+      funnel.categoryId = saved.categoryId || null;
+      funnel.categoryName = saved.categoryName || null;
       funnel.answers = saved.answers || {};
       funnel.view = 'conversation';
       clearBody();
       appendAiBubble(
-        `Welcome back! Continuing from ${saved.categoryName || 'where you left off'} — ask me anything.`
+        saved.categoryName
+          ? `Welcome back! Continuing from ${saved.categoryName} — ask me anything.`
+          : "Welcome back! What else can I help you find?"
       );
       // Note: the message transcript itself isn't replayed on a fresh page
       // load (no message-history endpoint in v1) — but the category/budget/
