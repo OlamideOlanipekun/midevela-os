@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [country, setCountry] = useState("Nigeria");
   const [currency, setCurrency] = useState("NGN");
   const [accentColor, setAccentColor] = useState("#1EE67A");
-  const [engagementDelay, setEngagementDelay] = useState(15);
+  const [engagementDelay, setEngagementDelay] = useState(5);
   const [exitIntent, setExitIntent] = useState(true);
   const [showProductImages, setShowProductImages] = useState(true);
   const [playSounds, setPlaySounds] = useState(true);

@@ -27,7 +27,10 @@ export interface OrgSettings {
 
 export const defaultOrgSettings: OrgSettings = {
   accentColor: "#1EE67A",
-  engagementDelay: 15,
+  // Widget v1.0 spec: the assistant proactively opens 3-5s after page
+  // load, not 15s - fast enough to feel like a salesperson greeting a
+  // visitor, not so fast it interrupts them mid-scroll.
+  engagementDelay: 5,
   features: {
     exitIntent: true,
     showProductImages: true,
