@@ -7,6 +7,7 @@ import "./products.css";
 interface Product {
   id: string;
   name: string;
+  brand?: string;
   price: string;
   category: string;
   stockStatus: "In Stock" | "Low Stock" | "Out of Stock";
@@ -14,6 +15,11 @@ interface Product {
   aiCompleteness: number;
   icon: string;
   description?: string;
+}
+
+interface CategoryOption {
+  id: string;
+  name: string;
 }
 
 function qualityColor(pct: number) {
@@ -25,6 +31,7 @@ function qualityColor(pct: number) {
 export default function ProductsPage() {
   const { isReadOnly } = useSubscription();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -32,8 +39,9 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const [newName, setNewName] = useState("");
+  const [newBrand, setNewBrand] = useState("");
   const [newPrice, setNewPrice] = useState("");
-  const [newCategory, setNewCategory] = useState("Fashion & Apparel");
+  const [newCategory, setNewCategory] = useState("");
   const [newStock, setNewStock] = useState<"In Stock" | "Low Stock" | "Out of Stock">("In Stock");
   const [newDescription, setNewDescription] = useState("");
 
@@ -47,6 +55,20 @@ export default function ProductsPage() {
       .catch((err) => console.error("Error loading products:", err))
       .finally(() => setLoading(false));
 
+    // Real categories drive both the filter and the add-form dropdown —
+    // previously this was 3 hardcoded options unrelated to the widget's
+    // actual category foundation.
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.categories)) {
+          const opts = data.categories.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name }));
+          setCategoryOptions(opts);
+          if (opts.length > 0) setNewCategory((prev) => prev || opts[0].name);
+        }
+      })
+      .catch((err) => console.error("Error loading categories:", err));
+
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("action") === "add") setShowAddDrawer(true);
@@ -56,6 +78,7 @@ export default function ProductsPage() {
   const handleStartEdit = (p: Product) => {
     setEditingProduct(p);
     setNewName(p.name);
+    setNewBrand(p.brand || "");
     setNewPrice(p.price.replace(/[₦,]/g, ""));
     setNewCategory(p.category);
     setNewStock(p.stockStatus);
@@ -80,8 +103,8 @@ export default function ProductsPage() {
     try {
       const method = editingProduct ? "PUT" : "POST";
       const payload = editingProduct
-        ? { id: editingProduct.id, name: newName, price: newPrice, category: newCategory, stockStatus: newStock, description: newDescription }
-        : { name: newName, price: newPrice, category: newCategory, stockStatus: newStock, description: newDescription };
+        ? { id: editingProduct.id, name: newName, brand: newBrand, price: newPrice, category: newCategory, stockStatus: newStock, description: newDescription }
+        : { name: newName, brand: newBrand, price: newPrice, category: newCategory, stockStatus: newStock, description: newDescription };
 
       const res = await fetch("/api/products", {
         method,
@@ -97,6 +120,7 @@ export default function ProductsPage() {
           setProducts((prev) => [data.product, ...prev]);
         }
         setNewName("");
+        setNewBrand("");
         setNewPrice("");
         setNewDescription("");
         setEditingProduct(null);
@@ -177,9 +201,9 @@ export default function ProductsPage() {
             </div>
             <select className="prod-select" value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="all">All categories</option>
-              <option value="Fashion & Apparel">Fashion & Apparel</option>
-              <option value="Beauty & Cosmetics">Beauty & Cosmetics</option>
-              <option value="Electronics">Electronics</option>
+              {categoryOptions.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
             </select>
             <span className="live-pill" style={{ marginLeft: "auto" }}>
               {visibleProducts.length} items · {avgQuality}% avg. AI-ready
@@ -261,6 +285,17 @@ export default function ProductsPage() {
               </div>
 
               <div className="prod-field">
+                <label htmlFor="new-prod-brand">Brand (optional)</label>
+                <input
+                  id="new-prod-brand"
+                  type="text"
+                  placeholder="e.g. Apple, Dell, Zara"
+                  value={newBrand}
+                  onChange={(e) => setNewBrand(e.target.value)}
+                />
+              </div>
+
+              <div className="prod-field">
                 <label htmlFor="new-prod-price">Price (₦)</label>
                 <input
                   id="new-prod-price"
@@ -274,11 +309,21 @@ export default function ProductsPage() {
 
               <div className="prod-field">
                 <label htmlFor="new-prod-cat">Category</label>
-                <select id="new-prod-cat" value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>
-                  <option value="Fashion & Apparel">Fashion & Apparel</option>
-                  <option value="Beauty & Cosmetics">Beauty & Cosmetics</option>
-                  <option value="Electronics">Electronics</option>
-                </select>
+                {categoryOptions.length > 0 ? (
+                  <select id="new-prod-cat" value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>
+                    {categoryOptions.map((c) => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id="new-prod-cat"
+                    type="text"
+                    placeholder="e.g. Fashion & Apparel"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                  />
+                )}
               </div>
 
               <div className="prod-field">

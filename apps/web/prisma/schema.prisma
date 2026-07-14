@@ -176,11 +176,19 @@ model WidgetKey {
 // ─────────────────────────────────────────────────────────────
 
 model Category {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orgId     String   @map("org_id") @db.Uuid
-  name      String
-  parentId  String?  @map("parent_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId             String   @map("org_id") @db.Uuid
+  name              String
+  slug              String?
+  image             String?
+  icon              String?
+  displayOrder      Int      @default(0) @map("display_order")
+  // Ordered qualification steps the widget walks for this category, e.g.
+  // [{ id, key, question, type: "single"|"budget", options:[{label,value,icon?}] }].
+  // Never hardcoded in the widget — see server/widget/qualificationTemplates.ts.
+  qualificationFlow Json     @default("[]") @map("qualification_flow")
+  parentId          String?  @map("parent_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   parent   Category?    @relation("SubCategories", fields: [parentId], references: [id], onDelete: SetNull)
@@ -196,6 +204,7 @@ model Product {
   orgId           String          @map("org_id") @db.Uuid
   categoryId      String?         @map("category_id") @db.Uuid
   name            String
+  brand           String?
   description     String?
   price           Decimal         @db.Decimal(12, 2)
   currency        String          @default("NGN")
@@ -213,6 +222,7 @@ model Product {
 
   @@index([orgId, createdAt])
   @@index([orgId, categoryId])
+  @@index([orgId, brand])
   @@map("products")
 }
 
@@ -287,6 +297,10 @@ model Conversation {
   intent       String              @default("greeting")
   aiConfidence Int                 @default(100) @map("ai_confidence")
   outcome      ConversationOutcome @default(PENDING)
+  // Shopping-funnel state: { categoryId, categoryName, budget:{min,max},
+  // brand, answers:{}, viewedProductIds:[], funnelStep }. Grounds AI chat
+  // turns and lets a returning visitor resume without repeating themselves.
+  context      Json                @default("{}")
 
   org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   customer Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)

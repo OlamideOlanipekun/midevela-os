@@ -48,6 +48,15 @@ const SidebarIcon = ({ type }: { type: string }) => {
           <line x1="12" y1="22.08" x2="12" y2="12" />
         </svg>
       );
+    case "categories":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+      );
     case "knowledge":
       return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -93,6 +102,7 @@ const mainNavItems = [
   { label: "Conversations", href: "/dashboard/conversations", icon: "conversations", badge: 12 },
   { label: "Customers", href: "/dashboard/customers", icon: "customers" },
   { label: "Products", href: "/dashboard/products", icon: "products" },
+  { label: "Categories", href: "/dashboard/categories", icon: "categories" },
   { label: "Knowledge", href: "/dashboard/knowledge", icon: "knowledge" },
 ];
 

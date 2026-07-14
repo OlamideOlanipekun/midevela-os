@@ -34,14 +34,14 @@ interface EmbeddingHit {
 const SIMILARITY_FLOOR = 0.5;
 
 /** Only ever hand the widget an http(s) URL — these end up in href/src. */
-function safeHttpUrl(value: unknown): string | null {
+export function safeHttpUrl(value: unknown): string | null {
   if (typeof value !== "string") return null;
   return /^https?:\/\//i.test(value.trim()) ? value.trim() : null;
 }
 
 /** Product.images is loose JSON — entries may be "https://…" strings or
  *  objects like { url: "…" } depending on the import path. */
-function firstImageUrl(images: unknown): string | null {
+export function firstImageUrl(images: unknown): string | null {
   if (!Array.isArray(images)) return null;
   for (const entry of images) {
     const candidate =

@@ -3,8 +3,10 @@ import prisma from "@/lib/prisma";
 import { ApiError } from "@/server/http";
 import { syncProductEmbedding, deleteEmbedding } from "@/server/knowledge/sync";
 import { formatMoney } from "@/server/catalog/money";
+import { iconFor } from "@/server/catalog/icons";
+import { getOrCreateCategoryByName } from "@/server/catalog/categories";
 
-export { formatMoney };
+export { formatMoney, iconFor };
 
 type ProductWithCategory = Product & { category: Category | null };
 
@@ -25,14 +27,6 @@ function completenessScore(description: string | null | undefined): number {
   if (description.length > 120) return 95;
   if (description.length > 50) return 90;
   return 50;
-}
-
-function iconFor(categoryName: string): string {
-  const c = categoryName.toLowerCase();
-  if (c.includes("fashion") || c.includes("apparel")) return "🛍️";
-  if (c.includes("beauty") || c.includes("cosmetic")) return "🧴";
-  if (c.includes("electronic")) return "💻";
-  return "📦";
 }
 
 /**
@@ -67,6 +61,7 @@ export function toProductResponse(p: ProductWithCategory) {
   return {
     id: p.id,
     name: p.name,
+    brand: p.brand ?? "",
     price: formatMoney(p.price, p.currency),
     category: categoryName,
     stockStatus,
@@ -99,19 +94,11 @@ function parsePrice(price: unknown): number {
   return n;
 }
 
-async function resolveCategory(orgId: string, name?: string) {
-  if (!name?.trim()) return null;
-  return prisma.category.upsert({
-    where: { orgId_name: { orgId, name: name.trim() } },
-    update: {},
-    create: { orgId, name: name.trim() },
-  });
-}
-
 export interface ProductInput {
   name: string;
   price: unknown;
   category?: string;
+  brand?: string;
   stockStatus?: string;
   description?: string;
 }
@@ -120,13 +107,14 @@ export async function createProduct(orgId: string, input: ProductInput) {
   if (!input.name || input.price === undefined || input.price === "") {
     throw new ApiError(400, "Product name and price are required.");
   }
-  const category = await resolveCategory(orgId, input.category);
+  const category = await getOrCreateCategoryByName(orgId, input.category);
   const product = await prisma.product.create({
     data: {
       orgId,
       name: input.name,
       price: parsePrice(input.price),
       categoryId: category?.id ?? null,
+      brand: input.brand?.trim() || null,
       inventoryStatus: LABEL_TO_STATUS[input.stockStatus ?? ""] ?? "IN_STOCK",
       description: input.description || null,
       source: "MANUAL",
@@ -145,13 +133,14 @@ export async function updateProduct(
   const existing = await prisma.product.findFirst({ where: { id, orgId } });
   if (!existing) throw new ApiError(404, "Product not found.");
 
-  const category = await resolveCategory(orgId, input.category);
+  const category = await getOrCreateCategoryByName(orgId, input.category);
   const product = await prisma.product.update({
     where: { id },
     data: {
       name: input.name,
       price: parsePrice(input.price),
       ...(category ? { categoryId: category.id } : {}),
+      ...(input.brand !== undefined ? { brand: input.brand?.trim() || null } : {}),
       ...(input.stockStatus && LABEL_TO_STATUS[input.stockStatus]
         ? { inventoryStatus: LABEL_TO_STATUS[input.stockStatus] }
         : {}),

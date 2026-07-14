@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { widgetKey, customerId, messageText } = body ?? {};
+    const { widgetKey, customerId, messageText, context: contextPatch } = body ?? {};
 
     if (!widgetKey || typeof widgetKey !== "string") {
       return NextResponse.json({ error: "widgetKey is required." }, { status: 400, headers });
@@ -133,6 +133,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Shopping-funnel state (category/budget/brand/answers) collected via
+    // the widget's Welcome→Category→Qualification steps. Merged in — never
+    // replaced wholesale — so a later turn can't accidentally wipe earlier
+    // context, and persisted immediately so a page refresh mid-conversation
+    // doesn't lose it.
+    const existingContext = (conversation.context ?? {}) as Record<string, unknown>;
+    const mergedContext =
+      contextPatch && typeof contextPatch === "object"
+        ? { ...existingContext, ...(contextPatch as Record<string, unknown>) }
+        : existingContext;
+    if (contextPatch && typeof contextPatch === "object") {
+      conversation = await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { context: mergedContext as unknown as Prisma.InputJsonValue },
+      });
+    }
+
     const priorMessages = await prisma.message.findMany({
       where: { conversationId: conversation.id },
       orderBy: { createdAt: "desc" },
@@ -150,12 +167,23 @@ export async function POST(req: NextRequest) {
     const stored = (org.settings ?? {}) as Partial<OrgSettings>;
     const settings = { ...defaultOrgSettings, ...stored };
 
+    const shoppingContext = {
+      categoryName: typeof mergedContext.categoryName === "string" ? mergedContext.categoryName : undefined,
+      budget: typeof mergedContext.budget === "string" ? mergedContext.budget : undefined,
+      brand: typeof mergedContext.brand === "string" ? mergedContext.brand : undefined,
+      answers:
+        mergedContext.answers && typeof mergedContext.answers === "object"
+          ? (mergedContext.answers as Record<string, string>)
+          : undefined,
+    };
+
     const result = await processConversationTurn({
       orgId: org.id,
       orgName: org.name,
       settings,
       messageText,
       history,
+      shoppingContext,
     });
 
     await prisma.$transaction([

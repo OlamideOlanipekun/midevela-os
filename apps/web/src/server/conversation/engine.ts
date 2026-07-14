@@ -27,6 +27,14 @@ interface RecommendationOut {
   imageUrl: string | null;
 }
 
+export interface ShoppingContext {
+  categoryName?: string;
+  budget?: string;
+  brand?: string;
+  /** Free-form qualification answers (purpose, skinType, room, etc). */
+  answers?: Record<string, string>;
+}
+
 export interface ConversationTurnInput {
   orgId: string;
   orgName: string;
@@ -34,6 +42,10 @@ export interface ConversationTurnInput {
   messageText: string;
   /** Prior turns, oldest first. Loaded by the caller from persisted Messages. */
   history: ChatMessage[];
+  /** Category/budget/brand/answers already collected via the widget's
+   *  qualification funnel — grounds chat so the shopper never repeats
+   *  themselves after Welcome → Category → Qualification. */
+  shoppingContext?: ShoppingContext;
 }
 
 export interface ConversationTurnResult {
@@ -44,10 +56,26 @@ export interface ConversationTurnResult {
   outputTokens: number;
 }
 
+function formatShoppingContext(ctx: ShoppingContext | undefined): string | null {
+  if (!ctx) return null;
+  const parts: string[] = [];
+  if (ctx.categoryName) parts.push(`category: ${ctx.categoryName}`);
+  if (ctx.budget) parts.push(`budget: ${ctx.budget}`);
+  if (ctx.brand) parts.push(`preferred brand: ${ctx.brand}`);
+  if (ctx.answers) {
+    for (const [key, value] of Object.entries(ctx.answers)) {
+      if (key === "budget" || key === "brand" || !value) continue;
+      parts.push(`${key}: ${value}`);
+    }
+  }
+  return parts.length ? parts.join(", ") : null;
+}
+
 function buildSystemPrompt(
   orgName: string,
   settings: ConversationTurnInput["settings"],
-  context: RetrievedContext[]
+  context: RetrievedContext[],
+  shoppingContext?: ShoppingContext
 ): string {
   const products = context.filter((c): c is Extract<RetrievedContext, { type: "product" }> => c.type === "product");
   const knowledge = context.filter((c): c is Extract<RetrievedContext, { type: "knowledge" }> => c.type === "knowledge");
@@ -62,12 +90,17 @@ function buildSystemPrompt(
     ? knowledge.map((k) => `- ${k.title}: ${k.content}`).join("\n")
     : "(no matching policy/FAQ found for this query)";
 
+  const shoppingLine = formatShoppingContext(shoppingContext);
+
   return [
     `You are ${settings.aiName || "the AI shopping assistant"} for ${orgName}, an online store.`,
     settings.sellsDescription ? `What this store sells: ${settings.sellsDescription}` : null,
     `Tone: ${settings.tone || "friendly"}.`,
     settings.neverSay ? `Never say or imply: ${settings.neverSay}` : null,
     settings.greeting ? `Standard greeting style to match: "${settings.greeting}"` : null,
+    shoppingLine
+      ? `The shopper already told us this through the widget's qualification flow — ${shoppingLine}. Use it to stay relevant and NEVER ask them to repeat it.`
+      : null,
     "",
     "You help visitors find products and answer questions using ONLY the information below — never invent prices, stock, shipping details, or policies that aren't listed here. If the answer isn't in the provided context, say you're not sure and offer to connect them with the team.",
     "",
@@ -115,7 +148,7 @@ export async function processConversationTurn(
   const queryEmbedding = await embedText(input.messageText);
   const context = await retrieveContext(input.orgId, queryEmbedding);
 
-  const system = buildSystemPrompt(input.orgName, input.settings, context);
+  const system = buildSystemPrompt(input.orgName, input.settings, context, input.shoppingContext);
   const messages: ChatMessage[] = [
     { role: "system", content: system },
     ...input.history,
