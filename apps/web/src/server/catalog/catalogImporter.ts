@@ -33,6 +33,23 @@ export interface CatalogImportResult extends ImportResult {
 
 // ─── helpers ───────────────────────────────────────────────────────────
 
+/**
+ * Resolves a possibly-relative image URL (site-relative "/img/x.jpg",
+ * protocol-relative "//cdn.x.com/y.jpg", or already-absolute) against the
+ * page it came from, so the widget always gets a real, loadable image
+ * instead of silently dropping it (safeHttpUrl/firstImageUrl in
+ * server/retrieval/search.ts only accept absolute http(s) URLs).
+ */
+function absolutizeUrl(maybe: string | undefined, base: string): string {
+  if (!maybe) return "";
+  try {
+    const resolved = new URL(maybe, base);
+    return resolved.protocol === "http:" || resolved.protocol === "https:" ? resolved.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -141,7 +158,7 @@ async function tryShopify(origin: string): Promise<ImportRow[]> {
         category: p.product_type ? String(p.product_type) : "",
         brand: p.vendor ? String(p.vendor) : "",
         description: p.body_html ? stripHtml(String(p.body_html)).slice(0, 600) : "",
-        imageUrl: images[0]?.src ? String(images[0].src) : "",
+        imageUrl: images[0]?.src ? absolutizeUrl(String(images[0].src), origin) : "",
       });
     }
   }
@@ -171,7 +188,7 @@ async function tryWooCommerce(origin: string): Promise<ImportRow[]> {
       price: String(rawPrice / Math.pow(10, minor)),
       category: categories[0]?.name ? String(categories[0].name) : "",
       description: p.short_description ? stripHtml(String(p.short_description)).slice(0, 600) : "",
-      imageUrl: images[0]?.src ? String(images[0].src) : "",
+      imageUrl: images[0]?.src ? absolutizeUrl(String(images[0].src), origin) : "",
     });
   }
   return rows.slice(0, MAX_PRODUCTS);
@@ -179,7 +196,7 @@ async function tryWooCommerce(origin: string): Promise<ImportRow[]> {
 
 // ─── strategy 2: JSON-LD from fetched HTML ───────────────────────────────
 
-function extractJsonLd(html: string): ImportRow[] {
+function extractJsonLd(html: string, pageUrl: string): ImportRow[] {
   const rows: ImportRow[] = [];
   const re = /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
   let m: RegExpExecArray | null;
@@ -200,7 +217,7 @@ function extractJsonLd(html: string): ImportRow[] {
           price: String(price),
           brand: obj.brand ? String((obj.brand as Record<string, unknown>)?.name ?? obj.brand) : "",
           description: obj.description ? String(obj.description) : "",
-          imageUrl: image ? String(image) : "",
+          imageUrl: image ? absolutizeUrl(String(image), pageUrl) : "",
         });
       }
     } catch {
@@ -261,7 +278,7 @@ export async function importCatalogFromUrl(orgId: string, rawUrl: string): Promi
     const res = await timedFetch(url);
     const html = res && res.ok ? await res.text().catch(() => "") : "";
     if (html) {
-      rows = extractJsonLd(html);
+      rows = extractJsonLd(html, url);
       if (rows.length) strategy = "json-ld";
       if (!rows.length) {
         rows = await groqExtract(stripHtml(html));
