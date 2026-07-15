@@ -4,10 +4,11 @@ import prisma from "@/lib/prisma";
 import { requireActiveOrg } from "@/server/auth/context";
 import { withErrorHandling, jsonError } from "@/server/http";
 import { assertPublicUrl } from "@/server/net/ssrfGuard";
+import { importCatalogFromUrl } from "@/server/catalog/catalogImporter";
 
-// ⚠️ Interim implementation: synchronous, max 3 pages, JSON-LD +
-// heuristic extraction. Phase 2 moves this into a background job chain
-// with progress reporting (see 00-backend-architecture.md).
+// Products now come from the layered catalogImporter (platform-JSON →
+// JSON-LD → fetch+LLM → Firecrawl). This route additionally does a light,
+// best-effort knowledge pass (shipping/FAQ) over a few pages.
 
 const MAX_PAGES = 3;
 const FETCH_TIMEOUT_MS = 3500;
@@ -19,15 +20,6 @@ function cleanText(html: string): string {
     .replace(/<[^>]*>/g, "")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-interface CrawledProduct {
-  name: string;
-  price: number;
-  currency: string;
-  description: string;
-  imageUrl?: string;
-  sourceUrl: string;
 }
 
 interface CrawledEntry {
@@ -55,42 +47,6 @@ async function fetchPage(pageUrl: string): Promise<string | null> {
   } finally {
     clearTimeout(timeoutId);
   }
-}
-
-function extractJsonLdProducts(html: string, sourceUrl: string): CrawledProduct[] {
-  const products: CrawledProduct[] = [];
-  const jsonLdRegex =
-    /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
-  let match;
-  while ((match = jsonLdRegex.exec(html)) !== null) {
-    try {
-      const data = JSON.parse(match[1].trim());
-      const objects = Array.isArray(data) ? data : [data];
-      for (const obj of objects) {
-        const type = obj["@type"] || obj["type"];
-        if (type !== "Product" || !obj.name) continue;
-        const offer = Array.isArray(obj.offers) ? obj.offers[0] : obj.offers;
-        const price = Number(offer?.price);
-        if (!Number.isFinite(price)) continue;
-        const image = Array.isArray(obj.image)
-          ? obj.image[0]
-          : typeof obj.image === "object"
-            ? obj.image?.url
-            : obj.image;
-        products.push({
-          name: String(obj.name),
-          price,
-          currency: offer?.priceCurrency || "NGN",
-          description: obj.description ? String(obj.description) : "",
-          imageUrl: image ? String(image) : undefined,
-          sourceUrl,
-        });
-      }
-    } catch {
-      // malformed JSON-LD block — skip
-    }
-  }
-  return products;
 }
 
 function extractKnowledge(html: string): CrawledEntry[] {
@@ -152,13 +108,17 @@ export async function POST(req: NextRequest) {
     let targetUrl = String(url).trim();
     if (!/^https?:\/\//i.test(targetUrl)) targetUrl = `https://${targetUrl}`;
 
-    // SSRF guard: the seed URL must resolve to a public address before we
-    // make any server-side fetch. Throws ApiError(400) on private/invalid.
+    // Products: layered importer (platform-JSON → JSON-LD → fetch+LLM →
+    // Firecrawl), which runs its own SSRF guard + persistence (dedupe,
+    // embeddings, category auto-seed).
+    const productResult = await importCatalogFromUrl(org.id, targetUrl);
+
+    // Knowledge (shipping/FAQ): a separate best-effort HTML crawl. Its own
+    // SSRF guard on the seed + every followed link.
     const parsedTarget = await assertPublicUrl(targetUrl);
     const origin = parsedTarget.origin;
 
     const crawledPages: string[] = [];
-    const foundProducts: CrawledProduct[] = [];
     const foundEntries: CrawledEntry[] = [];
 
     const queue = [targetUrl];
@@ -166,8 +126,6 @@ export async function POST(req: NextRequest) {
       const pageUrl = queue.shift()!;
       if (crawledPages.includes(pageUrl)) continue;
 
-      // Re-check every followed link, not just the seed — a public page can
-      // link to an internal host. Skip (don't abort the crawl) on failure.
       try {
         await assertPublicUrl(pageUrl);
       } catch {
@@ -178,35 +136,10 @@ export async function POST(req: NextRequest) {
       const html = await fetchPage(pageUrl);
       if (!html) continue;
 
-      foundProducts.push(...extractJsonLdProducts(html, pageUrl));
       foundEntries.push(...extractKnowledge(html));
       for (const link of internalLinks(html, origin).slice(0, 2)) {
         if (!crawledPages.includes(link)) queue.push(link);
       }
-    }
-
-    // Persist drafts, de-duplicated by name/title. No fake fallback data:
-    // an empty crawl reports honestly as empty.
-    let productsAdded = 0;
-    for (const p of foundProducts) {
-      const exists = await prisma.product.findFirst({
-        where: { orgId: org.id, name: { equals: p.name, mode: "insensitive" } },
-        select: { id: true },
-      });
-      if (exists) continue;
-      await prisma.product.create({
-        data: {
-          orgId: org.id,
-          name: p.name,
-          price: p.price,
-          currency: p.currency,
-          description: p.description || null,
-          images: p.imageUrl ? [p.imageUrl] : [],
-          source: "CRAWL",
-          sourceUrl: p.sourceUrl,
-        },
-      });
-      productsAdded++;
     }
 
     let entriesAdded = 0;
@@ -242,9 +175,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      strategy: productResult.strategy,
+      productsFoundCount: productResult.imported,
+      productsSkipped: productResult.skipped.length,
+      productsWarned: productResult.warnings.length,
       pagesCrawledCount: crawledPages.length,
-      pagesCrawled: crawledPages,
-      productsFoundCount: productsAdded,
       faqsFoundCount: foundEntries.filter((e) => e.type === "FAQ").length,
       policiesFoundCount: foundEntries.filter((e) => e.type === "POLICY").length,
     });
