@@ -7,13 +7,29 @@ import type { NextConfig } from "next";
 // Next.js runtime and is a dedicated follow-up). frame-ancestors 'none'
 // gives clickjacking protection without touching script loading, so the
 // script-injected widget on merchant sites is unaffected.
-const SECURITY_HEADERS = [
+const COMMON_HEADERS = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-  { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+];
+
+// Default: no framing at all (anti-clickjacking).
+const SECURITY_HEADERS = [
+  ...COMMON_HEADERS,
+  { key: "X-Frame-Options", value: "DENY" },
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+];
+
+// The widget-preview harness is intentionally embedded in an <iframe> by
+// our own onboarding/settings pages so a merchant can test their live
+// widget. It must be same-origin framable — DENY would blank the iframe.
+// 'self' still blocks any OTHER origin from framing it, so it stays
+// clickjacking-safe.
+const SAMEORIGIN_FRAME_HEADERS = [
+  ...COMMON_HEADERS,
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
 ];
 
 const nextConfig: NextConfig = {
@@ -29,7 +45,15 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      // widget-preview must be same-origin framable (see above). Listed
+      // first and excluded from the DENY rule below so only ONE
+      // X-Frame-Options value is ever sent for it.
+      { source: "/widget-preview", headers: SAMEORIGIN_FRAME_HEADERS },
+      // Everything else: no framing. Negative lookahead keeps widget-preview
+      // out of this rule so it never gets a conflicting DENY header.
+      { source: "/((?!widget-preview).*)", headers: SECURITY_HEADERS },
+    ];
   },
 };
 
