@@ -14,6 +14,7 @@ interface Product {
   stockClass: string;
   aiCompleteness: number;
   icon: string;
+  imageUrl?: string | null;
   description?: string;
 }
 
@@ -37,6 +38,9 @@ export default function ProductsPage() {
   const [category, setCategory] = useState("all");
   const [showAddDrawer, setShowAddDrawer] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  // Product ids whose image URL failed to load — fall back to the category
+  // icon instead of a browser broken-image glyph.
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
 
   const [newName, setNewName] = useState("");
   const [newBrand, setNewBrand] = useState("");
@@ -214,7 +218,17 @@ export default function ProductsPage() {
             {visibleProducts.map((p) => (
               <div key={p.id} className="prod-card">
                 <div className="prod-card-top">
-                  <div className="prod-icon-tile">{p.icon}</div>
+                  {p.imageUrl && !brokenImages.has(p.id) ? (
+                    <img
+                      src={p.imageUrl}
+                      alt={p.name}
+                      className="prod-image-tile"
+                      loading="lazy"
+                      onError={() => setBrokenImages((prev) => new Set(prev).add(p.id))}
+                    />
+                  ) : (
+                    <div className="prod-icon-tile">{p.icon}</div>
+                  )}
                   <span className="prod-category-tag">{p.category}</span>
                 </div>
 

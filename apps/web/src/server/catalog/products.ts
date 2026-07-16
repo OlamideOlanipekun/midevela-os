@@ -5,6 +5,7 @@ import { syncProductEmbedding, deleteEmbedding } from "@/server/knowledge/sync";
 import { formatMoney } from "@/server/catalog/money";
 import { iconFor } from "@/server/catalog/icons";
 import { getOrCreateCategoryByName } from "@/server/catalog/categories";
+import { firstImageUrl } from "@/server/retrieval/search";
 
 export { formatMoney, iconFor };
 
@@ -73,6 +74,7 @@ export function toProductResponse(p: ProductWithCategory) {
           : "status-dot-red",
     aiCompleteness: completenessScore(p.description),
     icon: iconFor(categoryName),
+    imageUrl: firstImageUrl(p.images),
     description: p.description ?? "",
   };
 }
