@@ -103,6 +103,7 @@ export interface ProductInput {
   brand?: string;
   stockStatus?: string;
   description?: string;
+  imageUrl?: string;
 }
 
 export async function createProduct(orgId: string, input: ProductInput) {
@@ -110,6 +111,7 @@ export async function createProduct(orgId: string, input: ProductInput) {
     throw new ApiError(400, "Product name and price are required.");
   }
   const category = await getOrCreateCategoryByName(orgId, input.category);
+  const imageUrl = input.imageUrl?.trim();
   const product = await prisma.product.create({
     data: {
       orgId,
@@ -119,6 +121,7 @@ export async function createProduct(orgId: string, input: ProductInput) {
       brand: input.brand?.trim() || null,
       inventoryStatus: LABEL_TO_STATUS[input.stockStatus ?? ""] ?? "IN_STOCK",
       description: input.description || null,
+      images: imageUrl && isHttpUrl(imageUrl) ? [imageUrl] : [],
       source: "MANUAL",
     },
     include: { category: true },
@@ -136,6 +139,7 @@ export async function updateProduct(
   if (!existing) throw new ApiError(404, "Product not found.");
 
   const category = await getOrCreateCategoryByName(orgId, input.category);
+  const trimmedImage = input.imageUrl?.trim();
   const product = await prisma.product.update({
     where: { id },
     data: {
@@ -145,6 +149,12 @@ export async function updateProduct(
       ...(input.brand !== undefined ? { brand: input.brand?.trim() || null } : {}),
       ...(input.stockStatus && LABEL_TO_STATUS[input.stockStatus]
         ? { inventoryStatus: LABEL_TO_STATUS[input.stockStatus] }
+        : {}),
+      // Only touch images when an imageUrl field was sent: a valid URL sets
+      // it, an explicit empty string clears it, undefined leaves it as-is
+      // (so editing other fields never wipes a crawled/imported image).
+      ...(input.imageUrl !== undefined
+        ? { images: trimmedImage && isHttpUrl(trimmedImage) ? [trimmedImage] : [] }
         : {}),
       description: input.description || null,
     },

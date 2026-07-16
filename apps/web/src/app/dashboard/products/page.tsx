@@ -48,6 +48,7 @@ export default function ProductsPage() {
   const [newCategory, setNewCategory] = useState("");
   const [newStock, setNewStock] = useState<"In Stock" | "Low Stock" | "Out of Stock">("In Stock");
   const [newDescription, setNewDescription] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -87,6 +88,7 @@ export default function ProductsPage() {
     setNewCategory(p.category);
     setNewStock(p.stockStatus);
     setNewDescription(p.description || "");
+    setNewImageUrl(p.imageUrl || "");
     setShowAddDrawer(true);
   };
 
@@ -107,8 +109,8 @@ export default function ProductsPage() {
     try {
       const method = editingProduct ? "PUT" : "POST";
       const payload = editingProduct
-        ? { id: editingProduct.id, name: newName, brand: newBrand, price: newPrice, category: newCategory, stockStatus: newStock, description: newDescription }
-        : { name: newName, brand: newBrand, price: newPrice, category: newCategory, stockStatus: newStock, description: newDescription };
+        ? { id: editingProduct.id, name: newName, brand: newBrand, price: newPrice, category: newCategory, stockStatus: newStock, description: newDescription, imageUrl: newImageUrl }
+        : { name: newName, brand: newBrand, price: newPrice, category: newCategory, stockStatus: newStock, description: newDescription, imageUrl: newImageUrl };
 
       const res = await fetch("/api/products", {
         method,
@@ -127,6 +129,7 @@ export default function ProductsPage() {
         setNewBrand("");
         setNewPrice("");
         setNewDescription("");
+        setNewImageUrl("");
         setEditingProduct(null);
         setShowAddDrawer(false);
       }
@@ -307,6 +310,25 @@ export default function ProductsPage() {
                   value={newBrand}
                   onChange={(e) => setNewBrand(e.target.value)}
                 />
+              </div>
+
+              <div className="prod-field">
+                <label htmlFor="new-prod-image">Product image URL (optional)</label>
+                <input
+                  id="new-prod-image"
+                  type="url"
+                  placeholder="https://yourstore.com/images/product.jpg"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                />
+                {newImageUrl.trim() && /^https?:\/\//i.test(newImageUrl.trim()) && (
+                  <img
+                    src={newImageUrl.trim()}
+                    alt="Preview"
+                    style={{ marginTop: 8, width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border)" }}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
+                )}
               </div>
 
               <div className="prod-field">
