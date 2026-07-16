@@ -10,12 +10,36 @@ interface Plan {
   price: string;
 }
 
+interface UsageStatus {
+  planCode: string;
+  used: number;
+  cap: number;
+  unlimited: boolean;
+  pct: number;
+  level: "ok" | "warning" | "critical" | "exceeded";
+  periodLabel: string;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   trialing: "Trialing",
   active: "Active",
   past_due: "Past due",
   cancelled: "Cancelled",
   expired: "Expired",
+};
+
+const USAGE_LEVEL_COLOR: Record<UsageStatus["level"], string> = {
+  ok: "var(--teal)",
+  warning: "#c8860d",
+  critical: "var(--rust)",
+  exceeded: "var(--rust)",
+};
+
+const USAGE_LEVEL_MESSAGE: Record<UsageStatus["level"], string | null> = {
+  ok: null,
+  warning: "You're approaching your monthly AI conversation limit.",
+  critical: "You're close to your monthly AI limit — upgrade to avoid interruptions.",
+  exceeded: "You've reached your monthly AI limit. New widget conversations are paused until next month or you upgrade.",
 };
 
 function formatDate(iso: string | null): string | null {
@@ -28,12 +52,18 @@ export default function BillingPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<UsageStatus | null>(null);
 
   useEffect(() => {
     fetch("/api/billing/plans")
       .then((res) => res.json())
       .then((data) => setPlans(Array.isArray(data.plans) ? data.plans : []))
       .catch(() => setPlans([]));
+
+    fetch("/api/billing/usage")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUsage(data))
+      .catch(() => setUsage(null));
   }, []);
 
   // After returning from Paystack's hosted checkout, the webhook may
@@ -102,6 +132,36 @@ export default function BillingPage() {
           )}
           {subscription.status === "active" && subscription.currentPeriodEnd && (
             <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>Renews {formatDate(subscription.currentPeriodEnd)}</div>
+          )}
+        </div>
+      )}
+
+      {usage && (
+        <div className="card" style={{ padding: "18px 22px", marginBottom: 22 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 12, color: "var(--ink-soft)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              AI conversations this month
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: USAGE_LEVEL_COLOR[usage.level] }}>
+              {usage.unlimited ? `${usage.used.toLocaleString()} used` : `${usage.used.toLocaleString()} / ${usage.cap.toLocaleString()}`}
+            </div>
+          </div>
+          {!usage.unlimited && (
+            <div style={{ marginTop: 10, height: 8, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${Math.min(100, usage.pct)}%`,
+                  height: "100%",
+                  background: USAGE_LEVEL_COLOR[usage.level],
+                  transition: "width 0.3s ease",
+                }}
+              />
+            </div>
+          )}
+          {USAGE_LEVEL_MESSAGE[usage.level] && (
+            <div style={{ marginTop: 10, fontSize: 13, color: USAGE_LEVEL_COLOR[usage.level] }}>
+              {USAGE_LEVEL_MESSAGE[usage.level]}
+            </div>
           )}
         </div>
       )}

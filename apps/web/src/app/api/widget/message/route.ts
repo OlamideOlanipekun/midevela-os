@@ -5,20 +5,36 @@ import { resolveWidgetKey, isOriginAllowed, corsHeaders } from "@/server/convers
 import { processConversationTurn } from "@/server/conversation/engine";
 import { defaultOrgSettings, type OrgSettings } from "@/server/tenancy/org";
 import { getSubscriptionForOrg, accessLevelFor } from "@/server/billing/subscription";
+import { getUsageStatus, recordAiUsage } from "@/server/billing/usage";
 import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
 import type { ChatMessage } from "@/server/conversation/llm";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
 
-// Per-minute abuse limits on the public widget. The key is public (it's in
-// every merchant's page source), so these bound how fast anyone can drive
-// paid LLM calls. Checked before the DB lookup so spam never touches Postgres.
+// ─── Multi-layer usage control (workspace isolation + cost protection) ───
+// Every layer below runs cheapest/broadest-first and BEFORE any DB write or
+// LLM call, so an abusive or over-cap request never generates cost or data.
+//
+//   IP/key limits          → this specific widget key can't be hammered
+//   Session limits         → one VISITOR can't hog the key's shared budget
+//   Global platform limit  → protects Midevela's own Groq/Voyage spend
+//                            across every merchant, independent of any
+//                            single org's plan
+//   Daily org safety limit → a runaway bot/loop can't burn a whole month
+//                            of one merchant's cap in a single day
+//   Monthly org cap        → the REAL per-plan limit (Plan.monthlyMessageCap),
+//                            tracked durably in Postgres (server/billing/usage.ts)
 const WIDGET_IP_PER_MIN = 60;
 const WIDGET_KEY_PER_MIN = 30;
-// Hard monthly ceiling on LLM turns per org — an abuse backstop independent
-// of (and stricter-failing than) per-plan caps, which land in PR-8.
-const WIDGET_MONTHLY_CAP = Number(process.env.WIDGET_MONTHLY_CAP) || 10000;
+// Per-VISITOR-SESSION limits — tighter than the per-key limits above so one
+// shopper can't monopolize a merchant's shared widget-key budget.
+const SESSION_PER_MIN = 10;
+const SESSION_MAX_MESSAGES = 30; // per session "lifetime" (approximated via a long window)
+const SESSION_WINDOW_SEC = 6 * 60 * 60;
+// Platform-wide safety net, independent of any org's plan — protects
+// Midevela's own Groq/Voyage account from a runaway cost event.
+const GLOBAL_MONTHLY_CAP = Number(process.env.GLOBAL_MONTHLY_MESSAGE_CAP) || 50000;
 
 // Shown to a shopper when the merchant's subscription is inactive. The
 // assistant simply goes quiet — we never spend Groq/Voyage on an org that
@@ -73,6 +89,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Platform-wide safety net — independent of any single org's plan or
+    // widget key, protects Midevela's own Groq/Voyage account. Checked
+    // before any DB read since it doesn't depend on which org this is.
+    const yyyymm = new Date().toISOString().slice(0, 7).replace("-", "");
+    const globalLimit = await rateLimit(`usage:global:${yyyymm}`, GLOBAL_MONTHLY_CAP, 32 * 86400);
+    if (!globalLimit.ok) {
+      console.error(`Widget: PLATFORM-WIDE monthly message ceiling hit (${GLOBAL_MONTHLY_CAP}).`);
+      return NextResponse.json(
+        { replyText: ASSISTANT_UNAVAILABLE_REPLY, intent: null, recommendations: [] },
+        { headers }
+      );
+    }
+
     const key = await resolveWidgetKey(widgetKey);
     if (!key) {
       return NextResponse.json({ error: "Invalid widget key." }, { status: 401, headers });
@@ -82,6 +111,30 @@ export async function POST(req: NextRequest) {
     }
 
     const org = key.org;
+
+    // Client-supplied visitor id, bounded. When absent (storage-blocked
+    // browsers, scripted callers) mint a fresh one per request — a shared
+    // "anonymous" bucket would merge strangers into one conversation and
+    // leak their history to each other through the LLM context window.
+    const trimmedCustomerId =
+      typeof customerId === "string" && customerId.trim().length <= 128 ? customerId.trim() : "";
+    const externalId = trimmedCustomerId || `anon-${crypto.randomUUID()}`;
+
+    // Per-VISITOR-SESSION limits, scoped to this org so two different
+    // merchants' visitors can never collide on the same key even if a
+    // customerId were somehow reused. Tighter than the per-key limits above
+    // so one shopper can't monopolize a merchant's shared widget-key budget.
+    const sessionKey = `${org.id}:${externalId}`;
+    const [sessionPerMin, sessionLifetime] = await Promise.all([
+      rateLimit(`session:min:${sessionKey}`, SESSION_PER_MIN, 60),
+      rateLimit(`session:total:${sessionKey}`, SESSION_MAX_MESSAGES, SESSION_WINDOW_SEC),
+    ]);
+    if (!sessionPerMin.ok || !sessionLifetime.ok) {
+      return NextResponse.json(
+        { replyText: RATE_LIMITED_REPLY, intent: null, recommendations: [] },
+        { headers }
+      );
+    }
 
     // Billing gate: a locked (expired/cancelled) org's widget must not
     // reach the LLM. past_due stays live through the grace window — we
@@ -96,26 +149,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hard monthly ceiling on LLM turns for this org (abuse backstop). Keyed
-    // by year-month so it rolls over automatically; checked before any writes
-    // so an over-cap org generates neither cost nor data.
-    const yyyymm = new Date().toISOString().slice(0, 7).replace("-", "");
-    const monthly = await rateLimit(`usage:${org.id}:${yyyymm}`, WIDGET_MONTHLY_CAP, 32 * 86400);
-    if (!monthly.ok) {
-      console.error(`Widget: org ${org.id} hit the monthly LLM ceiling (${WIDGET_MONTHLY_CAP}).`);
+    // Real per-plan usage: (a) a daily safety net sized to the org's own
+    // plan (so a runaway bot/loop can't burn a whole month's cap in a day),
+    // then (b) the actual monthly cap from Plan.monthlyMessageCap, tracked
+    // durably in Postgres (server/billing/usage.ts) — this is the field
+    // that existed in the schema but was never enforced anywhere before.
+    const usage = await getUsageStatus(org.id);
+    const dailyCap = usage.unlimited ? 2000 : Math.max(50, Math.ceil(usage.cap / 20));
+    const dailyKey = `usage:daily:${org.id}:${new Date().toISOString().slice(0, 10)}`;
+    const dailyLimit = await rateLimit(dailyKey, dailyCap, 86400);
+    if (!dailyLimit.ok) {
+      console.error(`Widget: org ${org.id} hit its daily safety limit (${dailyCap}).`);
       return NextResponse.json(
         { replyText: ASSISTANT_UNAVAILABLE_REPLY, intent: null, recommendations: [] },
         { headers }
       );
     }
-
-    // Client-supplied visitor id, bounded. When absent (storage-blocked
-    // browsers, scripted callers) mint a fresh one per request — a shared
-    // "anonymous" bucket would merge strangers into one conversation and
-    // leak their history to each other through the LLM context window.
-    const trimmedCustomerId =
-      typeof customerId === "string" && customerId.trim().length <= 128 ? customerId.trim() : "";
-    const externalId = trimmedCustomerId || `anon-${crypto.randomUUID()}`;
+    if (usage.level === "exceeded") {
+      console.error(`Widget: org ${org.id} exceeded its ${usage.planCode} plan cap (${usage.used}/${usage.cap}).`);
+      return NextResponse.json(
+        { replyText: ASSISTANT_UNAVAILABLE_REPLY, intent: null, recommendations: [] },
+        { headers }
+      );
+    }
 
     const customer = await prisma.customer.upsert({
       where: { orgId_externalId: { orgId: org.id, externalId } },
@@ -203,6 +259,11 @@ export async function POST(req: NextRequest) {
         data: { intent: result.intent },
       }),
     ]);
+
+    // Durable per-plan usage counter — the real basis for the monthly cap
+    // check above and the dashboard's usage display. Best-effort: a failure
+    // here must never break a reply that already succeeded.
+    await recordAiUsage(org.id);
 
     return NextResponse.json(
       { replyText: result.replyText, intent: result.intent, recommendations: result.recommendations },
