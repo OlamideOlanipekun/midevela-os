@@ -60,6 +60,45 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+// Filenames that are almost never the actual product photo — nav logos,
+// payment badges, UI sprites — so the LLM isn't distracted by them.
+const NON_PRODUCT_IMAGE = /logo|icon|sprite|badge|payment|favicon|avatar|placeholder/i;
+
+/** Pulls the real image URL out of an <img> tag, preferring lazy-load
+ *  attributes (data-src, srcset) over `src`, since many storefronts put a
+ *  1x1 placeholder gif in `src` and the real photo in a data-* attribute. */
+function imgSrc(tag: string): string {
+  const attr = (name: string) => {
+    const m = tag.match(new RegExp(`${name}\\s*=\\s*["']([^"']+)["']`, "i"));
+    return m ? m[1].trim() : "";
+  };
+  const srcset = attr("data-srcset") || attr("srcset");
+  const firstFromSrcset = srcset ? srcset.split(",")[0].trim().split(/\s+/)[0] : "";
+  return attr("data-src") || attr("data-original") || attr("data-lazy-src") || firstFromSrcset || attr("src");
+}
+
+/** Like stripHtml, but turns <img> tags into inline `![alt](url)` markers
+ *  first, so a product's photo survives into the text the LLM sees instead
+ *  of being discarded along with every other tag. */
+function htmlToMarkdownish(html: string, baseUrl: string): string {
+  const withImages = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<img\b[^>]*>/gi, (tag) => {
+      const src = imgSrc(tag);
+      if (!src || NON_PRODUCT_IMAGE.test(src)) return "";
+      const abs = absolutizeUrl(src, baseUrl);
+      if (!abs) return "";
+      const altMatch = tag.match(/alt\s*=\s*["']([^"']*)["']/i);
+      return ` ![${altMatch ? altMatch[1] : ""}](${abs}) `;
+    });
+  return withImages
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // A realistic browser UA. Many storefronts (and their public /products.json
 // endpoints) block non-browser user-agents behind bot protection — with a
 // bot UA, allbirds' free Shopify endpoint 403s and we waste a paid Firecrawl
@@ -89,11 +128,15 @@ async function timedFetch(url: string, init?: RequestInit): Promise<Response | n
 }
 
 /** Extract products from arbitrary page text/markdown via Groq (higher
- *  token cap than the conversation engine's completeJson). Never invents. */
-async function groqExtract(content: string): Promise<ImportRow[]> {
+ *  token cap than the conversation engine's completeJson). Never invents.
+ *  When baseUrl is given, the content is expected to carry inline
+ *  `![alt](url)` image markers (see htmlToMarkdownish / Firecrawl's own
+ *  markdown output) and the LLM is asked to pair each product with the
+ *  marker nearest it — never to invent a URL that isn't in the text. */
+async function groqExtract(content: string, baseUrl?: string): Promise<ImportRow[]> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return [];
-  const clipped = content.slice(0, 16000);
+  const clipped = content.slice(0, 20000);
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -106,8 +149,11 @@ async function groqExtract(content: string): Promise<ImportRow[]> {
         {
           role: "system",
           content:
-            'You extract e-commerce products from a storefront page. Return ONLY JSON: {"products":[{"name":string,"price":string,"category":string,"description":string}]}. ' +
-            "Only real purchasable products actually shown on the page. price is digits only (no currency symbol). If a field is unknown use an empty string. If there are no products return an empty array. Never invent products.",
+            'You extract e-commerce products from a storefront page. Return ONLY JSON: {"products":[{"name":string,"price":string,"category":string,"description":string,"imageUrl":string}]}. ' +
+            "Only real purchasable products actually shown on the page. price is digits only (no currency symbol). " +
+            "The text may contain inline image markers like ![alt](url) — if one clearly belongs to a product (appears right next to its name/price), copy that URL verbatim into imageUrl. " +
+            "Never invent or guess an image URL — only use one that appears literally in the given text, and leave imageUrl empty if none clearly matches. " +
+            "If a field is unknown use an empty string. If there are no products return an empty array. Never invent products.",
         },
         { role: "user", content: `Storefront page content:\n\n${clipped}` },
       ],
@@ -121,11 +167,12 @@ async function groqExtract(content: string): Promise<ImportRow[]> {
     return products
       .filter((p: { name?: string }) => p && typeof p.name === "string" && p.name.trim())
       .slice(0, MAX_PRODUCTS)
-      .map((p: { name: string; price?: string; category?: string; description?: string }) => ({
+      .map((p: { name: string; price?: string; category?: string; description?: string; imageUrl?: string }) => ({
         name: p.name.trim(),
         price: p.price ?? "",
         category: p.category ?? "",
         description: p.description ?? "",
+        imageUrl: p.imageUrl && baseUrl ? absolutizeUrl(p.imageUrl, baseUrl) : "",
       }));
   } catch {
     return [];
@@ -251,7 +298,7 @@ async function tryFirecrawl(url: string, stealth: boolean): Promise<ImportRow[]>
     return [];
   }
   if (md.length < 40) return [];
-  return groqExtract(md);
+  return groqExtract(md, url);
 }
 
 // ─── orchestrator ────────────────────────────────────────────────────────
@@ -281,7 +328,7 @@ export async function importCatalogFromUrl(orgId: string, rawUrl: string): Promi
       rows = extractJsonLd(html, url);
       if (rows.length) strategy = "json-ld";
       if (!rows.length) {
-        rows = await groqExtract(stripHtml(html));
+        rows = await groqExtract(htmlToMarkdownish(html, url), url);
         if (rows.length) strategy = "fetch-llm";
       }
     }
