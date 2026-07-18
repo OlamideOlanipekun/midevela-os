@@ -2,7 +2,7 @@ import type { Product, Category, InventoryStatus } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ApiError } from "@/server/http";
 import { syncProductEmbedding, deleteEmbedding } from "@/server/knowledge/sync";
-import { formatMoney } from "@/server/catalog/money";
+import { formatMoney, normalizeCurrencyCode } from "@/server/catalog/money";
 import { iconFor } from "@/server/catalog/icons";
 import { getOrCreateCategoryByName } from "@/server/catalog/categories";
 import { firstImageUrl } from "@/server/retrieval/search";
@@ -22,6 +22,11 @@ const LABEL_TO_STATUS: Record<string, InventoryStatus> = {
   "Low Stock": "LOW_STOCK",
   "Out of Stock": "OUT_OF_STOCK",
 };
+
+async function getOrgCurrency(orgId: string): Promise<string> {
+  const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { currency: true } });
+  return org?.currency ?? "NGN";
+}
 
 function completenessScore(description: string | null | undefined): number {
   if (!description) return 40;
@@ -104,6 +109,7 @@ export interface ProductInput {
   stockStatus?: string;
   description?: string;
   imageUrl?: string;
+  currency?: string;
 }
 
 export async function createProduct(orgId: string, input: ProductInput) {
@@ -112,11 +118,13 @@ export async function createProduct(orgId: string, input: ProductInput) {
   }
   const category = await getOrCreateCategoryByName(orgId, input.category);
   const imageUrl = input.imageUrl?.trim();
+  const currency = normalizeCurrencyCode(input.currency) ?? (await getOrgCurrency(orgId));
   const product = await prisma.product.create({
     data: {
       orgId,
       name: input.name,
       price: parsePrice(input.price),
+      currency,
       categoryId: category?.id ?? null,
       brand: input.brand?.trim() || null,
       inventoryStatus: LABEL_TO_STATUS[input.stockStatus ?? ""] ?? "IN_STOCK",
@@ -156,6 +164,9 @@ export async function updateProduct(
       ...(input.imageUrl !== undefined
         ? { images: trimmedImage && isHttpUrl(trimmedImage) ? [trimmedImage] : [] }
         : {}),
+      // Same "only touch if explicitly sent" rule as images — a normal price
+      // edit shouldn't silently reset a correctly-detected currency.
+      ...(normalizeCurrencyCode(input.currency) ? { currency: normalizeCurrencyCode(input.currency)! } : {}),
       description: input.description || null,
     },
     include: { category: true },
@@ -186,6 +197,7 @@ export interface ImportRow {
   description?: string;
   imageUrl?: string;
   stockStatus?: string;
+  currency?: string;
 }
 
 export interface ImportResult {
@@ -218,6 +230,9 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
   // so a re-import doesn't create duplicates of products already in the DB.
   const existing = await prisma.product.findMany({ where: { orgId }, select: { name: true } });
   const seenNames = new Set(existing.map((p) => p.name.trim().toLowerCase()));
+  // Fallback for rows with no confidently-detected currency (CSV rows never
+  // have one; crawled rows do when the source page made it clear).
+  const orgCurrency = await getOrgCurrency(orgId);
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i] ?? {};
@@ -266,6 +281,7 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
         orgId,
         name,
         price,
+        currency: normalizeCurrencyCode(row.currency) ?? orgCurrency,
         categoryId: category?.id ?? null,
         brand: String(row.brand ?? "").trim() || null,
         description: description || null,

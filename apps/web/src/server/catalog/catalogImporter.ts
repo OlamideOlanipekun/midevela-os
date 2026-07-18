@@ -1,5 +1,6 @@
 import { assertPublicUrl } from "@/server/net/ssrfGuard";
 import { importProducts, type ImportRow, type ImportResult } from "@/server/catalog/products";
+import { normalizeCurrencyCode } from "@/server/catalog/money";
 
 /**
  * Layered catalog importer. Tries strategies cheapest-and-most-accurate
@@ -149,8 +150,10 @@ async function groqExtract(content: string, baseUrl?: string): Promise<ImportRow
         {
           role: "system",
           content:
-            'You extract e-commerce products from a storefront page. Return ONLY JSON: {"products":[{"name":string,"price":string,"category":string,"description":string,"imageUrl":string}]}. ' +
+            'You extract e-commerce products from a storefront page. Return ONLY JSON: {"products":[{"name":string,"price":string,"category":string,"description":string,"imageUrl":string,"currency":string}]}. ' +
             "Only real purchasable products actually shown on the page. price is digits only (no currency symbol). " +
+            "currency is the ISO 4217 code for whatever currency the page actually shows prices in — infer it from a symbol ($ = USD, ₦ or 'NGN' = NGN, £ = GBP, € = EUR) or an explicit code. " +
+            "Use the SAME currency for every product unless the page clearly shows different currencies for different products. If you can't tell, leave currency empty — never guess. " +
             "The text may contain inline image markers like ![alt](url) — if one clearly belongs to a product (appears right next to its name/price), copy that URL verbatim into imageUrl. " +
             "Never invent or guess an image URL — only use one that appears literally in the given text, and leave imageUrl empty if none clearly matches. " +
             "If a field is unknown use an empty string. If there are no products return an empty array. Never invent products.",
@@ -167,12 +170,13 @@ async function groqExtract(content: string, baseUrl?: string): Promise<ImportRow
     return products
       .filter((p: { name?: string }) => p && typeof p.name === "string" && p.name.trim())
       .slice(0, MAX_PRODUCTS)
-      .map((p: { name: string; price?: string; category?: string; description?: string; imageUrl?: string }) => ({
+      .map((p: { name: string; price?: string; category?: string; description?: string; imageUrl?: string; currency?: string }) => ({
         name: p.name.trim(),
         price: p.price ?? "",
         category: p.category ?? "",
         description: p.description ?? "",
         imageUrl: p.imageUrl && baseUrl ? absolutizeUrl(p.imageUrl, baseUrl) : "",
+        currency: normalizeCurrencyCode(p.currency) ?? undefined,
       }));
   } catch {
     return [];
@@ -236,6 +240,7 @@ async function tryWooCommerce(origin: string): Promise<ImportRow[]> {
       category: categories[0]?.name ? String(categories[0].name) : "",
       description: p.short_description ? stripHtml(String(p.short_description)).slice(0, 600) : "",
       imageUrl: images[0]?.src ? absolutizeUrl(String(images[0].src), origin) : "",
+      currency: normalizeCurrencyCode(prices.currency_code) ?? undefined,
     });
   }
   return rows.slice(0, MAX_PRODUCTS);
@@ -259,12 +264,14 @@ function extractJsonLd(html: string, pageUrl: string): ImportRow[] {
         const price = (offer as Record<string, unknown>)?.price;
         if (price === undefined) continue;
         const image = Array.isArray(obj.image) ? obj.image[0] : typeof obj.image === "object" ? (obj.image as Record<string, unknown>)?.url : obj.image;
+        const priceCurrency = (offer as Record<string, unknown>)?.priceCurrency;
         rows.push({
           name: String(obj.name),
           price: String(price),
           brand: obj.brand ? String((obj.brand as Record<string, unknown>)?.name ?? obj.brand) : "",
           description: obj.description ? String(obj.description) : "",
           imageUrl: image ? absolutizeUrl(String(image), pageUrl) : "",
+          currency: normalizeCurrencyCode(priceCurrency) ?? undefined,
         });
       }
     } catch {
