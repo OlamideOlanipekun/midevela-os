@@ -359,6 +359,7 @@ model Plan {
   monthlyMessageCap Int     @map("monthly_message_cap")
   productCap        Int     @map("product_cap")
   channelCap        Int     @default(1) @map("channel_cap")
+  knowledgeCap      Int     @default(10) @map("knowledge_cap")
   active            Boolean @default(true)
 
   subscriptions Subscription[]

@@ -29,7 +29,7 @@ export default function PricingPage() {
                 <div className="p-price">₦15,000<span>/ month</span></div>
                 <p className="p-desc">For small retailers and entrepreneurs getting started with automated sales.</p>
                 <ul className="p-list">
-                  <li><span className="check">✓</span> WhatsApp + website widget</li>
+                  <li><span className="check">✓</span> Website widget (WhatsApp — coming soon)</li>
                   <li><span className="check">✓</span> Catalog up to 20 items</li>
                   <li><span className="check">✓</span> Core AI qualification &amp; scoring</li>
                   <li><span className="check">✓</span> Standard AI sales agent</li>
@@ -47,7 +47,7 @@ export default function PricingPage() {
                 <p className="p-desc">For growing businesses handling daily customer inquiries across channels.</p>
                 <ul className="p-list">
                   <li><span className="check">✓</span> Everything in Starter</li>
-                  <li><span className="check">✓</span> All channels — WhatsApp, website, social</li>
+                  <li><span className="check">✓</span> Website widget (WhatsApp, social — coming soon)</li>
                   <li><span className="check">✓</span> Unlimited catalog items</li>
                   <li><span className="check">✓</span> Paystack payment link generation</li>
                   <li><span className="check">✓</span> Appointment booking engine</li>
@@ -64,7 +64,7 @@ export default function PricingPage() {
                 <ul className="p-list">
                   <li><span className="check">✓</span> Everything in Growth</li>
                   <li><span className="check">✓</span> Custom-trained AI persona</li>
-                  <li><span className="check">✓</span> Multi-staff dashboard access</li>
+                  <li><span className="check">✓</span> Multi-staff dashboard access (coming soon)</li>
                   <li><span className="check">✓</span> Predictive lead scoring</li>
                   <li><span className="check">✓</span> Priority support &amp; dedicated manager</li>
                   <li><span className="check">✓</span> Unlimited AI messages</li>

@@ -5,6 +5,7 @@ import { requireActiveOrg } from "@/server/auth/context";
 import { withErrorHandling, jsonError } from "@/server/http";
 import { assertPublicUrl } from "@/server/net/ssrfGuard";
 import { importCatalogFromUrl } from "@/server/catalog/catalogImporter";
+import { getPlanCaps, remainingBudget } from "@/server/billing/caps";
 
 // Products now come from the layered catalogImporter (platform-JSON →
 // JSON-LD → fetch+LLM → Firecrawl). This route additionally does a light,
@@ -142,6 +143,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Plan-capped: crawled FAQ/policy pages count toward the org's total
+    // knowledge entries like any manually-added one. Updates to an already-
+    // existing policy don't consume budget — only genuinely new rows do.
+    const { knowledgeCap } = await getPlanCaps(org.id);
+    const existingKnowledgeCount = await prisma.knowledgeEntry.count({ where: { orgId: org.id } });
+    let budget = remainingBudget(existingKnowledgeCount, knowledgeCap);
+
     let entriesAdded = 0;
     for (const e of foundEntries) {
       const exists = await prisma.knowledgeEntry.findFirst({
@@ -161,6 +169,7 @@ export async function POST(req: NextRequest) {
         }
         continue;
       }
+      if (budget <= 0) continue;
       await prisma.knowledgeEntry.create({
         data: {
           orgId: org.id,
@@ -170,6 +179,7 @@ export async function POST(req: NextRequest) {
           metadata: e.metadata ?? {},
         },
       });
+      budget--;
       entriesAdded++;
     }
 

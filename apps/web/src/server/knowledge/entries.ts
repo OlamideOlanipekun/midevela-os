@@ -3,6 +3,22 @@ import prisma from "@/lib/prisma";
 import { ApiError } from "@/server/http";
 import { syncKnowledgeEmbedding, deleteEmbedding } from "@/server/knowledge/sync";
 import { relativeTime } from "@/server/shared/time";
+import { getPlanCaps, isUnlimited } from "@/server/billing/caps";
+
+/** Throws a 403 once the org's total knowledge entries (FAQ + POLICY +
+ *  DOCUMENT) are at its plan's cap. Call before creating a NEW row —
+ *  updates to an existing entry never need this. */
+async function assertKnowledgeBudget(orgId: string) {
+  const { knowledgeCap } = await getPlanCaps(orgId);
+  if (isUnlimited(knowledgeCap)) return;
+  const count = await prisma.knowledgeEntry.count({ where: { orgId } });
+  if (count >= knowledgeCap) {
+    throw new ApiError(
+      403,
+      `You've reached your plan's knowledge base limit (${knowledgeCap} entries). Upgrade to add more.`
+    );
+  }
+}
 
 /** Best-effort — see products.ts's safeSyncProductEmbedding for why. */
 async function safeSyncKnowledgeEmbedding(orgId: string, entry: KnowledgeEntry) {
@@ -87,6 +103,7 @@ export async function createFaq(
   if (!input.question || !input.answer) {
     throw new ApiError(400, "Question and answer are required.");
   }
+  await assertKnowledgeBudget(orgId);
   const entry = await prisma.knowledgeEntry.create({
     data: {
       orgId,
@@ -115,6 +132,7 @@ export async function upsertPolicy(
       title: { equals: input.name, mode: "insensitive" },
     },
   });
+  if (!existing) await assertKnowledgeBudget(orgId);
   const entry = existing
     ? await prisma.knowledgeEntry.update({
         where: { id: existing.id },

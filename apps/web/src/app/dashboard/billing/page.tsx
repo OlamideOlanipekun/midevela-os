@@ -80,10 +80,10 @@ export default function BillingPage() {
 
   const features = [
     { label: "AI conversations / month", starter: "1,000", growth: "5,000", pro: "Unlimited" },
-    { label: "Omnichannel support", starter: "WhatsApp only", growth: "WhatsApp, Website, IG", pro: "All channels + API" },
-    { label: "Knowledge base sources", starter: "Up to 10 FAQs", growth: "Up to 50 FAQs + 5 PDFs", pro: "Unlimited (dynamic scraping)" },
-    { label: "Team seats", starter: "1 user", growth: "3 users", pro: "Unlimited" },
-    { label: "Response latency", starter: "Standard", growth: "Priority reasoning", pro: "Dedicated model engine" },
+    { label: "Omnichannel support", starter: "Website widget", growth: "Website widget", pro: "Website widget" },
+    { label: "Knowledge base sources", starter: "Up to 10 entries", growth: "Up to 50 entries", pro: "Unlimited (dynamic scraping)" },
+    { label: "Team seats", starter: "1 user", growth: "1 user", pro: "1 user" },
+    { label: "Response latency", starter: "Standard", growth: "Standard", pro: "Standard" },
   ];
 
   const handleSelectPlan = async (planCode: string) => {
@@ -220,6 +220,9 @@ export default function BillingPage() {
             ))}
           </tbody>
         </table>
+        <p style={{ padding: "12px 0 0", color: "var(--ink-soft)", fontSize: 13, lineHeight: 1.6 }}>
+          WhatsApp/Instagram channels, PDF knowledge uploads, multi-seat teams, and priority-latency tiers are coming soon.
+        </p>
       </div>
 
       <div className="grid-2">

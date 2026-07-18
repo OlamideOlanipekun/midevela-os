@@ -6,6 +6,7 @@ import { formatMoney, normalizeCurrencyCode } from "@/server/catalog/money";
 import { iconFor } from "@/server/catalog/icons";
 import { getOrCreateCategoryByName, backfillCategoryImages } from "@/server/catalog/categories";
 import { firstImageUrl } from "@/server/retrieval/search";
+import { getPlanCaps, remainingBudget } from "@/server/billing/caps";
 
 export { formatMoney, iconFor };
 
@@ -115,6 +116,10 @@ export interface ProductInput {
 export async function createProduct(orgId: string, input: ProductInput) {
   if (!input.name || input.price === undefined || input.price === "") {
     throw new ApiError(400, "Product name and price are required.");
+  }
+  const { productCap } = await getPlanCaps(orgId);
+  if (remainingBudget(await prisma.product.count({ where: { orgId } }), productCap) <= 0) {
+    throw new ApiError(403, `You've reached your plan's product limit (${productCap}). Upgrade to add more.`);
   }
   const category = await getOrCreateCategoryByName(orgId, input.category);
   const imageUrl = input.imageUrl?.trim();
@@ -234,6 +239,8 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
   // Fallback for rows with no confidently-detected currency (CSV rows never
   // have one; crawled rows do when the source page made it clear).
   const orgCurrency = await getOrgCurrency(orgId);
+  const { productCap } = await getPlanCaps(orgId);
+  let productBudget = remainingBudget(existing.length, productCap);
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i] ?? {};
@@ -276,6 +283,11 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
       result.warnings.push({ row: rowNum, name, reason: "No category — product won't appear in the widget's category grid." });
     }
 
+    if (productBudget <= 0) {
+      result.skipped.push({ row: rowNum, name, reason: `Plan product limit reached (${productCap}). Upgrade to import more.` });
+      continue;
+    }
+
     const category = await getOrCreateCategoryByName(orgId, row.category, { image: row.categoryImageUrl });
     const product = await prisma.product.create({
       data: {
@@ -293,6 +305,7 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
       include: { category: true },
     });
     await safeSyncProductEmbedding(orgId, product);
+    productBudget--;
     result.imported++;
   }
 
