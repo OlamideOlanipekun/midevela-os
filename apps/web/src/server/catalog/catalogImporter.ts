@@ -234,6 +234,7 @@ async function tryWooCommerce(origin: string): Promise<ImportRow[]> {
     if (!p.name || !Number.isFinite(rawPrice)) continue;
     const images = Array.isArray(p.images) ? (p.images as Array<Record<string, unknown>>) : [];
     const categories = Array.isArray(p.categories) ? (p.categories as Array<Record<string, unknown>>) : [];
+    const categoryImage = categories[0]?.image as Record<string, unknown> | undefined;
     rows.push({
       name: String(p.name),
       price: String(rawPrice / Math.pow(10, minor)),
@@ -241,6 +242,7 @@ async function tryWooCommerce(origin: string): Promise<ImportRow[]> {
       description: p.short_description ? stripHtml(String(p.short_description)).slice(0, 600) : "",
       imageUrl: images[0]?.src ? absolutizeUrl(String(images[0].src), origin) : "",
       currency: normalizeCurrencyCode(prices.currency_code) ?? undefined,
+      categoryImageUrl: (categoryImage?.src ? absolutizeUrl(String(categoryImage.src), origin) : "") || undefined,
     });
   }
   return rows.slice(0, MAX_PRODUCTS);

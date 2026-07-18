@@ -4,7 +4,7 @@ import { ApiError } from "@/server/http";
 import { syncProductEmbedding, deleteEmbedding } from "@/server/knowledge/sync";
 import { formatMoney, normalizeCurrencyCode } from "@/server/catalog/money";
 import { iconFor } from "@/server/catalog/icons";
-import { getOrCreateCategoryByName } from "@/server/catalog/categories";
+import { getOrCreateCategoryByName, backfillCategoryImages } from "@/server/catalog/categories";
 import { firstImageUrl } from "@/server/retrieval/search";
 
 export { formatMoney, iconFor };
@@ -198,6 +198,7 @@ export interface ImportRow {
   imageUrl?: string;
   stockStatus?: string;
   currency?: string;
+  categoryImageUrl?: string;
 }
 
 export interface ImportResult {
@@ -275,7 +276,7 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
       result.warnings.push({ row: rowNum, name, reason: "No category — product won't appear in the widget's category grid." });
     }
 
-    const category = await getOrCreateCategoryByName(orgId, row.category);
+    const category = await getOrCreateCategoryByName(orgId, row.category, { image: row.categoryImageUrl });
     const product = await prisma.product.create({
       data: {
         orgId,
@@ -293,6 +294,15 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
     });
     await safeSyncProductEmbedding(orgId, product);
     result.imported++;
+  }
+
+  // Best-effort: fill any category still missing an image with a
+  // representative product photo, now that this batch's products (and
+  // their images) are persisted. A failure here shouldn't fail the import.
+  try {
+    await backfillCategoryImages(orgId);
+  } catch (err) {
+    console.error("Category image backfill failed:", err);
   }
 
   return result;

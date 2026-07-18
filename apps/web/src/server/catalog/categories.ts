@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { ApiError } from "@/server/http";
 import { iconFor } from "@/server/catalog/icons";
 import { getDefaultQualificationFlow, type QualificationFlow } from "@/server/widget/qualificationTemplates";
+import { firstImageUrl, safeHttpUrl } from "@/server/retrieval/search";
 
 export function slugify(name: string): string {
   return name
@@ -82,9 +83,11 @@ export interface CategoryInput {
  * (manual product add/edit, the crawler). Creates the category — seeded
  * with a slug, icon, and a default qualification flow inferred from the
  * name/org industry — the first time it's used; otherwise returns the
- * existing row untouched.
+ * existing row untouched. `opts.image`, when a valid http(s) URL, seeds a
+ * real category image on CREATE only — an existing category is never
+ * touched here, so a re-crawl can't clobber an image already set.
  */
-export async function getOrCreateCategoryByName(orgId: string, name?: string) {
+export async function getOrCreateCategoryByName(orgId: string, name?: string, opts?: { image?: string }) {
   const trimmed = name?.trim();
   if (!trimmed) return null;
 
@@ -99,11 +102,39 @@ export async function getOrCreateCategoryByName(orgId: string, name?: string) {
       orgId,
       name: trimmed,
       slug: slugify(trimmed),
+      image: safeHttpUrl(opts?.image),
       icon: iconFor(trimmed),
       qualificationFlow: getDefaultQualificationFlow(trimmed, org?.industry) as unknown as Prisma.InputJsonValue,
       displayOrder: (maxOrder._max.displayOrder ?? -1) + 1,
     },
   });
+}
+
+/**
+ * Fills any category still missing an image with a representative photo
+ * from one of its own in-stock products — run best-effort after an
+ * import/crawl so the widget grid stops defaulting to the emoji for any
+ * category whose products actually have real photos. Never touches a
+ * category that already has an image (structured-source or merchant-set).
+ */
+export async function backfillCategoryImages(orgId: string): Promise<void> {
+  const categories = await prisma.category.findMany({
+    where: { orgId, image: null },
+    select: { id: true },
+  });
+  if (categories.length === 0) return;
+
+  for (const cat of categories) {
+    const products = await prisma.product.findMany({
+      where: { orgId, categoryId: cat.id },
+      select: { images: true },
+      orderBy: [{ inventoryStatus: "asc" }, { createdAt: "asc" }],
+      take: 20,
+    });
+    const image = products.map((p) => firstImageUrl(p.images)).find((url): url is string => !!url);
+    if (!image) continue;
+    await prisma.category.update({ where: { id: cat.id }, data: { image } });
+  }
 }
 
 export async function createCategory(orgId: string, input: CategoryInput) {

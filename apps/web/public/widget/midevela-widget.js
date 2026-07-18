@@ -944,6 +944,16 @@
         </div>
       `;
 
+      if (imageUrl) {
+        const img = card.querySelector('.reco-img img');
+        if (img) {
+          img.addEventListener('error', () => {
+            const imgEl = card.querySelector('.reco-img');
+            if (imgEl) imgEl.textContent = '🛍️';
+          }, { once: true });
+        }
+      }
+
       const viewEls = card.querySelectorAll('[data-role="view"]');
       viewEls.forEach((el) => el.addEventListener('click', () => trackEvent('product_viewed', { productId: r.id, source })));
 
@@ -1034,10 +1044,20 @@
           const tile = document.createElement('button');
           tile.type = 'button';
           tile.className = 'cat-tile';
+          const catImage = isHttpUrl(cat.image) ? cat.image : '';
           tile.innerHTML = `
-            <div class="cat-tile-icon">${cat.image ? `<img src="${escapeHtml(cat.image)}" alt="">` : escapeHtml(cat.icon || '📦')}</div>
+            <div class="cat-tile-icon">${catImage ? `<img src="${escapeHtml(catImage)}" alt="">` : escapeHtml(cat.icon || '📦')}</div>
             <span class="cat-tile-name">${escapeHtml(cat.name)}</span>
           `;
+          if (catImage) {
+            const img = tile.querySelector('.cat-tile-icon img');
+            if (img) {
+              img.addEventListener('error', () => {
+                const iconEl = tile.querySelector('.cat-tile-icon');
+                if (iconEl) iconEl.textContent = cat.icon || '📦';
+              }, { once: true });
+            }
+          }
           tile.addEventListener('click', () => selectCategory(cat));
           grid.appendChild(tile);
         });
