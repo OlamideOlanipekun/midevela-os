@@ -484,6 +484,27 @@
   transform: translateY(-1px);
 }
 
+/* Mobile back button — hidden on desktop, shown on mobile */
+.conv-back-btn {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .15s ease;
+}
+
+.conv-back-btn:hover {
+  border-color: var(--ink);
+  background: var(--paper-raised);
+}
+
 /* Take over button */
 .conv-takeover-btn {
   font-family: var(--font-mono);
@@ -677,9 +698,19 @@
   .conv-layout {
     grid-template-columns: 1fr;
   }
+
   .conv-list-panel {
-    display: none;
+    display: flex;
   }
+
+  .conv-list-panel-hidden {
+    display: none !important;
+  }
+
+  .conv-chat-panel-hidden {
+    display: none !important;
+  }
+
   /* Grid items default to min-width:auto, which stops them shrinking
      below their content's intrinsic width — the chat header's avatar +
      name + badge + button don't wrap, so without this the whole column
@@ -691,6 +722,11 @@
     flex-wrap: wrap;
     row-gap: 10px;
   }
+
+  .conv-back-btn {
+    display: flex !important;
+  }
+
   .conv-msg-group {
     max-width: 88%;
   }

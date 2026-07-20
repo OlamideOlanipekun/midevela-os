@@ -1027,6 +1027,7 @@
 }
 @media (max-width: 1180px) { .kpi-strip { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 620px) { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px) { .kpi-strip { grid-template-columns: 1fr; } }
 
 .kpi-card {
   background: var(--paper-raised);
@@ -1301,6 +1302,10 @@
   .quick-actions { grid-template-columns: repeat(2, 1fr); }
 }
 
+@media (max-width: 420px) {
+  .quick-actions { grid-template-columns: 1fr; }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1529,6 +1534,13 @@ textarea.input {
   border-radius: var(--radius-sm);
   padding: 3px;
   width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs > * {
+  flex-shrink: 0;
 }
 
 .tab {

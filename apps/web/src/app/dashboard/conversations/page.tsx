@@ -40,8 +40,7 @@ export default function ConversationsPage() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [inputText, setInputText] = useState("");
-  const [loadingTakeover, setLoadingTakeover] = useState(false);
-  const [takeoverActive, setTakeoverActive] = useState<Record<string, boolean>>({});
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
   useEffect(() => {
     fetch("/api/conversations")
@@ -62,38 +61,8 @@ export default function ConversationsPage() {
     .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     .filter((c) => filter === "all" || c.unread);
 
-  // Manual takeover / human reply have no backend yet (no
-  // human-vs-AI message distinction, no "paused" state on
-  // Conversation) — this stays a local-only interaction, same as
-  // before, until that's built. Not part of this data-wiring pass.
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim() || !activeConv) return;
-
-    const newMsg: Message = {
-      role: "ai",
-      content: inputText,
-      createdAt: new Date().toISOString(),
-    };
-
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConv.id
-          ? { ...c, preview: inputText, messages: [...c.messages, newMsg] }
-          : c
-      )
-    );
-    setInputText("");
-  };
-
-  const handleTakeover = () => {
-    if (!activeConv) return;
-    setLoadingTakeover(true);
-    setTimeout(() => {
-      setLoadingTakeover(false);
-      setTakeoverActive((prev) => ({ ...prev, [activeConv.id]: true }));
-    }, 800);
-  };
+  // Human reply is not yet implemented — all conversations are AI-handled.
+  // The input remains disabled until direct merchant reply is built.
 
   return (
     <div className="conv-page">
@@ -119,7 +88,7 @@ export default function ConversationsPage() {
       ) : (
       <div className="conv-layout">
         {/* LEFT: QUEUE */}
-        <div className="conv-panel conv-list-panel">
+        <div className={`conv-panel conv-list-panel ${mobileView === "chat" ? "conv-list-panel-hidden" : ""}`}>
           <div className="conv-list-header">
             <div className="conv-list-title">
               <h2>Queue</h2>
@@ -165,11 +134,12 @@ export default function ConversationsPage() {
                 tabIndex={0}
                 key={c.id}
                 className={`conv-item ${c.id === activeId ? "active" : ""}`}
-                onClick={() => setActiveId(c.id)}
+                onClick={() => { setActiveId(c.id); setMobileView("chat"); }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     setActiveId(c.id);
+                    setMobileView("chat");
                   }
                 }}
               >
@@ -193,9 +163,18 @@ export default function ConversationsPage() {
         </div>
 
         {/* CENTER: CONVERSATION */}
-        <div className="conv-panel conv-chat-panel">
+        <div className={`conv-panel conv-chat-panel ${mobileView === "list" ? "conv-chat-panel-hidden" : ""}`}>
           <div className="conv-chat-header">
             <div className="conv-chat-header-info">
+              <button
+                className="conv-back-btn"
+                onClick={() => setMobileView("list")}
+                aria-label="Back to conversations"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
               <div className="conv-avatar" style={{ width: 40, height: 40, fontSize: 15 }}>
                 {activeConv.name[0]}
               </div>
@@ -207,33 +186,10 @@ export default function ConversationsPage() {
                 </div>
               </div>
             </div>
-            {takeoverActive[activeConv.id] ? (
-              <span className="badge badge-green" style={{ padding: "7px 14px" }}>
-                Counter manned · You
-              </span>
-            ) : (
-              <button
-                className="conv-takeover-btn"
-                onClick={handleTakeover}
-                disabled={loadingTakeover}
-              >
-                {loadingTakeover ? "Taking over…" : "Take over counter"}
-              </button>
-            )}
+            <button className="conv-takeover-btn" disabled style={{ opacity: 0.5, cursor: "not-allowed" }}>
+              Manual reply — coming soon
+            </button>
           </div>
-
-          {takeoverActive[activeConv.id] && (
-            <div className="conv-takeover-banner">
-              <span>Manual takeover active — AI responses are paused for this customer.</span>
-              <button
-                onClick={() =>
-                  setTakeoverActive((prev) => ({ ...prev, [activeConv.id]: false }))
-                }
-              >
-                Restore AI
-              </button>
-            </div>
-          )}
 
           <div className="conv-chat-scroll">
             {activeConv.messages.map((msg, i) => (
@@ -267,22 +223,18 @@ export default function ConversationsPage() {
             ))}
           </div>
 
-          <form className="conv-chat-input-area" onSubmit={handleSend}>
+          <div className="conv-chat-input-area">
             <input
               type="text"
-              placeholder={
-                takeoverActive[activeConv.id]
-                  ? `Reply to ${activeConv.name}…`
-                  : `Take over to reply, or let the AI continue…`
-              }
+              placeholder="AI handles conversations — human reply coming soon"
               className="conv-chat-input"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              disabled
+              style={{ opacity: 0.5, cursor: "not-allowed" }}
             />
-            <button type="submit" className="conv-send-btn">
+            <button className="conv-send-btn" disabled style={{ opacity: 0.4, cursor: "not-allowed" }}>
               Send →
             </button>
-          </form>
+          </div>
         </div>
 
         {/* RIGHT: CUSTOMER FILE */}

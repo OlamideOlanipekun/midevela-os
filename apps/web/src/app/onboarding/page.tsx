@@ -306,6 +306,7 @@ export default function OnboardingPage() {
             Midevela
           </div>
           <div className="tb-center mono">Setting up your counter</div>
+          <div className="tb-mobile-step mono">Step {currentStep} of 6</div>
           <button className="tb-skip" onClick={handleSkip}>
             Skip setup →
           </button>

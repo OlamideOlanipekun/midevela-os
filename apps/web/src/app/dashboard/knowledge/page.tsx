@@ -89,11 +89,7 @@ export default function KnowledgeBasePage() {
   const handleStartCrawl = async () => {
     if (!crawlUrl.trim()) return;
     setCrawlLoading(true);
-    setCrawlMessage("Initializing crawler (depth 0)…");
-
-    setTimeout(() => setCrawlMessage("Scraping home page — extracting hyperlinks…"), 1200);
-    setTimeout(() => setCrawlMessage("Scraping products page — parsing JSON-LD…"), 2600);
-    setTimeout(() => setCrawlMessage("Saving updates to the Business Brain…"), 3800);
+    setCrawlMessage("Crawling website…");
 
     try {
       const response = await fetch("/api/workspace/crawl", {
@@ -102,14 +98,11 @@ export default function KnowledgeBasePage() {
         body: JSON.stringify({ url: crawlUrl }),
       });
       const data = await response.json();
+      setCrawlLoading(false);
       if (data.success) {
-        setTimeout(() => {
-          setCrawlLoading(false);
-          setCrawlMessage(`Crawled ${data.pagesCrawledCount} pages · imported ${data.productsFoundCount} products & ${data.policiesFoundCount} policies.`);
-          loadKnowledgeData();
-        }, 4200);
+        setCrawlMessage(`Crawled ${data.pagesCrawledCount} pages · imported ${data.productsFoundCount} products & ${data.policiesFoundCount} policies.`);
+        loadKnowledgeData();
       } else {
-        setCrawlLoading(false);
         setCrawlMessage(`Crawl failed: ${data.error || "unknown error"}`);
       }
     } catch (err) {
@@ -279,13 +272,10 @@ export default function KnowledgeBasePage() {
 
               {activeTab === "docs" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  <div className="know-uploader">
+                  <div className="know-uploader" style={{ opacity: 0.5 }}>
                     <span style={{ fontSize: 26 }}>📂</span>
-                    <span className="know-uploader-title">Drag & drop files to train the AI</span>
-                    <span className="know-uploader-sub">Supports PDF, DOCX, CSV, TXT up to 10MB</span>
-                    <button className="btn-outline" style={{ marginTop: 8 }} disabled={isReadOnly}>
-                      Browse files
-                    </button>
+                    <span className="know-uploader-title">File uploads — coming soon</span>
+                    <span className="know-uploader-sub">Upload PDF, DOCX, CSV, and TXT files to train the AI with your business content.</span>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

@@ -930,3 +930,106 @@
   background: repeating-linear-gradient(90deg, var(--ink) 0, var(--ink) 2px, transparent 2px, transparent 5px, var(--ink) 5px, var(--ink) 6px, transparent 6px, transparent 10px);
   opacity: 0.75;
 }
+
+/* ─── RESPONSIVE: MOBILE STEP INDICATOR ─── */
+.tb-mobile-step {
+  display: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #8FA098;
+}
+
+@media (max-width: 720px) {
+  .tb-mobile-step {
+    display: inline;
+  }
+
+  .onboarding-page-wrapper .content {
+    padding: 28px 20px;
+  }
+
+  .onboarding-page-wrapper .topbar {
+    padding: 0 16px;
+  }
+
+  .onboarding-page-wrapper .tb-center {
+    display: none;
+  }
+
+  .onboarding-page-wrapper .step-panel h2 {
+    font-size: clamp(22px, 6vw, 28px);
+  }
+
+  .onboarding-page-wrapper .step-desc {
+    max-width: 100%;
+    font-size: 14px;
+  }
+
+  .onboarding-page-wrapper .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-page-wrapper .tone-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .onboarding-page-wrapper .catalog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-page-wrapper .channel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-page-wrapper .step-nav {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .onboarding-page-wrapper .btn-next {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .onboarding-page-wrapper .btn-back {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .onboarding-page-wrapper .content {
+    padding: 20px 14px;
+  }
+
+  .onboarding-page-wrapper .tone-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-page-wrapper .field input,
+  .onboarding-page-wrapper .field select,
+  .onboarding-page-wrapper .field textarea {
+    font-size: 14px;
+    padding: 11px 14px;
+  }
+
+  .onboarding-page-wrapper .step-panel .step-desc {
+    margin-bottom: 20px;
+  }
+
+  .onboarding-page-wrapper .snippet-box {
+    padding: 14px;
+  }
+
+  .onboarding-page-wrapper .snippet-box code {
+    font-size: 11px;
+  }
+
+  .onboarding-page-wrapper .snippet-copy {
+    position: static;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
+  }
+}

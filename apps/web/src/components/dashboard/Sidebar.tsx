@@ -99,7 +99,7 @@ const SidebarIcon = ({ type }: { type: string }) => {
 
 const mainNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
-  { label: "Conversations", href: "/dashboard/conversations", icon: "conversations", badge: 12 },
+  { label: "Conversations", href: "/dashboard/conversations", icon: "conversations" },
   { label: "Customers", href: "/dashboard/customers", icon: "customers" },
   { label: "Products", href: "/dashboard/products", icon: "products" },
   { label: "Categories", href: "/dashboard/categories", icon: "categories" },

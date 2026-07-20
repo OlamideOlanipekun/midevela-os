@@ -8,11 +8,11 @@ type CustomerWithConversations = Customer & {
 };
 
 /**
- * `aiConfidence` reflects Conversation.aiConfidence, which the
- * conversation engine doesn't compute a real value for yet — it's the
- * schema default (100) on every row until that's wired up. Shown as-is
- * (real DB value) rather than invented, but it won't vary until the
- * engine actually starts writing a meaningful number there.
+ * `aiConfidence` averages the Conversation.aiConfidence values which the
+ * conversation engine now computes on every turn (based on JSON parse
+ * success, intent clarity, and recommendation grounding). Pre-existing
+ * conversations may still show 100 (the schema default used before the
+ * engine started writing a real value).
  *
  * `preferences` and product interests are genuinely empty for now —
  * nothing populates Customer.preferences or tracks product-view events

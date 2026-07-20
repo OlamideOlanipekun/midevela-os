@@ -164,7 +164,6 @@ export default function ProductsPage() {
         </div>
         {!loading && (
           <div className="prod-page-actions">
-            <button className="btn-outline" disabled={isReadOnly}>Import CSV</button>
             <button className="btn-dark" onClick={() => setShowAddDrawer(true)} disabled={isReadOnly}>
               + Add product
             </button>
