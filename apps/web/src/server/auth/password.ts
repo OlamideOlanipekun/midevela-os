@@ -33,3 +33,14 @@ export function validatePasswordStrength(password: string): string | null {
   if (password.length > 200) return "Password is too long.";
   return null;
 }
+
+/**
+ * Not a real account's hash — a fixed, valid-format placeholder so login
+ * can run a real scrypt computation against a nonexistent email instead of
+ * skipping straight to "invalid". Without this, "no such user" returns
+ * near-instantly while "wrong password" costs a real scrypt call, and that
+ * timing gap lets an attacker enumerate valid emails even though both
+ * cases return the identical error message.
+ */
+export const DUMMY_PASSWORD_HASH =
+  "3267900d63056eb9e7322c93d51caed9:602c204da61a3e13c23febddf580123e7a261992131efa9f78ea0adc84dfd9fec6a4e2d351820ccd52fa0b56a404eb42420d66f5ddab4213481e593e61b6f5cf";

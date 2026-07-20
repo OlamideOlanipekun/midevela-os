@@ -234,6 +234,21 @@ export default function SettingsPage() {
 
             <div className="set-field">
               <label>Allowed website domains</label>
+              {allowedDomains.trim() === "" && (
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "#c8860d",
+                    background: "rgba(200, 134, 13, 0.08)",
+                    border: "1px solid rgba(200, 134, 13, 0.25)",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    margin: "0 0 8px",
+                  }}
+                >
+                  Your widget can currently be embedded on any website. Add your domain below to restrict it.
+                </p>
+              )}
               <textarea
                 rows={3}
                 value={allowedDomains}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withErrorHandling, jsonError } from "@/server/http";
-import { verifyPassword } from "@/server/auth/password";
+import { verifyPassword, DUMMY_PASSWORD_HASH } from "@/server/auth/password";
 import { createSession } from "@/server/auth/session";
 import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
 
@@ -38,8 +38,13 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({ where: { email } });
     // Same error for "no such user" and "wrong password" — don't leak
-    // which one it was.
-    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    // which one it was. Critically, verifyPassword always runs (against a
+    // dummy hash when there's no user) so a nonexistent email takes the
+    // same scrypt-bound time as a wrong password on a real one — otherwise
+    // the response *timing* would leak what the identical error message
+    // doesn't.
+    const passwordValid = await verifyPassword(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+    if (!user || !passwordValid) {
       return jsonError(401, "Invalid email or password.");
     }
 
