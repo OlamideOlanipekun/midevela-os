@@ -11,6 +11,12 @@ import type { ChatMessage } from "@/server/conversation/llm";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
+// A "visit" is just the visitor's current ACTIVE conversation, bounded by
+// this much inactivity. Past it, the visit is over: the conversation is
+// ended and a fresh one starts, so a returning visitor's AI context can
+// never be hijacked by an old, unrelated conversation. History is never
+// deleted — the old conversation stays in the DB, just no longer active.
+const VISIT_IDLE_MS = 30 * 60 * 1000;
 
 // ─── Multi-layer usage control (workspace isolation + cost protection) ───
 // Every layer below runs cheapest/broadest-first and BEFORE any DB write or
@@ -183,10 +189,32 @@ export async function POST(req: NextRequest) {
       where: { orgId: org.id, customerId: customer.id, status: "ACTIVE" },
       orderBy: { startedAt: "desc" },
     });
+
+    let isNewConversation = false;
+
+    if (conversation) {
+      // Activity signal = the conversation's newest message, or its start
+      // if it doesn't have one yet.
+      const lastMessage = await prisma.message.findFirst({
+        where: { conversationId: conversation.id },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      });
+      const lastActivity = lastMessage?.createdAt ?? conversation.startedAt;
+      if (Date.now() - lastActivity.getTime() > VISIT_IDLE_MS) {
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { status: "ENDED", endedAt: new Date() },
+        });
+        conversation = null;
+      }
+    }
+
     if (!conversation) {
       conversation = await prisma.conversation.create({
         data: { orgId: org.id, customerId: customer.id, channel: "WEBSITE" },
       });
+      isNewConversation = true;
     }
 
     // Shopping-funnel state (category/budget/brand/answers) collected via
@@ -266,7 +294,12 @@ export async function POST(req: NextRequest) {
     await recordAiUsage(org.id);
 
     return NextResponse.json(
-      { replyText: result.replyText, intent: result.intent, recommendations: result.recommendations },
+      {
+        replyText: result.replyText,
+        intent: result.intent,
+        recommendations: result.recommendations,
+        isNewConversation,
+      },
       { headers }
     );
   } catch (err) {

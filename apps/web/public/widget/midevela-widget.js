@@ -101,26 +101,84 @@
       /* in-memory flag already set */
     }
   }
+  function resetAutoOpened() {
+    autoOpenedInMemory = false;
+    try {
+      window.sessionStorage.removeItem(AUTO_OPEN_FLAG);
+    } catch (e) {
+      /* in-memory flag already cleared */
+    }
+  }
+
+  // A "visit" mirrors the server's: the same 30-minute idle window bounds
+  // the visitor's current ACTIVE conversation (see VISIT_IDLE_MS in
+  // /api/widget/message). Past it, a returning visitor gets a fresh
+  // welcome instead of "Continuing from moisturizer…" — this timestamp is
+  // only ever updated when a message is actually SENT, matching the
+  // server's own activity signal (Message.createdAt), not on every page
+  // load/boot.
+  const LAST_ACTIVITY_KEY = 'midevela_last_activity';
+  const VISIT_IDLE_MS = 30 * 60 * 1000;
+  function getLastActivity() {
+    try {
+      const raw = window.localStorage.getItem(LAST_ACTIVITY_KEY);
+      return raw ? Number(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function markActivity() {
+    try {
+      window.localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+    } catch (e) {
+      /* storage blocked — visit-boundary detection just won't persist */
+    }
+  }
+  function isNewVisit() {
+    const last = getLastActivity();
+    return !last || Date.now() - last > VISIT_IDLE_MS;
+  }
 
   // Persistent shopping-funnel state — category/budget/brand/answers, so a
   // returning visitor (or a page reload mid-funnel) never repeats
   // themselves. Mirrored server-side on Conversation.context once chat
-  // starts (see /api/widget/message's `context` patch).
+  // starts (see /api/widget/message's `context` patch). Expires after the
+  // same idle window as belt-and-suspenders alongside the explicit
+  // new-visit reset below.
   const FUNNEL_KEY = 'midevela_funnel_state';
   function loadFunnelState() {
     try {
       const raw = window.localStorage.getItem(FUNNEL_KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const state = JSON.parse(raw);
+      if (state && typeof state.savedAt === 'number' && Date.now() - state.savedAt > VISIT_IDLE_MS) {
+        return null;
+      }
+      return state;
     } catch (e) {
       return null;
     }
   }
   function saveFunnelState(state) {
     try {
-      window.localStorage.setItem(FUNNEL_KEY, JSON.stringify(state));
+      window.localStorage.setItem(FUNNEL_KEY, JSON.stringify(Object.assign({}, state, { savedAt: Date.now() })));
     } catch (e) {
       /* storage blocked — funnel simply won't persist across reloads */
     }
+  }
+  // Wipes everything that would otherwise resurrect a previous visit —
+  // used both when this pageview's own boot detects the idle window has
+  // passed, and when the server tells us (via isNewConversation) that IT
+  // just started a fresh conversation, e.g. because this tab was
+  // asleep/backgrounded across the boundary and our own boot-time guess
+  // was already stale by the time a message was actually sent.
+  function resetVisitLocalState() {
+    try {
+      window.localStorage.removeItem(FUNNEL_KEY);
+    } catch (e) {
+      /* storage blocked — nothing to clear */
+    }
+    resetAutoOpened();
   }
 
   function nowTime() {
@@ -1203,6 +1261,7 @@
       funnel.conversationStarted = true;
       funnel.view = 'conversation';
       persistFunnel();
+      markActivity();
       if (isFirstMessage) trackEvent('conversation_started', {});
 
       appendCustomerBubble(text);
@@ -1241,6 +1300,14 @@
     }
 
     function handleAIResponse(data) {
+      // Server is the source of truth on the conversation/visit boundary —
+      // if it just started a fresh conversation (this pageview's own
+      // boot-time guess can be stale, e.g. an open tab left idle across the
+      // window), resync local state so the NEXT boot doesn't resurrect it.
+      if (data && data.isNewConversation) {
+        resetVisitLocalState();
+      }
+
       const replyText = (data && data.replyText) || "Sorry, I didn't quite catch that. Could you rephrase?";
       const recommendations = Array.isArray(data && data.recommendations) ? data.recommendations : [];
 
@@ -1298,6 +1365,14 @@
     // the full welcome card and repeat the opening line verbatim, which
     // reads as robotic rather than a salesperson picking up where they
     // left off.
+    // A visit that's gone idle 30+ minutes is over: wipe anything that
+    // would otherwise resume it, so this boot falls through to the plain
+    // "What are you shopping for today?" welcome below, and the proactive
+    // open fires again as if for a brand-new visitor.
+    if (isNewVisit()) {
+      resetVisitLocalState();
+    }
+
     const saved = loadFunnelState();
     if (saved && (saved.view === 'recommendations' || saved.view === 'conversation')) {
       funnel.categoryId = saved.categoryId || null;
