@@ -67,3 +67,40 @@ export async function listConversations(orgId: string) {
   });
   return conversations.map(toConversationResponse);
 }
+
+const RECENT_CATEGORY_WINDOW_DAYS = 30;
+
+/**
+ * The category (if any) a returning visitor was shopping for recently —
+ * sourced from Conversation.context, which sendMessage's contextPatch
+ * already writes on every conversation's first message. No separate
+ * tracking needed; this just reads what qualification already grounded
+ * the AI with. Bounded to the last 30 days so a visitor from months ago
+ * doesn't get a stale "welcome back" callback.
+ */
+export async function getRecentShoppingCategory(
+  orgId: string,
+  externalId: string
+): Promise<{ id: string; name: string } | null> {
+  const customer = await prisma.customer.findUnique({
+    where: { orgId_externalId: { orgId, externalId } },
+    select: { id: true },
+  });
+  if (!customer) return null;
+
+  const since = new Date(Date.now() - RECENT_CATEGORY_WINDOW_DAYS * 86400000);
+  const recent = await prisma.conversation.findMany({
+    where: { orgId, customerId: customer.id, startedAt: { gte: since } },
+    orderBy: { startedAt: "desc" },
+    take: 10,
+    select: { context: true },
+  });
+
+  for (const c of recent) {
+    const ctx = c.context as Record<string, unknown>;
+    if (ctx && typeof ctx.categoryId === "string" && typeof ctx.categoryName === "string") {
+      return { id: ctx.categoryId, name: ctx.categoryName };
+    }
+  }
+  return null;
+}

@@ -212,9 +212,10 @@
     aiName: 'AI Sales Assistant',
     settings: { engagementDelay: 0, showProductImages: true },
     categories: [],
+    lastCategory: null,
   };
 
-  fetch(initApiUrl)
+  fetch(initApiUrl + '&customerId=' + encodeURIComponent(customerId))
     .then(function (res) {
       return res.ok ? res.json() : null;
     })
@@ -1084,12 +1085,10 @@
     }
 
     // ─── Views ───
-    function renderWelcome() {
-      funnel.view = 'welcome';
-      persistFunnel();
-      clearBody();
-      appendAiBubble(greeting);
-
+    // Shared by the plain first-time welcome and the returning-visitor
+    // "welcome back" prompt — the category grid + Ask-anything chip are
+    // identical in both, just preceded by a different greeting.
+    function renderCategoryGridAndChips() {
       if (config.categories.length > 0) {
         const label = document.createElement('div');
         label.className = 'msg-row ai';
@@ -1138,6 +1137,48 @@
       chipsWrap.appendChild(askChip);
       body.appendChild(chipsWrap);
       scrollToBottom();
+    }
+
+    function renderWelcome() {
+      funnel.view = 'welcome';
+      persistFunnel();
+      clearBody();
+      appendAiBubble(greeting);
+      renderCategoryGridAndChips();
+    }
+
+    // Shown instead of renderWelcome() on a new visit when the visitor has
+    // a recent category on file (config.lastCategory, resolved server-side
+    // from their own conversation history) — offers a shortcut into that
+    // category's qualification flow, or the full grid as always. Never
+    // auto-resumes: picking "Continue" starts a fresh conversation via the
+    // exact same selectCategory() a grid click uses, with no old
+    // budget/brand/answers carried over.
+    function renderWelcomeBack(cat) {
+      funnel.view = 'welcome';
+      persistFunnel();
+      clearBody();
+      appendAiBubble(`Welcome back 👋 You were exploring ${cat.name} last time.`);
+
+      const continueRow = document.createElement('div');
+      continueRow.className = 'msg-row ai';
+      const continueAvatar = document.createElement('div');
+      continueAvatar.className = 'msg-avatar';
+      continueAvatar.style.visibility = 'hidden';
+      const continueCol = document.createElement('div');
+      continueCol.className = 'msg-col';
+      const continueBtn = document.createElement('button');
+      continueBtn.type = 'button';
+      continueBtn.className = 'chip';
+      continueBtn.textContent = `Continue with ${cat.name}`;
+      continueBtn.addEventListener('click', () => selectCategory(cat));
+      continueCol.appendChild(continueBtn);
+      continueRow.appendChild(continueAvatar);
+      continueRow.appendChild(continueCol);
+      body.appendChild(continueRow);
+
+      appendAiBubble('Or explore something else:');
+      renderCategoryGridAndChips();
     }
 
     function selectCategory(cat) {
@@ -1396,6 +1437,8 @@
       clearBody();
       appendAiBubble(`Picking back up on ${saved.categoryName}…`);
       fetchQualificationStep();
+    } else if (config.lastCategory) {
+      renderWelcomeBack(config.lastCategory);
     } else {
       renderWelcome();
     }

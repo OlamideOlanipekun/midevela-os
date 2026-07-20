@@ -3,6 +3,7 @@ import { resolveWidgetKey, isOriginAllowed, corsHeaders } from "@/server/convers
 import { defaultOrgSettings, type OrgSettings } from "@/server/tenancy/org";
 import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
 import { listCategoriesForWidget } from "@/server/catalog/categories";
+import { getRecentShoppingCategory } from "@/server/conversations/conversations";
 
 // Cheap (one DB read + a category query), but still public.
 const INIT_IP_PER_MIN = 30;
@@ -44,6 +45,20 @@ export async function GET(req: NextRequest) {
     const settings = { ...defaultOrgSettings, ...stored };
     const categories = await listCategoriesForWidget(key.orgId);
 
+    // Returning-visitor hint: the category (if any) this visitor was
+    // recently shopping for, sourced from their own conversation history —
+    // never trusted blindly, only surfaced if it still matches a real,
+    // live category (not deleted/renamed since).
+    const customerId = req.nextUrl.searchParams.get("customerId");
+    let lastCategory = null;
+    if (customerId && customerId.trim().length <= 128) {
+      const recent = await getRecentShoppingCategory(key.orgId, customerId.trim());
+      if (recent) {
+        const match = categories.find((c) => c.id === recent.id);
+        if (match) lastCategory = { id: match.id, name: match.name, icon: match.icon, image: match.image };
+      }
+    }
+
     return NextResponse.json(
       {
         business: { name: key.org.name, currency: key.org.currency },
@@ -56,6 +71,7 @@ export async function GET(req: NextRequest) {
           exitIntent: settings.features?.exitIntent ?? true,
         },
         categories,
+        lastCategory,
       },
       { headers }
     );
