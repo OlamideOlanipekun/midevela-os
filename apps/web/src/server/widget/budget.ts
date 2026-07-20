@@ -43,7 +43,7 @@ export async function computeBudgetOptions(
 ): Promise<QualificationOption[]> {
   const products = await prisma.product.findMany({
     where: { orgId, categoryId: { in: categoryIds }, inventoryStatus: { not: "OUT_OF_STOCK" } },
-    select: { price: true },
+    select: { price: true, currency: true },
   });
 
   const prices = products.map((p) => Number(p.price)).filter((n) => Number.isFinite(n) && n > 0);
@@ -57,16 +57,31 @@ export async function computeBudgetOptions(
 
   if (boundaries.length === 0) return [];
 
+  // Derive dominant currency from products that actually set the price boundaries
+  const activeProducts = products.filter((p) => Number.isFinite(Number(p.price)) && Number(p.price) > 0);
+  const currencyCount = new Map<string, number>();
+  let dominantCurrency = currency;
+  let maxCount = 0;
+  for (const p of activeProducts) {
+    const c = p.currency ?? currency;
+    const count = (currencyCount.get(c) ?? 0) + 1;
+    currencyCount.set(c, count);
+    if (count > maxCount) {
+      maxCount = count;
+      dominantCurrency = c;
+    }
+  }
+
   const options: QualificationOption[] = [];
-  options.push({ label: `Under ${formatMoney(boundaries[0], currency)}`, value: `0-${boundaries[0]}` });
+  options.push({ label: `Under ${formatMoney(boundaries[0], dominantCurrency)}`, value: `0-${boundaries[0]}` });
   for (let i = 0; i < boundaries.length - 1; i++) {
     options.push({
-      label: `${formatMoney(boundaries[i], currency)} – ${formatMoney(boundaries[i + 1], currency)}`,
+      label: `${formatMoney(boundaries[i], dominantCurrency)} – ${formatMoney(boundaries[i + 1], dominantCurrency)}`,
       value: `${boundaries[i]}-${boundaries[i + 1]}`,
     });
   }
   const top = boundaries[boundaries.length - 1];
-  options.push({ label: `${formatMoney(top, currency)}+`, value: `${top}-` });
+  options.push({ label: `${formatMoney(top, dominantCurrency)}+`, value: `${top}-` });
 
   return options;
 }

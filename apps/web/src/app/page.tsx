@@ -93,7 +93,6 @@ const Lock = (props: IconProps) => (
 );
 
 export default function Home() {
-  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
@@ -143,7 +142,7 @@ export default function Home() {
           <div className="wrap hero-grid">
             <div className="hero-text">
               <div className="eyebrow" style={{ marginBottom: '32px' }}>
-                <span className="accent-sage" style={{ fontSize: '20px', lineHeight: 1 }}>●</span> Now Serving · Ticket #00482
+                <span className="accent-sage" style={{ fontSize: '20px', lineHeight: 1 }}>●</span> Now Serving 
               </div>
               <h1 style={{ maxWidth: '12ch' }}>Turn every visitor into a guided <span className="accent-sage">buyer.</span></h1>
               <p className="lede" style={{ fontSize: '20px', color: 'var(--text-muted)', marginTop: '32px', maxWidth: '46ch', lineHeight: '1.5' }}>
@@ -162,7 +161,7 @@ export default function Home() {
                     <span className="hc-avatar">M</span>
                     <div>
                       <div className="hc-name">Midevela Counter</div>
-                      <div className="hc-status"><span className="hc-dot"></span> AI Active · Ticket #00482</div>
+                      <div className="hc-status"><span className="hc-dot"></span> AI Active </div>
                     </div>
                   </div>
                   <div className="hc-body">
@@ -433,7 +432,7 @@ export default function Home() {
             <div className="bento-grid" style={{ alignItems: 'center' }}>
               <div className="card-white" style={{ gridColumn: 'span 4', padding: 'clamp(32px, 6vw, 64px)', border: '1px solid rgba(0,0,0,0.05)' }}>
                 <div className="eyebrow">Starter</div>
-                <div className="serif" style={{ fontSize: '64px', marginTop: '32px', lineHeight: 1 }}>₦15k<span style={{ fontSize: '18px', fontWeight: 400, opacity: 0.6 }}>/mo</span></div>
+                <div className="serif" style={{ fontSize: '64px', marginTop: '32px', lineHeight: 1 }}>Coming Soon</div>
                 <ul style={{ marginTop: '56px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <li style={{ fontSize: '16px', color: 'var(--text-muted)' }}><CheckCircle2 size={16} style={{ display: 'inline', marginRight: '12px', color: 'var(--pine-black)' }} /> 20 catalog items</li>
                   <li style={{ fontSize: '16px', color: 'var(--text-muted)' }}><CheckCircle2 size={16} style={{ display: 'inline', marginRight: '12px', color: 'var(--pine-black)' }} /> Web Widget</li>
@@ -454,7 +453,7 @@ export default function Home() {
               }}>
                 <div className="glow-overlay" style={{ background: 'radial-gradient(circle at top right, rgba(197,255,74,0.12) 0%, transparent 50%)' }}></div>
                 <div className="eyebrow" style={{ color: 'var(--pine-black)', display: 'inline-flex', background: 'var(--pop-sage)', padding: '4px 12px', borderRadius: '99px', fontSize: '10px' }}>Most Recommended</div>
-                <div className="serif" style={{ fontSize: '72px', marginTop: '32px', lineHeight: 1 }}>₦45k<span style={{ fontSize: '20px', fontWeight: 400, opacity: 0.6 }}>/mo</span></div>
+                <div className="serif" style={{ fontSize: '72px', marginTop: '32px', lineHeight: 1 }}>Coming Soon</div>
                 <ul style={{ marginTop: '56px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <li style={{ fontSize: '16px' }}><CheckCircle2 size={16} style={{ display: 'inline', marginRight: '12px', color: 'var(--teal)' }} /> Everything in Starter</li>
                   <li style={{ fontSize: '16px' }}><CheckCircle2 size={16} style={{ display: 'inline', marginRight: '12px', color: 'var(--teal)' }} /> Unlimited catalog sync</li>
@@ -466,7 +465,7 @@ export default function Home() {
 
               <div className="card-white" style={{ gridColumn: 'span 4', padding: 'clamp(32px, 6vw, 64px)', border: '1px solid rgba(0,0,0,0.05)' }}>
                 <div className="eyebrow">Pro</div>
-                <div className="serif" style={{ fontSize: '64px', marginTop: '32px', lineHeight: 1 }}>₦150k<span style={{ fontSize: '18px', fontWeight: 400, opacity: 0.6 }}>/mo</span></div>
+                <div className="serif" style={{ fontSize: '64px', marginTop: '32px', lineHeight: 1 }}>Coming Soon</div>
                 <ul style={{ marginTop: '56px', listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <li style={{ fontSize: '16px', color: 'var(--text-muted)' }}><CheckCircle2 size={16} style={{ display: 'inline', marginRight: '12px', color: 'var(--pine-black)' }} /> Everything in Growth</li>
                   <li style={{ fontSize: '16px', color: 'var(--text-muted)' }}><CheckCircle2 size={16} style={{ display: 'inline', marginRight: '12px', color: 'var(--pine-black)' }} /> Custom AI Personas</li>
@@ -522,42 +521,6 @@ export default function Home() {
           <Footer />
         </section>
       </main>
-
-      {/* LIVE WIDGET */}
-      <button 
-        className={`sw-launcher ${!isWidgetOpen ? 'show' : ''}`} 
-        onClick={() => setIsWidgetOpen(true)}
-        aria-label="Open chat"
-        style={{ 
-          width: '64px', 
-          height: '64px', 
-          fontSize: '18px', 
-          background: 'var(--pine-black)',
-          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)'
-        }}
-      >
-        M
-      </button>
-
-      <div className={`sw-panel ${isWidgetOpen ? 'open' : ''}`} style={{ width: '420px', borderRadius: '32px', boxShadow: '0 40px 80px -20px rgba(0,0,0,0.4)', border: '1px solid rgba(0,0,0,0.05)' }}>
-        <div className="sw-head" style={{ padding: '32px 32px 24px', background: 'var(--pine-black)' }}>
-          <div className="sw-avatar" style={{ width: '40px', height: '40px', background: 'var(--pop-sage)', color: 'var(--pine-black)', fontWeight: 800, fontSize: '18px' }}>M</div>
-          <div className="sw-meta">
-            <div className="sw-name" style={{ fontSize: '18px', color: 'white' }}>Midevela Assistant</div>
-            <div className="sw-status" style={{ color: 'var(--pop-sage)', fontSize: '12px' }}><span className="dot2" style={{ background: 'var(--pop-sage)', width: '6px', height: '6px' }}></span> Active now</div>
-          </div>
-          <button className="sw-close" onClick={() => setIsWidgetOpen(false)} style={{ fontSize: '28px', color: 'white', opacity: 0.5 }}>&times;</button>
-        </div>
-        <div className="sw-body" style={{ padding: '40px 32px' }}>
-          <div className="sw-bubble" style={{ padding: '24px', fontSize: '16px', borderRadius: '24px 24px 24px 4px', border: '1px solid rgba(0,0,0,0.05)', background: 'var(--bg-cream)' }}>
-            Hey, welcome in! What are you shopping for today?
-          </div>
-          <div className="sw-inputrow" style={{ marginTop: '32px', padding: '10px 10px 10px 24px', borderRadius: '99px', border: '1px solid rgba(0,0,0,0.05)', background: 'white' }}>
-            <input type="text" placeholder="Type what you're looking for…" style={{ fontSize: '15px' }} />
-            <button type="button" style={{ background: 'var(--pine-black)', width: '40px', height: '40px' }}><ArrowRight size={20} color="white" /></button>
-          </div>
-        </div>
-      </div>
     </>
   );
 }
