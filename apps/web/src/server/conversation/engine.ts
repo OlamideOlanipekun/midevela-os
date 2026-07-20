@@ -54,6 +54,11 @@ export interface ConversationTurnResult {
   recommendations: RecommendationOut[];
   inputTokens: number;
   outputTokens: number;
+  /** Structured-output reliability: how well the model's response followed the
+   *  required format. Measures parse success, intent clarity, and recommendation
+   *  grounding — NOT answer correctness. 0 = complete failure, 50+ = valid
+   *  output with increasing signal quality, capped at 100. */
+  aiConfidence: number;
 }
 
 function formatShoppingContext(ctx: ShoppingContext | undefined): string | null {
@@ -132,6 +137,31 @@ function tryParseModelJson(raw: string): { reply?: unknown; intent?: unknown; re
 export const FALLBACK_REPLY_TEXT =
   "Sorry, I'm having a little trouble right now — could you try rephrasing that, or ask again in a moment?";
 
+/**
+ * Computes a structured-output confidence score based on signals that are
+ * available after a successful model response parse:
+ *
+ *   base 50 — the model produced valid JSON with a valid non-empty reply
+ *   +25   — the intent is a recognized value (not "unknown")
+ *   +15   — at least one recommendation was grounded against a real product
+ *   +10   — at least two recommendations were grounded
+ *   cap   — 100
+ *
+ * This deliberately measures FORMAT-FOLLOWING reliability, not answer
+ * correctness. A score of 100 does not mean the answer is right — only that
+ * every structural signal the engine can check passed cleanly.
+ */
+function computeConfidence(intent: Intent, recommendations: RecommendationOut[]): number {
+  const groundedCount = recommendations.length;
+
+  let score = 50; // valid JSON + valid non-empty reply
+  if (intent !== "unknown") score += 25;
+  if (groundedCount >= 1) score += 15;
+  if (groundedCount >= 2) score += 10;
+
+  return Math.min(score, 100);
+}
+
 function safeFallback(inputTokens: number, outputTokens: number): ConversationTurnResult {
   return {
     replyText: FALLBACK_REPLY_TEXT,
@@ -139,6 +169,7 @@ function safeFallback(inputTokens: number, outputTokens: number): ConversationTu
     recommendations: [],
     inputTokens,
     outputTokens,
+    aiConfidence: 0,
   };
 }
 
@@ -210,11 +241,14 @@ export async function processConversationTurn(
     });
   }
 
+  const aiConfidence = computeConfidence(intent, recommendations);
+
   return {
     replyText: parsed.reply.trim(),
     intent,
     recommendations: recommendations.slice(0, 3),
     inputTokens: totalInputTokens,
     outputTokens: totalOutputTokens,
+    aiConfidence,
   };
 }

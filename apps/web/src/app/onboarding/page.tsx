@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { formatMoney } from "@/server/catalog/money";
 import "./onboarding.css";
 
 const toneGreetings: Record<string, string> = {
@@ -628,7 +629,7 @@ export default function OnboardingPage() {
                 <div style={{ background: "#E7F3F0", border: "1px solid var(--teal)", borderRadius: "var(--radius-md)", padding: "12px 16px", fontSize: 13.5 }}>
                   ✅ <b>{addedProducts.length} product{addedProducts.length === 1 ? "" : "s"}</b> in your catalog so far.
                   {addedProducts.filter((p) => p.name !== "(imported)" && p.name !== "(crawled)").slice(0, 5).map((p, i) => (
-                    <span key={i} style={{ display: "inline-block", background: "#fff", border: "1px solid var(--line)", borderRadius: 100, padding: "2px 10px", fontSize: 12, margin: "6px 6px 0 0" }}>{p.name}{p.price ? ` · ₦${p.price}` : ""}</span>
+                    <span key={i} style={{ display: "inline-block", background: "#fff", border: "1px solid var(--line)", borderRadius: 100, padding: "2px 10px", fontSize: 12, margin: "6px 6px 0 0" }}>{p.name}{p.price ? ` · ${formatMoney(Number(p.price), currencyCode(currency))}` : ""}</span>
                   ))}
                 </div>
               )}

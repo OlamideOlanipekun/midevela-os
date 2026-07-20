@@ -41,7 +41,10 @@ function parseBudget(value: string | undefined): { min: number; max: number | nu
  * — no extra LLM call, no re-embedding candidates on every request.
  */
 export async function recommendProducts(input: RecommendInput): Promise<RecommendedProduct[]> {
-  const category = await prisma.category.findFirst({ where: { id: input.categoryId, orgId: input.orgId } });
+  const [category, org] = await Promise.all([
+    prisma.category.findFirst({ where: { id: input.categoryId, orgId: input.orgId } }),
+    prisma.organization.findUnique({ where: { id: input.orgId }, select: { currency: true } }),
+  ]);
   if (!category) throw new ApiError(404, "Category not found.");
 
   const children = await prisma.category.findMany({
@@ -50,6 +53,7 @@ export async function recommendProducts(input: RecommendInput): Promise<Recommen
   });
   const categoryIds = [category.id, ...children.map((c) => c.id)];
 
+  const orgCurrency = org?.currency ?? "NGN";
   const budget = parseBudget(input.answers.budget);
   const brand = input.answers.brand?.trim();
 
@@ -59,7 +63,10 @@ export async function recommendProducts(input: RecommendInput): Promise<Recommen
       categoryId: { in: categoryIds },
       inventoryStatus: { not: "OUT_OF_STOCK" },
       ...(budget
-        ? { price: { gte: budget.min, ...(budget.max !== null ? { lte: budget.max } : {}) } }
+        ? {
+            price: { gte: budget.min, ...(budget.max !== null ? { lte: budget.max } : {}) },
+            currency: orgCurrency,
+          }
         : {}),
       ...(brand ? { brand } : {}),
     },

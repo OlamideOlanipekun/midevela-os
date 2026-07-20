@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.conversation.update({
         where: { id: conversation.id },
-        data: { intent: result.intent },
+        data: { intent: result.intent, aiConfidence: result.aiConfidence },
       }),
     ]);
 

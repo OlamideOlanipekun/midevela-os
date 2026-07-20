@@ -35,6 +35,7 @@ export async function nextQualificationStep(
     if (!(step.key in answers)) {
       if (step.type === "budget") {
         const dynamicStep = await withDynamicBudget(orgId, category.id, step);
+        if (dynamicStep === null) continue;
         return { done: false, step: dynamicStep, categoryName: category.name };
       }
       return { done: false, step, categoryName: category.name };
@@ -45,20 +46,38 @@ export async function nextQualificationStep(
 
 /**
  * Replaces a budget step's static options with ones computed from the
- * category's real, in-stock prices — falls back to the step's original
- * (template) options when the catalog doesn't have enough price variety
- * to bucket meaningfully (computeBudgetOptions returns []).
+ * category's real, in-stock prices. Falls back to org-wide products when
+ * the category doesn't have enough price variety. Returns null when the
+ * entire catalog is too sparse to bucket — the caller skips the step.
  */
 async function withDynamicBudget(
   orgId: string,
   categoryId: string,
   step: QualificationStep
-): Promise<QualificationStep> {
+): Promise<QualificationStep | null> {
   const [org, children] = await Promise.all([
     prisma.organization.findUnique({ where: { id: orgId }, select: { currency: true } }),
     prisma.category.findMany({ where: { parentId: categoryId, orgId }, select: { id: true } }),
   ]);
+  const currency = org?.currency ?? "NGN";
   const categoryIds = [categoryId, ...children.map((c) => c.id)];
-  const dynamicOptions = await computeBudgetOptions(orgId, categoryIds, org?.currency ?? "NGN");
-  return dynamicOptions.length > 0 ? { ...step, options: dynamicOptions } : step;
+
+  // Try category-specific products first.
+  let dynamicOptions = await computeBudgetOptions(orgId, categoryIds, currency);
+
+  // Fallback: compute from the entire org catalog.
+  if (dynamicOptions.length === 0) {
+    const allCategoryIds = await prisma.category.findMany({
+      where: { orgId },
+      select: { id: true },
+    });
+    dynamicOptions = await computeBudgetOptions(
+      orgId,
+      allCategoryIds.map((c) => c.id),
+      currency,
+    );
+  }
+
+  if (dynamicOptions.length === 0) return null;
+  return { ...step, options: dynamicOptions };
 }
