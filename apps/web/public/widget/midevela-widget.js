@@ -256,6 +256,71 @@
     const avatarLetter = aiName.charAt(0).toUpperCase() || 'A';
     const showProductImages = config.settings.showProductImages !== false;
 
+    // ─── SVG Icon Registry ───
+    var ICONS = {
+      bag: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h14l-1.5 11H4.5z"/><path d="M7 7V4a3 3 0 016 0v3"/></svg>',
+      leaf: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19A7 7 0 019 6c.7.4 1.3.8 1.8 1.3A7 7 0 0017 12h1a7 7 0 01-7 7z"/><path d="M12 12l-7 7"/></svg>',
+      chat: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 1110 10H2l2-5a10 10 0 01-2-5z"/></svg>',
+      phone: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13.5l-4-1-2 2a12.6 12.6 0 01-5-5l2-2-1-4H3a15.5 15.5 0 0015 10z"/></svg>',
+      mail: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l8 5 8-5"/><path d="M2 5v10a1 1 0 001 1h14a1 1 0 001-1V5"/><path d="M2 5l8 5 8-5"/></svg>',
+      star: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1l2.4 4.7 5.3.8-3.8 3.7.9 5.2L10 13.3l-4.8 2.4.9-5.2L2.3 6.5l5.3-.8z"/></svg>',
+      'star-filled': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1l2.4 4.7 5.3.8-3.8 3.7.9 5.2L10 13.3l-4.8 2.4.9-5.2L2.3 6.5l5.3-.8z"/></svg>',
+      check: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l4 4L16 6"/></svg>',
+      party: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18L18 6"/><path d="M14 18l-2-4-2 4"/><path d="M6 10l2-4 2 4"/><path d="M18 14l-2-4-2 4"/></svg>',
+      truck: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="16" r="2"/><circle cx="6" cy="16" r="2"/><path d="M2 6h12v10H2z"/><path d="M14 8h4l2 3v5h-2"/></svg>',
+      package: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12v12H4z"/><path d="M4 8h12"/><path d="M8 4v12"/></svg>',
+      card: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="16" height="8" rx="2"/><path d="M2 9h16"/></svg>',
+      shield: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1l7 3v6a7 7 0 01-7 7 7 7 0 01-7-7V4z"/></svg>',
+      trophy: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v4M8 20h8"/><path d="M16 6a4 4 0 10-8 0v2a4 4 0 108 0z"/><path d="M6 6H4a2 2 0 000 4h2M18 6h2a2 2 0 010 4h-2"/></svg>',
+      search: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="7"/><path d="M19 19l-4.3-4.3"/></svg>',
+      clock: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>',
+      file: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h8l4 4v13a1 1 0 01-1 1H5a1 1 0 01-1-1z"/><path d="M8 10h4M8 14h4M12 3v4h4"/></svg>',
+      pin: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18s-6-5.5-6-9a6 6 0 0112 0c0 3.5-6 9-6 9z"/><circle cx="10" cy="9" r="2"/></svg>',
+      'arrow-right': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h10"/><path d="M10 7l5 5-5 5"/></svg>',
+      'arrow-left': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12H5"/><path d="M10 7l-5 5 5 5"/></svg>',
+      'chevron-right': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l5 5-5 5"/></svg>',
+      'chevron-left': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>',
+      x: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l8 8"/><path d="M14 6l-8 8"/></svg>',
+      plus: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12"/><path d="M4 10h12"/></svg>',
+      minus: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12"/></svg>',
+      info: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M10 10v4"/><path d="M10 7v1"/></svg>',
+      smile: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M6 12a4 4 0 008 0"/><circle cx="7.5" cy="8.5" r=".5" fill="currentColor"/><circle cx="12.5" cy="8.5" r=".5" fill="currentColor"/></svg>',
+      sparkle: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l.7 3.3L16 4l-1.7 3.7L18 9l-3.7 1.7L16 14l-3.7-1.3L12 16l-1.3-3.7L7 14l1.7-3.7L5 9l3.7-1.7L7 4l3.3 1.3z"/></svg>',
+      heart: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17s-7-4.5-7-8a4 4 0 018-2 4 4 0 018 2c0 3.5-7 8-7 8z"/></svg>',
+      external: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h5v5"/><path d="M11 9l7-7"/><path d="M17 13v4a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h4"/></svg>',
+      refresh: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12a10 10 0 1018-4"/><path d="M19 1v6h-6"/></svg>',
+      send: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12l19-9-8 19-4-7z"/></svg>',
+      droplet: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1l5 8a6 6 0 11-10 0z"/></svg>',
+      sun: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="4"/><path d="M10 1v2M10 17v2M1 10h2M17 10h2M3.5 3.5l1.4 1.4M15.1 15.1l1.4 1.4M3.5 16.5l1.4-1.4M15.1 4.9l1.4-1.4"/></svg>',
+      flower: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="5" r="2.5"/><circle cx="10" cy="10" r="2.5"/><path d="M7 7.5l3 5M13 7.5l-3 5"/><path d="M6 12l4 6M14 12l-4 6"/></svg>',
+      eye: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 10s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7z"/><circle cx="10" cy="10" r="3"/></svg>',
+      whatsapp: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10 0C4.5 0 0 4.5 0 10c0 1.9.5 3.6 1.5 5.2L.5 19.5l4.3-1C6.4 19.4 8.2 20 10 20c5.5 0 10-4.5 10-10S15.5 0 10 0zm0 18.5c-1.7 0-3.3-.5-4.7-1.3l-.3-.2-2.6.7.7-2.5-.2-.3C2.2 13.6 1.7 12 1.7 10c0-4.6 3.7-8.3 8.3-8.3s8.3 3.7 8.3 8.3-3.7 8.3-8.3 8.3zm4.4-6.2c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.6.1-.2.2-.7.8-.9 1-.1.2-.3.2-.5.1-.5-.2-1.1-.4-1.6-.9-.5-.5-.9-1.1-1.2-1.7-.1-.2 0-.4.1-.5.1-.1.2-.2.3-.4.1-.1.1-.2.2-.3.1-.2 0-.4 0-.5-.1-.2-.6-1.5-.8-2-.1-.5-.2-.4-.3-.4h-.5c-.2 0-.5.1-.7.3-.5.5-.8 1.3-.8 2.1 0 .8.3 1.5.6 2.1.3.5.6.9 1 1.3l.5.5c.4.4.9.7 1.4 1 .5.3 1 .5 1.6.6.5.1 1 .1 1.4-.1.3-.1.7-.3.9-.6.3-.3.4-.6.4-.8.1-.2.1-.4 0-.5z"/></svg>',
+      list: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h2M6 5h12M2 10h2M6 10h12M2 15h2M6 15h12"/></svg>',
+      lock: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6a3 3 0 016 0v3"/></svg>',
+      compare: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l-5-5 5-5M13 5l5 5-5 5"/></svg>',
+      'alert-circle': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4M10 13v1"/></svg>',
+      wallet: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M12 9h4v4h-4a2 2 0 010-4z"/></svg>',
+      gem: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h12l3 5-9 11L1 7z"/></svg>',
+      tag: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h6l8 8-6 6-8-8V3z"/><circle cx="6.5" cy="6.5" r="1.5" fill="currentColor"/></svg>',
+      'message-circle': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a7 7 0 0114 0 7 7 0 01-7 7H2l1.5-3.5A7 7 0 012 9z"/></svg>',
+      'chevron-up': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 13l-5-5-5 5"/></svg>',
+      'chevron-down': '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7l5 5 5-5"/></svg>',
+      wave: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11c2 0 3-2 5-2s3 2 5 2 3-2 5-2"/><path d="M3 15c2 0 3-2 5-2s3 2 5 2 3-2 5-2"/><path d="M3 7c2 0 3-2 5-2s3 2 5 2 3-2 5-2"/></svg>',
+      folder: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2z"/></svg>',
+    };
+
+    function icon(key) {
+      return ICONS[key] || '';
+    }
+
+    function renderIcon(key, className) {
+      var div = document.createElement('span');
+      div.innerHTML = icon(key);
+      var svg = div.firstElementChild;
+      if (svg && className) svg.classList.add(className);
+      return svg || document.createElement('span');
+    }
+
     // ─── Funnel state (in-memory this pageview; persisted to localStorage) ───
     const funnel = {
       view: 'welcome', // welcome | qualification | recommendations | conversation
@@ -271,6 +336,15 @@
       --primary: ${config.theme.accentColor};
       --on-primary: ${onPrimary};
       --bg: #ffffff;
+      --icon-size: 20px;
+
+    .mdv-icon {
+      width: var(--icon-size);
+      height: var(--icon-size);
+      vertical-align: middle;
+      display: inline-block;
+      flex-shrink: 0;
+    }
       --bg-soft: #f8fafc;
       --text: #111827;
       --muted: #6b7280;
@@ -2331,7 +2405,7 @@
 
       <div class="input-area">
         <div class="input-wrap">
-          <button class="input-smiley-btn" aria-label="Insert emoji" type="button">😊</button>
+          <button class="input-smiley-btn" aria-label="Insert emoji" type="button">${icon('smile')}</button>
           <input type="text" class="input-field" id="midevela-input" maxlength="2000" placeholder="Ask anything\u2026" aria-label="Type your message" autocomplete="off">
           <button class="input-send-btn" id="midevela-send" aria-label="Send message">
             <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -2430,7 +2504,7 @@
         row.className = 'msg-row ai';
         var avatar = document.createElement('div');
         avatar.className = 'msg-avatar';
-        avatar.textContent = '\u{1F33F}';
+        avatar.innerHTML = icon('leaf');
         var col = document.createElement('div');
         col.className = 'msg-col';
         var sender = document.createElement('div');
@@ -2493,7 +2567,7 @@
       el.id = 'midevela-typing';
       el.className = 'typing';
       el.innerHTML =
-        '<div class="typing-avatar">\u{1F33F}</div>' +
+        '<div class="typing-avatar">' + icon('leaf') + '</div>' +
         '<div class="typing-content">' +
           '<span class="typing-text">' + escapeHtml(contextText || aiName + ' is thinking\u2026') + '</span>' +
           '<span class="typing-dots">' +
@@ -2520,7 +2594,7 @@
       var strip = document.createElement('div');
       strip.id = 'midevela-memory';
       strip.className = 'memory-strip';
-      strip.innerHTML = '<div class="memory-header">\u{1F9E0} Here\'s what I know</div><div class="memory-items" id="midevela-memory-items"></div>';
+      strip.innerHTML = '<div class="memory-header">' + icon('sparkle') + ' Here\'s what I know</div><div class="memory-items" id="midevela-memory-items"></div>';
       var container = strip.querySelector('#midevela-memory-items');
       renderMemoryItems(container);
       var editBtn = document.createElement('button');
@@ -2577,7 +2651,7 @@
         return;
       }
       container.innerHTML = items.map(function (item) {
-        return '<div class="memory-item">\u2713 ' + escapeHtml(item) + '</div>';
+        return '<div class="memory-item">' + icon('check') + ' ' + escapeHtml(item) + '</div>';
       }).join('');
     }
 
@@ -2589,7 +2663,7 @@
         var el = document.createElement('button');
         el.type = 'button';
         el.className = 'chip';
-        el.textContent = (chip.icon || '') + (chip.icon ? ' ' : '') + chip.label;
+        el.innerHTML = (chip.icon || '') + (chip.icon ? ' ' : '') + escapeHtml(chip.label);
         el.addEventListener('click', function () { chip.action(); });
         wrap.appendChild(el);
       });
@@ -2855,9 +2929,9 @@
           }
           questionText = 'What type of product are you looking for?';
           options = cats.map(function (c) {
-            return { icon: c.icon || '\u{1F4E6}', label: c.name, value: c.name, categoryId: c.id };
+            return { icon: c.icon || icon('package'), label: c.name, value: c.name, categoryId: c.id };
           });
-          options.push({ icon: '\u{1F4AD}', label: 'Not sure', value: 'any', categoryId: null });
+          options.push({ icon: icon('sparkle'), label: 'Not sure', value: 'any', categoryId: null });
           break;
 
         case 'concern':
@@ -2866,12 +2940,12 @@
             questionText = 'Great! What specific concern are you looking to address?';
           }
           options = [
-            { icon: '\u{1F9F4}', label: 'Acne', value: 'Acne' },
-            { icon: '\u{1F4A7}', label: 'Dryness', value: 'Dryness' },
-            { icon: '\u{1F31E}', label: 'Brightening', value: 'Brightening' },
-            { icon: '\u{1F9CD}', label: 'Aging', value: 'Aging' },
-            { icon: '\u{1F3E0}', label: 'Dark Spots', value: 'Dark Spots' },
-            { icon: '\u{1F4AD}', label: 'Not sure', value: 'any' },
+            { icon: icon('droplet'), label: 'Acne', value: 'Acne' },
+            { icon: icon('droplet'), label: 'Dryness', value: 'Dryness' },
+            { icon: icon('sun'), label: 'Brightening', value: 'Brightening' },
+            { icon: icon('clock'), label: 'Aging', value: 'Aging' },
+            { icon: icon('sun'), label: 'Dark Spots', value: 'Dark Spots' },
+            { icon: icon('sparkle'), label: 'Not sure', value: 'any' },
           ];
           break;
 
@@ -2881,22 +2955,22 @@
             questionText = 'What\u2019s your budget? That helps me find the best products for you.';
           }
           options = [
-            { icon: '\u{1F4B2}', label: 'Under $30', value: 'under-30' },
-            { icon: '\u{1F4B5}', label: '$30 \u2013 $60', value: '30-60' },
-            { icon: '\u{1F4B0}', label: '$60 \u2013 $100', value: '60-100' },
-            { icon: '\u{1F48E}', label: '$100+', value: '100-plus' },
-            { icon: '\u{1F4AD}', label: 'No preference', value: 'any' },
+            { icon: icon('card'), label: 'Under $30', value: 'under-30' },
+            { icon: icon('wallet'), label: '$30 \u2013 $60', value: '30-60' },
+            { icon: icon('money'), label: '$60 \u2013 $100', value: '60-100' },
+            { icon: icon('gem'), label: '$100+', value: '100-plus' },
+            { icon: icon('sparkle'), label: 'No preference', value: 'any' },
           ];
           break;
 
         case 'skinType':
           questionText = 'What\u2019s your skin type? This helps me find products that work best for you.';
           options = [
-            { icon: '\u{1F9F4}', label: 'Dry', value: 'Dry' },
-            { icon: '\u{1F4A6}', label: 'Oily', value: 'Oily' },
-            { icon: '\u{1F9D0}', label: 'Combination', value: 'Combination' },
-            { icon: '\u{1F4A8}', label: 'Sensitive', value: 'Sensitive' },
-            { icon: '\u{1F4AD}', label: 'Not sure', value: 'any' },
+            { icon: icon('droplet'), label: 'Dry', value: 'Dry' },
+            { icon: icon('droplet'), label: 'Oily', value: 'Oily' },
+            { icon: icon('sparkle'), label: 'Combination', value: 'Combination' },
+            { icon: icon('heart'), label: 'Sensitive', value: 'Sensitive' },
+            { icon: icon('sparkle'), label: 'Not sure', value: 'any' },
           ];
           break;
 
@@ -2904,10 +2978,10 @@
           var brandOptions = [];
           if (config.brands && Array.isArray(config.brands)) {
             config.brands.forEach(function (b) {
-              brandOptions.push({ icon: '\u{1F3F7}', label: b, value: b });
+              brandOptions.push({ icon: icon('tag'), label: b, value: b });
             });
           }
-          brandOptions.push({ icon: '\u{1F4AD}', label: 'No preference', value: 'any' });
+          brandOptions.push({ icon: icon('sparkle'), label: 'No preference', value: 'any' });
           questionText = 'Do you have a preferred brand?';
           options = brandOptions;
           break;
@@ -2925,7 +2999,7 @@
           var chip = document.createElement('button');
           chip.type = 'button';
           chip.className = 'chip';
-          chip.textContent = (opt.icon ? opt.icon + ' ' : '') + opt.label;
+chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label);
           chip.addEventListener('click', function () {
             answerDiscoveryQuestion(field, opt);
           });
@@ -2995,7 +3069,7 @@
         var chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'context-bar-chip';
-        chip.innerHTML = escapeHtml(label) + ': ' + escapeHtml(value) + ' <span class="context-bar-chip-remove">\u2716</span>';
+        chip.innerHTML = escapeHtml(label) + ': ' + escapeHtml(value) + ' <span class="context-bar-chip-remove">' + icon('x') + '</span>';
         chip.addEventListener('click', function () {
           // Remove this field from answers
           delete funnel.answers[fieldKey];
@@ -3096,7 +3170,7 @@
     }
     function recommendationFollowUpChips() {
       return [
-        { icon: '\u{1F50D}', label: 'Compare them', action: function () {
+        { icon: icon('search'), label: 'Compare them', action: function () {
           // Trigger compare mode by selecting first two products
           if (funnel.lastRecommendations && funnel.lastRecommendations.length >= 2) {
             funnel.compareSelection = [funnel.lastRecommendations[0].id, funnel.lastRecommendations[1].id];
@@ -3104,15 +3178,15 @@
             runCompare();
           }
         } },
-        { icon: '\u{1F4B0}', label: 'Cheaper options', action: function () {
+        { icon: icon('wallet'), label: 'Cheaper options', action: function () {
           sendMessage('show me cheaper options');
         } },
-        { icon: '\u{1F4D6}', label: 'Learn more', action: function () {
+        { icon: icon('external'), label: 'Learn more', action: function () {
           if (funnel.lastRecommendations && funnel.lastRecommendations.length > 0) {
             sendMessage('tell me more about ' + funnel.lastRecommendations[0].name);
           }
         } },
-        { icon: '\u{1F4AC}', label: 'Ask something else', action: function () {
+        { icon: icon('chat'), label: 'Ask something else', action: function () {
           funnel.view = 'conversation';
           persistFunnel();
           clearBody();
@@ -3125,14 +3199,14 @@
     // After any business/support answer, offer to return to shopping
     function businessFollowUpChips() {
       return [
-        { icon: '\u{1F6CD}', label: 'Continue shopping', action: function () {
+        { icon: icon('bag'), label: 'Continue shopping', action: function () {
           if (funnel.categoryId) {
             selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
           } else {
             renderWelcome();
           }
         } },
-        { icon: '\u{1F4AC}', label: 'Ask another question', action: function () {
+        { icon: icon('chat'), label: 'Ask another question', action: function () {
           input.focus();
         } },
       ];
@@ -3143,12 +3217,12 @@
       var el = document.createElement('div');
       el.className = 'error-bubble';
       el.innerHTML =
-        '<div class="error-icon">\u{1F4A1}</div>' +
+        '<div class="error-icon">' + icon('alert-circle') + '</div>' +
         '<div class="error-text">' + escapeHtml(message || 'Oops. Something went wrong. Let\u2019s try again.') + '</div>';
       if (typeof retryFn === 'function') {
         var btn = document.createElement('button');
         btn.className = 'error-retry-btn';
-        btn.textContent = '\u{1F504} Retry';
+        btn.innerHTML = icon('refresh') + ' Retry';
         btn.addEventListener('click', retryFn);
         el.appendChild(btn);
       }
@@ -3197,7 +3271,7 @@
       var el = document.createElement('div');
       el.className = 'compare-placeholder';
       el.innerHTML =
-        '<div class="compare-placeholder-title">\u{2696}\u{FE0F} Compare Products</div>' +
+        '<div class="compare-placeholder-title">' + icon('compare') + ' Compare Products</div>' +
         '<div class="compare-placeholder-row">' +
           '<div class="compare-placeholder-item">' + escapeHtml(productA || 'Product A') + '</div>' +
           '<div class="compare-placeholder-item">' + escapeHtml(productB || 'Product B') + '</div>' +
@@ -3205,7 +3279,7 @@
       if (typeof compareFn === 'function') {
         var btn = document.createElement('button');
         btn.className = 'compare-placeholder-btn';
-        btn.textContent = '\u{2696}\u{FE0F} Compare';
+        btn.innerHTML = icon('compare') + ' Compare';
         btn.addEventListener('click', compareFn);
         el.appendChild(btn);
       }
@@ -3241,7 +3315,7 @@
           '</div>';
       } else {
         imgHTML = '<div class="reco-img" data-role="view">' +
-          '<div class="reco-img-fallback"><span>\u{1F6CD}</span>Image unavailable</div>' +
+          '<div class="reco-img-fallback"><span>' + icon('bag') + '</span>Image unavailable</div>' +
           badgeHTML +
           '</div>';
       }
@@ -3252,7 +3326,7 @@
         var stars = '';
         var fullStars = Math.floor(Number(r.rating));
         for (var s = 0; s < 5; s++) {
-          stars += s < fullStars ? '\u{2605}' : '\u{2606}';
+          stars += s < fullStars ? icon('star-filled') : icon('star');
         }
         ratingHTML = '<div class="reco-rating">' + stars + '</div>';
       }
@@ -3279,7 +3353,7 @@
       var expandHTML = '';
       if (r.description || r.benefits || r.ingredients) {
         expandHTML = '<button type="button" class="reco-expand-toggle" data-role="expand">' +
-          (isExpanded ? '\u25B2 Less details' : '\u25BC More details') +
+          (isExpanded ? icon('chevron-up') + ' Less details' : icon('chevron-down') + ' More details') +
           '</button>' +
           '<div class="reco-expand' + (isExpanded ? ' open' : '') + '">' +
           (r.description ? '<div class="reco-expand-section">Description</div><div class="reco-expand-text">' + escapeHtml(r.description) + '</div>' : '') +
@@ -3299,8 +3373,8 @@
         footerHTML +
         expandHTML +
         '<div class="reco-actions">' +
-          (url ? '<a class="reco-btn" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" data-role="checkout">View Product \u2192</a>' : '') +
-          (source === 'funnel' ? '<button type="button" class="reco-compare-btn' + (isSelected ? ' active' : '') + '" data-role="compare">' + (isSelected ? '\u2713 Added' : '+ Compare') + '</button>' : '') +
+          (url ? '<a class="reco-btn" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" data-role="checkout">View Product ' + icon('arrow-right') + '</a>' : '') +
+          (source === 'funnel' ? '<button type="button" class="reco-compare-btn' + (isSelected ? ' active' : '') + '" data-role="compare">' + (isSelected ? icon('check') + ' Added' : '+ Compare') + '</button>' : '') +
         '</div>';
 
       // Image loading: remove shimmer when loaded
@@ -3315,7 +3389,7 @@
           img.addEventListener('error', function () {
             var imgEl = card.querySelector('.reco-img');
             if (imgEl) {
-              imgEl.innerHTML = '<div class="reco-img-fallback"><span>\u{1F6CD}</span>Image unavailable</div>' + badgeHTML;
+              imgEl.innerHTML = '<div class="reco-img-fallback"><span>' + icon('bag') + '</span>Image unavailable</div>' + badgeHTML;
             }
           }, { once: true });
         }
@@ -3425,7 +3499,7 @@
       var loadWrap = document.createElement('div');
       loadWrap.className = 'compare-loading';
       loadWrap.innerHTML =
-        '<div class="compare-loading-icon">\u{1F50D}</div>' +
+        '<div class="compare-loading-icon">' + icon('search') + '</div>' +
         '<div class="compare-loading-text" id="midevela-compare-loading-text">' + loadingTexts[0] + '</div>';
       overlay.appendChild(loadWrap);
 
@@ -3492,7 +3566,7 @@
           if (pi === recommendedIdx) {
             var badge = document.createElement('div');
             badge.className = 'compare-winner-badge';
-            badge.textContent = '\u{1F3C6} Best Match';
+            badge.innerHTML = icon('trophy') + ' Best Match';
             col.appendChild(badge);
           }
 
@@ -3503,7 +3577,7 @@
           if (imgUrl) {
             imgWrap.innerHTML = '<img src="' + escapeHtml(imgUrl) + '" alt="' + escapeHtml(p.name) + '" loading="lazy">';
           } else {
-            imgWrap.innerHTML = '\u{1F6CD}';
+            imgWrap.innerHTML = icon('bag');
           }
           col.appendChild(imgWrap);
 
@@ -3624,7 +3698,7 @@
           simRows.slice(0, 4).forEach(function (r) {
             var chip = document.createElement('span');
             chip.className = 'compare-sim-chip';
-            chip.textContent = '\u2713 ' + r.label + ': ' + (r.values[0] || 'Yes');
+            chip.innerHTML = icon('check') + ' ' + escapeHtml(r.label) + ': ' + escapeHtml(r.values[0] || 'Yes');
             simChips.appendChild(chip);
           });
           simSection.appendChild(simChips);
@@ -3730,7 +3804,7 @@
         row.className = 'msg-row ai';
         var avatar = document.createElement('div');
         avatar.className = 'msg-avatar';
-        avatar.textContent = '\u{1F33F}';
+        avatar.innerHTML = icon('leaf');
         var col = document.createElement('div');
         col.className = 'msg-col';
         var sender = document.createElement('div');
@@ -3759,7 +3833,7 @@
             (function (imgEl) {
               imgEl.addEventListener('error', function () {
                 var iconEl = tile.querySelector('.cat-tile-icon');
-                if (iconEl) iconEl.textContent = cat.icon || '\u{1F4E6}';
+                if (iconEl) iconEl.innerHTML = escapeHtml(cat.icon || '\u{1F4E6}');
               }, { once: true });
             })(tile.querySelector('.cat-tile-icon img'));
           }
@@ -3774,7 +3848,7 @@
       var askChip = document.createElement('button');
       askChip.type = 'button';
       askChip.className = 'chip';
-      askChip.textContent = '\u{1F4AC} Ask anything';
+      askChip.innerHTML = icon('chat') + ' Ask anything';
       askChip.addEventListener('click', function () {
         funnel.view = 'conversation';
         persistFunnel();
@@ -3817,7 +3891,7 @@
       // Action cards
       var actions = [
         {
-          icon: '\u{1F6CD}',
+          icon: icon('bag'),
           title: 'Start Shopping',
           desc: 'Find products with AI recommendations',
           fn: function () {
@@ -3828,7 +3902,7 @@
           },
         },
         {
-          icon: '\u{1F4C2}',
+          icon: icon('list'),
           title: 'Browse Categories',
           desc: 'Explore everything we offer',
           fn: function () {
@@ -3839,7 +3913,7 @@
           },
         },
         {
-          icon: '\u{1F4AC}',
+          icon: icon('chat'),
           title: 'Ask a Question',
           desc: 'Shipping, returns, delivery and more',
           fn: function () {
@@ -3917,7 +3991,7 @@
       // Back prefix
       var prefix = document.createElement('div');
       prefix.className = 'welcome-back-prefix';
-      prefix.textContent = 'Welcome back 👋';
+      prefix.innerHTML = icon('wave') + ' Welcome back';
       screen.appendChild(prefix);
 
       // Last explored
@@ -3935,13 +4009,13 @@
       // Action cards
       var actions = [
         {
-          icon: '🛍',
+          icon: icon('bag'),
           title: 'Continue with ' + cat.name,
           desc: 'Pick up where you left off',
           fn: function () { selectCategory(cat); },
         },
         {
-          icon: '📂',
+          icon: icon('folder'),
           title: 'Browse Categories',
           desc: 'Explore everything we offer',
           fn: function () {
@@ -3952,7 +4026,7 @@
           },
         },
         {
-          icon: '🔄',
+          icon: icon('refresh'),
           title: 'Something Else',
           desc: 'Start fresh with a new search',
           fn: function () { renderWelcome(); },
@@ -3985,7 +4059,7 @@
 
       var icon = document.createElement('div');
       icon.className = 'empty-conversation-icon';
-      icon.textContent = '💬';
+      icon.innerHTML = icon('chat');
       container.appendChild(icon);
 
       var title = document.createElement('div');
@@ -4059,7 +4133,7 @@
         var chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'chip';
-        chip.textContent = (opt.icon ? opt.icon + ' ' : '') + opt.label;
+        chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label);
         chip.addEventListener('click', function () { answerQualificationStep(step, opt, chipsWrap); });
         chipsWrap.appendChild(chip);
       });
@@ -4096,15 +4170,15 @@
             funnel.view = 'conversation';
             persistFunnel();
             renderSuggestionChips([
-              { icon: '\u{1F504}', label: 'Increase budget', action: function () {
+              { icon: icon('refresh'), label: 'Increase budget', action: function () {
                 delete funnel.answers.budget;
                 persistFunnel();
                 startDiscoveryFlow('increase budget');
               } },
-              { icon: '\u{1F50D}', label: 'Browse similar', action: function () {
+              { icon: icon('search'), label: 'Browse similar', action: function () {
                 renderWelcome();
               } },
-              { icon: '\u{1F4AC}', label: 'Contact our team', action: function () {
+              { icon: icon('chat'), label: 'Contact our team', action: function () {
                 sendMessage('I need help contacting the team');
               } },
             ]);
@@ -4210,12 +4284,12 @@
         scrollToBottom();
         appendAiBubble("No problem! Would you like something cheaper, or would you like a different category?", null);
         renderSuggestionChips([
-          { icon: '\u{1F4B0}', label: 'Something cheaper', action: function () {
+          { icon: icon('wallet'), label: 'Something cheaper', action: function () {
             delete funnel.answers.budget; persistFunnel();
             startDiscoveryFlow('cheaper');
           }},
-          { icon: '\u{1F504}', label: 'Different category', action: function () { renderWelcome(); }},
-          { icon: '\u{1F4AC}', label: 'Ask a question', action: function () { input.focus(); }},
+          { icon: icon('refresh'), label: 'Different category', action: function () { renderWelcome(); }},
+          { icon: icon('chat'), label: 'Ask a question', action: function () { input.focus(); }},
         ]);
         return;
       }
@@ -4344,7 +4418,7 @@
     function renderVerifiedBadge() {
       var b = document.createElement('div');
       b.className = 'verified-badge';
-      b.textContent = '\u2713 Verified Business Information';
+      b.innerHTML = icon('check') + ' Verified Business Information';
       return b;
     }
 
@@ -4374,7 +4448,7 @@
           '<span class="business-card-title">' + escapeHtml(title) + '</span>' +
         '</div>' +
         '<div class="business-card-body">' + escapeHtml(body) + '</div>' +
-        (linkText ? '<a class="business-card-link" href="' + escapeHtml(linkUrl || '#') + '" target="_blank">' + escapeHtml(linkText) + ' \u2192</a>' : '');
+        (linkText ? '<a class="business-card-link" href="' + escapeHtml(linkUrl || '#') + '" target="_blank">' + escapeHtml(linkText) + ' ' + icon('arrow-right') + '</a>' : '');
       return card;
     }
 
@@ -4384,7 +4458,7 @@
       card.className = 'business-card';
       card.innerHTML =
         '<div class="business-card-header">' +
-          '<span class="business-card-icon">\uD83D\uDE9A</span>' +
+          '<span class="business-card-icon">' + icon('truck') + '</span>' +
           '<span class="business-card-title">Shipping</span>' +
         '</div>' +
         '<div class="business-card-body">' + escapeHtml(clean) + '</div>';
@@ -4396,7 +4470,7 @@
       card.className = 'business-card';
       card.innerHTML =
         '<div class="business-card-header">' +
-          '<span class="business-card-icon">\uD83D\uDCE6</span>' +
+          '<span class="business-card-icon">' + icon('package') + '</span>' +
           '<span class="business-card-title">Returns Policy</span>' +
         '</div>' +
         '<div class="business-card-body">' + escapeHtml(text) + '</div>';
@@ -4414,7 +4488,7 @@
       card.className = 'business-card';
       card.innerHTML =
         '<div class="business-card-header">' +
-          '<span class="business-card-icon">\uD83D\uDCB3</span>' +
+          '<span class="business-card-icon">' + icon('card') + '</span>' +
           '<span class="business-card-title">Payment Methods</span>' +
         '</div>' +
         '<ul class="business-card-list">' + list + '</ul>';
@@ -4426,7 +4500,7 @@
       card.className = 'business-card';
       card.innerHTML =
         '<div class="business-card-header">' +
-          '<span class="business-card-icon">\uD83D\uDEE1\uFE0F</span>' +
+          '<span class="business-card-icon">' + icon('shield') + '</span>' +
           '<span class="business-card-title">Warranty</span>' +
         '</div>' +
         '<div class="business-card-body">' + escapeHtml(text) + '</div>';
@@ -4464,13 +4538,13 @@
         '<div class="contact-card-subtitle">Our team would be happy to help.</div>' +
         '<div class="contact-card-actions">' +
           (whatsapp ? '<a class="contact-btn" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
-            '<span class="contact-btn-icon">\uD83D\uDCAC</span>' +
+            '<span class="contact-btn-icon">' + icon('chat') + '</span>' +
             '<span class="contact-btn-label">WhatsApp</span></a>' : '') +
           (phone ? '<a class="contact-btn" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +
-            '<span class="contact-btn-icon">\uD83D\uDCDE</span>' +
+            '<span class="contact-btn-icon">' + icon('phone') + '</span>' +
             '<span class="contact-btn-label">Call</span></a>' : '') +
           (email ? '<a class="contact-btn" href="mailto:' + escapeHtml(email) + '">' +
-            '<span class="contact-btn-icon">\u2709\uFE0F</span>' +
+            '<span class="contact-btn-icon">' + icon('mail') + '</span>' +
             '<span class="contact-btn-label">Email</span></a>' : '') +
         '</div>';
       return card;
@@ -4487,11 +4561,11 @@
         '<div class="escalation-card-subtitle">Our team would be happy to help.</div>' +
         '<div class="escalation-actions">' +
           (whatsapp ? '<a class="escalation-btn escalation-btn-whatsapp" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
-            '<span class="escalation-btn-icon">\uD83D\uDCAC</span><span>WhatsApp</span></a>' : '') +
+            '<span class="escalation-btn-icon">' + icon('chat') + '</span><span>WhatsApp</span></a>' : '') +
           (phone ? '<a class="escalation-btn escalation-btn-call" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +
-            '<span class="escalation-btn-icon">\uD83D\uDCDE</span><span>Call</span></a>' : '') +
+            '<span class="escalation-btn-icon">' + icon('phone') + '</span><span>Call</span></a>' : '') +
           (email ? '<a class="escalation-btn escalation-btn-email" href="mailto:' + escapeHtml(email) + '">' +
-            '<span class="escalation-btn-icon">\u2709\uFE0F</span><span>Email</span></a>' : '') +
+            '<span class="escalation-btn-icon">' + icon('mail') + '</span><span>Email</span></a>' : '') +
         '</div>';
       return card;
     }
@@ -4506,13 +4580,13 @@
         '<div class="business-unknown-text">I couldn\u2019t find verified information about that. Would you like me to connect you with our team?</div>' +
         '<div class="business-unknown-actions">' +
           (whatsapp ? '<a class="contact-btn" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
-            '<span class="contact-btn-icon">\uD83D\uDCAC</span>' +
+            '<span class="contact-btn-icon">' + icon('chat') + '</span>' +
             '<span class="contact-btn-label">WhatsApp</span></a>' : '') +
           (phone ? '<a class="contact-btn" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +
-            '<span class="contact-btn-icon">\uD83D\uDCDE</span>' +
+            '<span class="contact-btn-icon">' + icon('phone') + '</span>' +
             '<span class="contact-btn-label">Call</span></a>' : '') +
           (email ? '<a class="contact-btn" href="mailto:' + escapeHtml(email) + '">' +
-            '<span class="contact-btn-icon">\u2709\uFE0F</span>' +
+            '<span class="contact-btn-icon">' + icon('mail') + '</span>' +
             '<span class="contact-btn-label">Email</span></a>' : '') +
         '</div>';
       return card;
@@ -4575,7 +4649,7 @@
           container.appendChild(renderWarrantyCard(text));
           break;
         case 'store':
-          container.appendChild(renderInfoCard('\uD83C\uDFEA', 'Our Location', text));
+          container.appendChild(renderInfoCard(icon('pin'), 'Our Location', text));
           break;
         case 'contact':
           container.appendChild(renderContactCard());
@@ -4594,7 +4668,7 @@
           ]));
           break;
         default:
-          container.appendChild(renderInfoCard('\u2139\uFE0F', 'Business Information', text));
+          container.appendChild(renderInfoCard(icon('info'), 'Business Information', text));
       }
       if (intent !== 'unknown' && intent !== 'contact' && intent !== 'faq') {
         container.appendChild(renderVerifiedBadge());
@@ -4608,8 +4682,8 @@
       card.className = 'policy-card';
       var label = text.indexOf('privacy') !== -1 ? 'Privacy Policy' : 'Policies';
       card.innerHTML =
-        '<div class="policy-card-text">\uD83D\uDCC4 ' + escapeHtml(label) + '</div>' +
-        '<span class="policy-card-arrow">\u203A</span>';
+        '<div class="policy-card-text">' + icon('file') + ' ' + escapeHtml(label) + '</div>' +
+        '<span class="policy-card-arrow">' + icon('chevron-right') + '</span>';
       card.addEventListener('click', function () {
         card.classList.toggle('open');
         var existing = card.querySelector('.policy-card-body');
@@ -4633,9 +4707,9 @@
         else if (method === 'email') { card.href = 'mailto:' + value; }
         card.target = '_blank';
       }
-      var icons = { whatsapp: '\uD83D\uDCAC', phone: '\uD83D\uDCDE', email: '\u2709\uFE0F', livechat: '\uD83D\uDCAC' };
+      var iconMap = { whatsapp: icon('chat'), phone: icon('phone'), email: icon('mail'), livechat: icon('chat') };
       card.innerHTML =
-        '<span class="contact-method-card-icon">' + (icons[method] || '') + '</span>' +
+        '<span class="contact-method-card-icon">' + (iconMap[method] || '') + '</span>' +
         '<span class="contact-method-card-label">' + escapeHtml(label) + '</span>' +
         (disabled ? '<span class="contact-method-card-badge">Coming Soon</span>' : '');
       return card;
@@ -4678,14 +4752,14 @@
       var wrap = document.createElement('div');
       wrap.className = 'escalation-actions-bottom';
       var actions = [
-        { label: 'Continue Shopping', icon: '\u{1F6CD}', fn: function () {
+        { label: 'Continue Shopping', icon: icon('bag'), fn: function () {
           if (funnel.categoryId) {
             selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
           } else {
             renderWelcome();
           }
         }},
-        { label: 'Start New Search', icon: '\u{1F50D}', fn: function () {
+        { label: 'Start New Search', icon: icon('search'), fn: function () {
           funnel.categoryId = null;
           funnel.categoryName = null;
           funnel.answers = {};
@@ -4694,7 +4768,7 @@
           clearBody();
           renderWelcome();
         }},
-        { label: 'Close Chat', icon: '\u{1F510}', fn: function () {
+        { label: 'Close Chat', icon: icon('x'), fn: function () {
           chat.classList.remove('open');
           fab.classList.remove('open');
         }},
@@ -4702,7 +4776,7 @@
       actions.forEach(function (a) {
         var btn = document.createElement('button');
         btn.className = 'escalation-action-btn';
-        btn.textContent = a.icon + ' ' + a.label;
+        btn.innerHTML = a.icon + ' ' + escapeHtml(a.label);
         btn.addEventListener('click', a.fn);
         wrap.appendChild(btn);
       });
@@ -4759,7 +4833,7 @@
       var el = document.createElement('div');
       el.className = 'success-celebration';
       el.innerHTML =
-        '<div class="success-icon">\uD83C\uDF89</div>' +
+        '<div class="success-icon">' + icon('party') + '</div>' +
         '<div class="success-title">Excellent choice!</div>' +
         '<div class="success-sub">I think this product fits what you\u2019re looking for.</div>';
       return el;
@@ -4786,12 +4860,12 @@
         viewBtn.target = '_blank';
       }
       viewBtn.className = 'continue-cta-btn btn-press ripple';
-      viewBtn.textContent = 'View Product \u2192';
+      viewBtn.innerHTML = 'View Product ' + icon('arrow-right');
       viewBtn.style.flex = '1';
       actions.appendChild(viewBtn);
       var shopBtn = document.createElement('button');
       shopBtn.className = 'escalation-action-btn btn-press';
-      shopBtn.textContent = '\u{1F6CD} Continue Shopping';
+      shopBtn.innerHTML = icon('bag') + ' Continue Shopping';
       shopBtn.addEventListener('click', function () {
         if (funnel.categoryId) {
           selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
@@ -4808,22 +4882,22 @@
       var el = document.createElement('div');
       el.className = 'business-unknown-card';
       el.innerHTML =
-        '<div class="success-icon" style="font-size:28px;">\uD83E\uDD14</div>' +
+        '<div class="success-icon" style="font-size:28px;">' + icon('alert-circle') + '</div>' +
         '<div class="business-unknown-text">I couldn\u2019t find something that matches exactly.\nLet\u2019s widen the search.</div>';
       body.appendChild(el);
       renderSuggestionChips([
-        { icon: '\u{1F4B0}', label: 'Increase budget', action: function () {
+        { icon: icon('wallet'), label: 'Increase budget', action: function () {
           delete funnel.answers.budget; persistFunnel();
           if (funnel.categoryId) selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
           else renderWelcome();
         }},
-        { icon: '\u{1F50D}', label: 'Show similar', action: function () {
+        { icon: icon('search'), label: 'Show similar', action: function () {
           delete funnel.answers.productType; delete funnel.answers.concern; persistFunnel();
           if (funnel.categoryId) selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
           else renderWelcome();
         }},
-        { icon: '\u{1F504}', label: 'Start again', action: function () { renderWelcome(); }},
-        { icon: '\u{1F4AC}', label: 'Ask a question', action: function () { input.focus(); }},
+        { icon: icon('refresh'), label: 'Start again', action: function () { renderWelcome(); }},
+        { icon: icon('chat'), label: 'Ask a question', action: function () { input.focus(); }},
       ]);
     }
 
@@ -4964,7 +5038,7 @@
             row.className = 'msg-row ai';
             var avatar = document.createElement('div');
             avatar.className = 'msg-avatar';
-            avatar.textContent = '\u{1F33F}';
+            avatar.innerHTML = icon('leaf');
             var col = document.createElement('div');
             col.className = 'msg-col';
             var sender = document.createElement('div');
