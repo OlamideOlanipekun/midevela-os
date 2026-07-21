@@ -1,0 +1,1280 @@
+{
+  "exportedAt": "2026-07-15T14:27:34.762Z",
+  "users": [
+    {
+      "id": "f339dff4-d5ca-4cc4-be3a-964e03421f84",
+      "orgId": "dd830357-7e89-423f-a970-2837894ef1c9",
+      "email": "olamideolanipekun75@gmail.com",
+      "passwordHash": "429af4afe21e32ac6e57f7b35393ea69:acf05177c94c4be3fc2902dacd6a5a4b2fcc926b9423f68b184a19a2f4d8eb3eef258ecaa6c258c389e433a0ae3325e5b7a7a0a8cd72c7793a16566754aa3a32",
+      "name": "Olamide Olanipekun",
+      "role": "OWNER",
+      "avatarUrl": null,
+      "emailVerified": false,
+      "createdAt": "2026-07-15T09:05:38.164Z",
+      "updatedAt": "2026-07-15T09:06:23.405Z"
+    },
+    {
+      "id": "a9b6ff08-2690-4614-9117-c29c17a610f4",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "email": "olamideolanipekun772@gmail.com",
+      "passwordHash": "41f4c4202fc5793ad02053128870780e:24935fa6f7e337d3b9a966125470acf6a5f21575e803cf3f67e0fad523b92ebc7f96ab089810953a093fc2838dde1335fff89a1c880ce5229adcde13bdfc0c43",
+      "name": "JOSEPH UBIOKA",
+      "role": "OWNER",
+      "avatarUrl": null,
+      "emailVerified": false,
+      "createdAt": "2026-07-15T10:03:28.571Z",
+      "updatedAt": "2026-07-15T10:03:41.276Z"
+    }
+  ],
+  "orgs": [
+    {
+      "id": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "name": "Botanica",
+      "slug": "botanica-5a5d",
+      "websiteUrl": "https://skincare-beta-five.vercel.app/",
+      "industry": "Beauty & Cosmetics",
+      "country": "Nigeria",
+      "currency": "NGN",
+      "logoUrl": null,
+      "settings": {
+        "tone": "professional",
+        "aiName": "Lumi",
+        "channels": [
+          "website"
+        ],
+        "features": {
+          "exitIntent": true,
+          "playSounds": true,
+          "showProductImages": true
+        },
+        "greeting": "Welcome to Botanica. How may I assist you today?",
+        "neverSay": "",
+        "accentColor": "#1EE67A",
+        "businessHours": {
+          "open": "10:00 AM",
+          "close": "8:00 PM"
+        },
+        "whatsappNumber": "",
+        "engagementDelay": 5,
+        "sellsDescription": "premium skincare product "
+      },
+      "createdAt": "2026-07-15T10:03:41.269Z",
+      "updatedAt": "2026-07-15T10:38:31.672Z"
+    },
+    {
+      "id": "dd830357-7e89-423f-a970-2837894ef1c9",
+      "name": "Botanica",
+      "slug": "botanica",
+      "websiteUrl": null,
+      "industry": "Beauty & Cosmetics",
+      "country": "Nigeria",
+      "currency": "NGN",
+      "logoUrl": null,
+      "settings": {
+        "tone": "friendly",
+        "aiName": "Lumi",
+        "channels": [
+          "website"
+        ],
+        "features": {
+          "exitIntent": true,
+          "playSounds": true,
+          "showProductImages": true
+        },
+        "greeting": "Hey! 👋 Welcome to Botanica. What are you looking for today?",
+        "neverSay": "",
+        "accentColor": "#1EE67A",
+        "businessHours": {
+          "open": "9:00 AM",
+          "close": "24/7 (Always open)"
+        },
+        "whatsappNumber": "",
+        "engagementDelay": 5,
+        "sellsDescription": "premium skincare product "
+      },
+      "createdAt": "2026-07-15T09:06:23.395Z",
+      "updatedAt": "2026-07-15T09:06:23.395Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "6249b1e8-7037-4be9-ac95-fc49c5d92016",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "fcdce578-5f4a-4e88-945b-da38d799ad10",
+      "name": "Botanical Gentle Cleanser",
+      "brand": null,
+      "description": "A soothing, plant-based cleanser that removes impurities while maintaining your skin's natural moisture barrier. Infused with chamomile and green tea extracts.",
+      "price": "38",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:57.232Z",
+      "updatedAt": "2026-07-15T10:03:57.232Z"
+    },
+    {
+      "id": "3fcf4cda-5e2b-406a-9b6c-e038392414a0",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "72709304-97ba-4926-9a28-529250ff4074",
+      "name": "Radiance Vitamin C Serum",
+      "brand": null,
+      "description": "A potent brightening serum featuring 15% L-ascorbic acid to reduce dark spots, even skin tone, and boost collagen production for a youthful glow.",
+      "price": "68",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:57.459Z",
+      "updatedAt": "2026-07-15T10:03:57.459Z"
+    },
+    {
+      "id": "c7666bc8-7768-42fa-a4e0-ea542e0c2477",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "247b29fc-87a6-4c79-bb57-459c72ea5b9e",
+      "name": "Hydra-Balance Moisturizer",
+      "brand": null,
+      "description": "A lightweight yet deeply nourishing moisturizer that balances oil production while providing 24-hour hydration. Perfect for combination skin.",
+      "price": "52",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:57.621Z",
+      "updatedAt": "2026-07-15T10:03:57.621Z"
+    },
+    {
+      "id": "7ef834b4-88e6-4e91-ad66-3ba5e7d96857",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "e522727d-d3c3-4768-bde4-89781e853628",
+      "name": "Rose Petal Hydrating Toner",
+      "brand": null,
+      "description": "A refreshing, alcohol-free toner infused with real rose petals to prep, hydrate, and soothe your skin before serums and moisturizers.",
+      "price": "32",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:57.781Z",
+      "updatedAt": "2026-07-15T10:03:57.781Z"
+    },
+    {
+      "id": "bad88066-f981-4b5d-886d-8de38796a833",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "3a1423da-ab16-48b9-a30d-ad2cd3a9d433",
+      "name": "Detox Clay Purifying Mask",
+      "brand": null,
+      "description": "A weekly treatment mask with kaolin clay and activated charcoal to draw out impurities, minimize pores, and mattify oily skin.",
+      "price": "45",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:57.906Z",
+      "updatedAt": "2026-07-15T10:03:57.906Z"
+    },
+    {
+      "id": "6e051993-925b-4f32-93a6-a04e9c1f8e14",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "247b29fc-87a6-4c79-bb57-459c72ea5b9e",
+      "name": "Calm & Repair Sensitive Cream",
+      "brand": null,
+      "description": "A fragrance-free, hypoallergenic cream designed specifically for sensitive and reactive skin. Strengthens the skin barrier and reduces redness.",
+      "price": "58",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:58.008Z",
+      "updatedAt": "2026-07-15T10:03:58.008Z"
+    },
+    {
+      "id": "66dd132b-f4d3-4db7-9a41-05e5f0c1e8be",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "93f1c796-2caa-4056-bfef-4c6296959189",
+      "name": "Retinol Night Treatment",
+      "brand": null,
+      "description": "An advanced anti-aging treatment with encapsulated retinol for gentle yet effective wrinkle reduction and skin renewal while you sleep.",
+      "price": "75",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:58.117Z",
+      "updatedAt": "2026-07-15T10:03:58.117Z"
+    },
+    {
+      "id": "97e21c52-f984-4187-851c-b9cb8da8f2dc",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "3a1423da-ab16-48b9-a30d-ad2cd3a9d433",
+      "name": "Honey Glow Hydrating Mask",
+      "brand": null,
+      "description": "A luxurious overnight mask with raw honey and propolis to deeply hydrate, nourish, and give your skin a natural morning glow.",
+      "price": "48",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:58.228Z",
+      "updatedAt": "2026-07-15T10:03:58.228Z"
+    },
+    {
+      "id": "870990d0-b35a-4991-9100-10ab806bf15a",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "fcdce578-5f4a-4e88-945b-da38d799ad10",
+      "name": "Oil-Free Gel Cleanser",
+      "brand": null,
+      "description": "A refreshing gel cleanser that removes excess oil and buildup without stripping the skin. Perfect for morning and evening use.",
+      "price": "34",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:58.338Z",
+      "updatedAt": "2026-07-15T10:03:58.338Z"
+    },
+    {
+      "id": "7133a5fd-017a-45db-af52-72b1ca7ee9e3",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "72709304-97ba-4926-9a28-529250ff4074",
+      "name": "Hyaluronic Boost Serum",
+      "brand": null,
+      "description": "A multi-weight hyaluronic acid serum that delivers intense hydration at every layer of the skin for a plump, dewy complexion.",
+      "price": "55",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:58.448Z",
+      "updatedAt": "2026-07-15T10:03:58.448Z"
+    },
+    {
+      "id": "4f8c3fb9-5662-4bd6-bb21-e504b5e80438",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "e522727d-d3c3-4768-bde4-89781e853628",
+      "name": "Exfoliating Enzyme Toner",
+      "brand": null,
+      "description": "A gentle daily exfoliating toner with fruit enzymes to dissolve dead skin cells and reveal brighter, smoother skin without irritation.",
+      "price": "36",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:58.548Z",
+      "updatedAt": "2026-07-15T10:03:58.548Z"
+    },
+    {
+      "id": "b1262346-1874-4be1-9dc5-7e90aba00729",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "93f1c796-2caa-4056-bfef-4c6296959189",
+      "name": "Niacinamide Pore Refiner",
+      "brand": null,
+      "description": "A targeted treatment serum with 10% niacinamide to minimize pores, control sebum, and improve overall skin texture.",
+      "price": "42",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:03:58.811Z",
+      "updatedAt": "2026-07-15T10:03:58.811Z"
+    },
+    {
+      "id": "fd00c066-f9af-4390-9074-c10610110a9b",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "fcdce578-5f4a-4e88-945b-da38d799ad10",
+      "name": "Botanical Gentle Cleanser",
+      "brand": null,
+      "description": "A soothing, plant-based cleanser that removes impurities while maintaining your skin's natural moisture barrier. Infused with chamomile and green tea extracts.",
+      "price": "38",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:21.816Z",
+      "updatedAt": "2026-07-15T10:38:21.816Z"
+    },
+    {
+      "id": "608cbfa7-6507-463b-ab80-00afcf420f71",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "72709304-97ba-4926-9a28-529250ff4074",
+      "name": "Radiance Vitamin C Serum",
+      "brand": null,
+      "description": "A potent brightening serum featuring 15% L-ascorbic acid to reduce dark spots, even skin tone, and boost collagen production for a youthful glow.",
+      "price": "68",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.072Z",
+      "updatedAt": "2026-07-15T10:38:22.072Z"
+    },
+    {
+      "id": "9a759a31-0563-4cac-bc57-bdf657ee1ad5",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "247b29fc-87a6-4c79-bb57-459c72ea5b9e",
+      "name": "Hydra-Balance Moisturizer",
+      "brand": null,
+      "description": "A lightweight yet deeply nourishing moisturizer that balances oil production while providing 24-hour hydration. Perfect for combination skin.",
+      "price": "52",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.215Z",
+      "updatedAt": "2026-07-15T10:38:22.215Z"
+    },
+    {
+      "id": "e2c2f2a2-9cec-4426-be84-3ca6d2e60440",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "e522727d-d3c3-4768-bde4-89781e853628",
+      "name": "Rose Petal Hydrating Toner",
+      "brand": null,
+      "description": "A refreshing, alcohol-free toner infused with real rose petals to prep, hydrate, and soothe your skin before serums and moisturizers.",
+      "price": "32",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.373Z",
+      "updatedAt": "2026-07-15T10:38:22.373Z"
+    },
+    {
+      "id": "66d41fb3-856f-47f8-9859-acbf1a3693cc",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "3a1423da-ab16-48b9-a30d-ad2cd3a9d433",
+      "name": "Detox Clay Purifying Mask",
+      "brand": null,
+      "description": "A weekly treatment mask with kaolin clay and activated charcoal to draw out impurities, minimize pores, and mattify oily skin.",
+      "price": "45",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.480Z",
+      "updatedAt": "2026-07-15T10:38:22.480Z"
+    },
+    {
+      "id": "d72b3492-2b68-4300-89fa-4853de6b3069",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "247b29fc-87a6-4c79-bb57-459c72ea5b9e",
+      "name": "Calm & Repair Sensitive Cream",
+      "brand": null,
+      "description": "A fragrance-free, hypoallergenic cream designed specifically for sensitive and reactive skin. Strengthens the skin barrier and reduces redness.",
+      "price": "58",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.570Z",
+      "updatedAt": "2026-07-15T10:38:22.570Z"
+    },
+    {
+      "id": "11de8417-5b49-4234-bd03-aa386eb7af1f",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "93f1c796-2caa-4056-bfef-4c6296959189",
+      "name": "Retinol Night Treatment",
+      "brand": null,
+      "description": "An advanced anti-aging treatment with encapsulated retinol for gentle yet effective wrinkle reduction and skin renewal while you sleep.",
+      "price": "75",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.658Z",
+      "updatedAt": "2026-07-15T10:38:22.658Z"
+    },
+    {
+      "id": "24550f05-bccb-4f16-8ce1-193ca278693b",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "3a1423da-ab16-48b9-a30d-ad2cd3a9d433",
+      "name": "Honey Glow Hydrating Mask",
+      "brand": null,
+      "description": "A luxurious overnight mask with raw honey and propolis to deeply hydrate, nourish, and give your skin a natural morning glow.",
+      "price": "48",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.757Z",
+      "updatedAt": "2026-07-15T10:38:22.757Z"
+    },
+    {
+      "id": "dcd45466-1f0f-4490-9d89-d00f47569cb5",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "fcdce578-5f4a-4e88-945b-da38d799ad10",
+      "name": "Oil-Free Gel Cleanser",
+      "brand": null,
+      "description": "A refreshing gel cleanser that removes excess oil and buildup without stripping the skin. Perfect for morning and evening use.",
+      "price": "34",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.860Z",
+      "updatedAt": "2026-07-15T10:38:22.860Z"
+    },
+    {
+      "id": "8148b923-d02e-4285-bfa8-ffaa5384b305",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "72709304-97ba-4926-9a28-529250ff4074",
+      "name": "Hyaluronic Boost Serum",
+      "brand": null,
+      "description": "A multi-weight hyaluronic acid serum that delivers intense hydration at every layer of the skin for a plump, dewy complexion.",
+      "price": "55",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:22.948Z",
+      "updatedAt": "2026-07-15T10:38:22.948Z"
+    },
+    {
+      "id": "573afa4c-6889-4513-b520-1d4205bc3e83",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "e522727d-d3c3-4768-bde4-89781e853628",
+      "name": "Exfoliating Enzyme Toner",
+      "brand": null,
+      "description": "A gentle daily exfoliating toner with fruit enzymes to dissolve dead skin cells and reveal brighter, smoother skin without irritation.",
+      "price": "36",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:23.051Z",
+      "updatedAt": "2026-07-15T10:38:23.051Z"
+    },
+    {
+      "id": "4064216b-f464-4a97-a57f-42145b7241d4",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "categoryId": "93f1c796-2caa-4056-bfef-4c6296959189",
+      "name": "Niacinamide Pore Refiner",
+      "brand": null,
+      "description": "A targeted treatment serum with 10% niacinamide to minimize pores, control sebum, and improve overall skin texture.",
+      "price": "42",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-15T10:38:23.142Z",
+      "updatedAt": "2026-07-15T10:38:23.142Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "fcdce578-5f4a-4e88-945b-da38d799ad10",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "name": "cleanser",
+      "slug": "cleanser",
+      "image": null,
+      "icon": "📦",
+      "displayOrder": 0,
+      "qualificationFlow": [
+        {
+          "id": "skin_type",
+          "key": "skinType",
+          "type": "single",
+          "options": [
+            {
+              "label": "Oily",
+              "value": "oily"
+            },
+            {
+              "label": "Dry",
+              "value": "dry"
+            },
+            {
+              "label": "Combination",
+              "value": "combination"
+            },
+            {
+              "label": "Sensitive",
+              "value": "sensitive"
+            },
+            {
+              "label": "Normal",
+              "value": "normal"
+            }
+          ],
+          "question": "What's your skin type?"
+        },
+        {
+          "id": "concern",
+          "key": "concern",
+          "type": "single",
+          "options": [
+            {
+              "label": "Acne",
+              "value": "acne"
+            },
+            {
+              "label": "Brightening",
+              "value": "brightening"
+            },
+            {
+              "label": "Anti-aging",
+              "value": "anti_aging"
+            },
+            {
+              "label": "Hydration",
+              "value": "hydration"
+            },
+            {
+              "label": "Just browsing",
+              "value": ""
+            }
+          ],
+          "question": "What's your main concern?"
+        },
+        {
+          "id": "budget",
+          "key": "budget",
+          "type": "budget",
+          "options": [
+            {
+              "label": "Under ₦200,000",
+              "value": "0-200000"
+            },
+            {
+              "label": "₦200k – ₦500k",
+              "value": "200000-500000"
+            },
+            {
+              "label": "₦500k – ₦1M",
+              "value": "500000-1000000"
+            },
+            {
+              "label": "Above ₦1M",
+              "value": "1000000-"
+            }
+          ],
+          "question": "What's your budget?"
+        }
+      ],
+      "parentId": null,
+      "createdAt": "2026-07-15T10:03:57.224Z"
+    },
+    {
+      "id": "72709304-97ba-4926-9a28-529250ff4074",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "name": "serum",
+      "slug": "serum",
+      "image": null,
+      "icon": "📦",
+      "displayOrder": 1,
+      "qualificationFlow": [
+        {
+          "id": "skin_type",
+          "key": "skinType",
+          "type": "single",
+          "options": [
+            {
+              "label": "Oily",
+              "value": "oily"
+            },
+            {
+              "label": "Dry",
+              "value": "dry"
+            },
+            {
+              "label": "Combination",
+              "value": "combination"
+            },
+            {
+              "label": "Sensitive",
+              "value": "sensitive"
+            },
+            {
+              "label": "Normal",
+              "value": "normal"
+            }
+          ],
+          "question": "What's your skin type?"
+        },
+        {
+          "id": "concern",
+          "key": "concern",
+          "type": "single",
+          "options": [
+            {
+              "label": "Acne",
+              "value": "acne"
+            },
+            {
+              "label": "Brightening",
+              "value": "brightening"
+            },
+            {
+              "label": "Anti-aging",
+              "value": "anti_aging"
+            },
+            {
+              "label": "Hydration",
+              "value": "hydration"
+            },
+            {
+              "label": "Just browsing",
+              "value": ""
+            }
+          ],
+          "question": "What's your main concern?"
+        },
+        {
+          "id": "budget",
+          "key": "budget",
+          "type": "budget",
+          "options": [
+            {
+              "label": "Under ₦200,000",
+              "value": "0-200000"
+            },
+            {
+              "label": "₦200k – ₦500k",
+              "value": "200000-500000"
+            },
+            {
+              "label": "₦500k – ₦1M",
+              "value": "500000-1000000"
+            },
+            {
+              "label": "Above ₦1M",
+              "value": "1000000-"
+            }
+          ],
+          "question": "What's your budget?"
+        }
+      ],
+      "parentId": null,
+      "createdAt": "2026-07-15T10:03:57.454Z"
+    },
+    {
+      "id": "247b29fc-87a6-4c79-bb57-459c72ea5b9e",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "name": "moisturizer",
+      "slug": "moisturizer",
+      "image": null,
+      "icon": "📦",
+      "displayOrder": 2,
+      "qualificationFlow": [
+        {
+          "id": "skin_type",
+          "key": "skinType",
+          "type": "single",
+          "options": [
+            {
+              "label": "Oily",
+              "value": "oily"
+            },
+            {
+              "label": "Dry",
+              "value": "dry"
+            },
+            {
+              "label": "Combination",
+              "value": "combination"
+            },
+            {
+              "label": "Sensitive",
+              "value": "sensitive"
+            },
+            {
+              "label": "Normal",
+              "value": "normal"
+            }
+          ],
+          "question": "What's your skin type?"
+        },
+        {
+          "id": "concern",
+          "key": "concern",
+          "type": "single",
+          "options": [
+            {
+              "label": "Acne",
+              "value": "acne"
+            },
+            {
+              "label": "Brightening",
+              "value": "brightening"
+            },
+            {
+              "label": "Anti-aging",
+              "value": "anti_aging"
+            },
+            {
+              "label": "Hydration",
+              "value": "hydration"
+            },
+            {
+              "label": "Just browsing",
+              "value": ""
+            }
+          ],
+          "question": "What's your main concern?"
+        },
+        {
+          "id": "budget",
+          "key": "budget",
+          "type": "budget",
+          "options": [
+            {
+              "label": "Under ₦200,000",
+              "value": "0-200000"
+            },
+            {
+              "label": "₦200k – ₦500k",
+              "value": "200000-500000"
+            },
+            {
+              "label": "₦500k – ₦1M",
+              "value": "500000-1000000"
+            },
+            {
+              "label": "Above ₦1M",
+              "value": "1000000-"
+            }
+          ],
+          "question": "What's your budget?"
+        }
+      ],
+      "parentId": null,
+      "createdAt": "2026-07-15T10:03:57.617Z"
+    },
+    {
+      "id": "e522727d-d3c3-4768-bde4-89781e853628",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "name": "toner",
+      "slug": "toner",
+      "image": null,
+      "icon": "📦",
+      "displayOrder": 3,
+      "qualificationFlow": [
+        {
+          "id": "skin_type",
+          "key": "skinType",
+          "type": "single",
+          "options": [
+            {
+              "label": "Oily",
+              "value": "oily"
+            },
+            {
+              "label": "Dry",
+              "value": "dry"
+            },
+            {
+              "label": "Combination",
+              "value": "combination"
+            },
+            {
+              "label": "Sensitive",
+              "value": "sensitive"
+            },
+            {
+              "label": "Normal",
+              "value": "normal"
+            }
+          ],
+          "question": "What's your skin type?"
+        },
+        {
+          "id": "concern",
+          "key": "concern",
+          "type": "single",
+          "options": [
+            {
+              "label": "Acne",
+              "value": "acne"
+            },
+            {
+              "label": "Brightening",
+              "value": "brightening"
+            },
+            {
+              "label": "Anti-aging",
+              "value": "anti_aging"
+            },
+            {
+              "label": "Hydration",
+              "value": "hydration"
+            },
+            {
+              "label": "Just browsing",
+              "value": ""
+            }
+          ],
+          "question": "What's your main concern?"
+        },
+        {
+          "id": "budget",
+          "key": "budget",
+          "type": "budget",
+          "options": [
+            {
+              "label": "Under ₦200,000",
+              "value": "0-200000"
+            },
+            {
+              "label": "₦200k – ₦500k",
+              "value": "200000-500000"
+            },
+            {
+              "label": "₦500k – ₦1M",
+              "value": "500000-1000000"
+            },
+            {
+              "label": "Above ₦1M",
+              "value": "1000000-"
+            }
+          ],
+          "question": "What's your budget?"
+        }
+      ],
+      "parentId": null,
+      "createdAt": "2026-07-15T10:03:57.775Z"
+    },
+    {
+      "id": "3a1423da-ab16-48b9-a30d-ad2cd3a9d433",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "name": "mask",
+      "slug": "mask",
+      "image": null,
+      "icon": "📦",
+      "displayOrder": 4,
+      "qualificationFlow": [
+        {
+          "id": "skin_type",
+          "key": "skinType",
+          "type": "single",
+          "options": [
+            {
+              "label": "Oily",
+              "value": "oily"
+            },
+            {
+              "label": "Dry",
+              "value": "dry"
+            },
+            {
+              "label": "Combination",
+              "value": "combination"
+            },
+            {
+              "label": "Sensitive",
+              "value": "sensitive"
+            },
+            {
+              "label": "Normal",
+              "value": "normal"
+            }
+          ],
+          "question": "What's your skin type?"
+        },
+        {
+          "id": "concern",
+          "key": "concern",
+          "type": "single",
+          "options": [
+            {
+              "label": "Acne",
+              "value": "acne"
+            },
+            {
+              "label": "Brightening",
+              "value": "brightening"
+            },
+            {
+              "label": "Anti-aging",
+              "value": "anti_aging"
+            },
+            {
+              "label": "Hydration",
+              "value": "hydration"
+            },
+            {
+              "label": "Just browsing",
+              "value": ""
+            }
+          ],
+          "question": "What's your main concern?"
+        },
+        {
+          "id": "budget",
+          "key": "budget",
+          "type": "budget",
+          "options": [
+            {
+              "label": "Under ₦200,000",
+              "value": "0-200000"
+            },
+            {
+              "label": "₦200k – ₦500k",
+              "value": "200000-500000"
+            },
+            {
+              "label": "₦500k – ₦1M",
+              "value": "500000-1000000"
+            },
+            {
+              "label": "Above ₦1M",
+              "value": "1000000-"
+            }
+          ],
+          "question": "What's your budget?"
+        }
+      ],
+      "parentId": null,
+      "createdAt": "2026-07-15T10:03:57.902Z"
+    },
+    {
+      "id": "93f1c796-2caa-4056-bfef-4c6296959189",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "name": "treatment",
+      "slug": "treatment",
+      "image": null,
+      "icon": "📦",
+      "displayOrder": 5,
+      "qualificationFlow": [
+        {
+          "id": "skin_type",
+          "key": "skinType",
+          "type": "single",
+          "options": [
+            {
+              "label": "Oily",
+              "value": "oily"
+            },
+            {
+              "label": "Dry",
+              "value": "dry"
+            },
+            {
+              "label": "Combination",
+              "value": "combination"
+            },
+            {
+              "label": "Sensitive",
+              "value": "sensitive"
+            },
+            {
+              "label": "Normal",
+              "value": "normal"
+            }
+          ],
+          "question": "What's your skin type?"
+        },
+        {
+          "id": "concern",
+          "key": "concern",
+          "type": "single",
+          "options": [
+            {
+              "label": "Acne",
+              "value": "acne"
+            },
+            {
+              "label": "Brightening",
+              "value": "brightening"
+            },
+            {
+              "label": "Anti-aging",
+              "value": "anti_aging"
+            },
+            {
+              "label": "Hydration",
+              "value": "hydration"
+            },
+            {
+              "label": "Just browsing",
+              "value": ""
+            }
+          ],
+          "question": "What's your main concern?"
+        },
+        {
+          "id": "budget",
+          "key": "budget",
+          "type": "budget",
+          "options": [
+            {
+              "label": "Under ₦200,000",
+              "value": "0-200000"
+            },
+            {
+              "label": "₦200k – ₦500k",
+              "value": "200000-500000"
+            },
+            {
+              "label": "₦500k – ₦1M",
+              "value": "500000-1000000"
+            },
+            {
+              "label": "Above ₦1M",
+              "value": "1000000-"
+            }
+          ],
+          "question": "What's your budget?"
+        }
+      ],
+      "parentId": null,
+      "createdAt": "2026-07-15T10:03:58.113Z"
+    }
+  ],
+  "widgetKeys": [
+    {
+      "id": "50c7967a-f8b8-4bfd-8766-9c8aabd00eb0",
+      "orgId": "dd830357-7e89-423f-a970-2837894ef1c9",
+      "publicKey": "mdv_pk_e24rY-T2miaXZAtK6kbpU0D7",
+      "label": "Default",
+      "allowedDomains": [],
+      "active": true,
+      "createdAt": "2026-07-15T09:06:23.405Z"
+    },
+    {
+      "id": "c54d9811-3d45-4322-91b2-43ca4895093b",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "publicKey": "mdv_pk_awcJLLO5tdHreSEfaC6vY3qS",
+      "label": "Default",
+      "allowedDomains": [],
+      "active": true,
+      "createdAt": "2026-07-15T10:03:41.276Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "d4c7ba45-dbb5-4e78-b8f4-17f470bec67c",
+      "orgId": "dd830357-7e89-423f-a970-2837894ef1c9",
+      "planId": "e27b9d98-1b8b-476e-96e7-cd32b66819a6",
+      "status": "TRIALING",
+      "paystackCustomerCode": null,
+      "paystackSubscriptionCode": null,
+      "trialEndsAt": "2026-07-29T09:06:23.484Z",
+      "currentPeriodEnd": null,
+      "createdAt": "2026-07-15T09:06:23.485Z",
+      "updatedAt": "2026-07-15T09:06:23.485Z"
+    },
+    {
+      "id": "005ce706-ab7e-43ed-b9bc-e59feb4baa6e",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "planId": "e27b9d98-1b8b-476e-96e7-cd32b66819a6",
+      "status": "TRIALING",
+      "paystackCustomerCode": null,
+      "paystackSubscriptionCode": null,
+      "trialEndsAt": "2026-07-29T10:03:41.298Z",
+      "currentPeriodEnd": null,
+      "createdAt": "2026-07-15T10:03:41.298Z",
+      "updatedAt": "2026-07-15T10:03:41.298Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "99df52e1-8e5f-441e-9270-b03f8ab95146",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "externalId": "visitor-mrlyhban-ie9r6i2ocvh",
+      "name": null,
+      "email": null,
+      "phone": null,
+      "preferences": [],
+      "buyingStage": "EXPLORING",
+      "firstSeen": "2026-07-15T10:47:24.200Z",
+      "lastSeen": "2026-07-15T10:51:14.915Z"
+    },
+    {
+      "id": "b9931f67-869c-486c-b15d-86a753d9e6ee",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "externalId": "visitor-mrlyfzas-hz83jp5k6me",
+      "name": null,
+      "email": null,
+      "phone": null,
+      "preferences": [],
+      "buyingStage": "EXPLORING",
+      "firstSeen": "2026-07-15T10:46:22.364Z",
+      "lastSeen": "2026-07-15T11:54:42.155Z"
+    },
+    {
+      "id": "524d65f1-421a-474b-83a9-4802b6857eb7",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "externalId": "visitor-mrlyd1u9-zg8h0tfsj0d",
+      "name": null,
+      "email": null,
+      "phone": null,
+      "preferences": [],
+      "buyingStage": "EXPLORING",
+      "firstSeen": "2026-07-15T10:44:04.872Z",
+      "lastSeen": "2026-07-15T14:20:53.575Z"
+    },
+    {
+      "id": "0ac90a99-9d8e-4850-b34c-ff3625c204d5",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "externalId": "visitor-mrly648l-p69j9oej72e",
+      "name": null,
+      "email": null,
+      "phone": null,
+      "preferences": [],
+      "buyingStage": "EXPLORING",
+      "firstSeen": "2026-07-15T10:38:37.721Z",
+      "lastSeen": "2026-07-15T10:39:01.923Z"
+    }
+  ],
+  "conversations": [
+    {
+      "id": "4543fda9-861f-4ef0-ab71-6f0295095190",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "customerId": "99df52e1-8e5f-441e-9270-b03f8ab95146",
+      "channel": "WEBSITE",
+      "status": "ACTIVE",
+      "startedAt": "2026-07-15T10:51:14.929Z",
+      "endedAt": null,
+      "summary": null,
+      "intent": "discovery",
+      "aiConfidence": 100,
+      "outcome": "PENDING",
+      "context": {
+        "answers": {
+          "skinType": "dry"
+        },
+        "categoryId": "e522727d-d3c3-4768-bde4-89781e853628",
+        "categoryName": "toner"
+      }
+    },
+    {
+      "id": "4b0e139b-9b7b-4c00-9af3-1a64af517583",
+      "orgId": "e3a16562-e142-4f24-ae27-a8401f57bafc",
+      "customerId": "b9931f67-869c-486c-b15d-86a753d9e6ee",
+      "channel": "WEBSITE",
+      "status": "ACTIVE",
+      "startedAt": "2026-07-15T10:51:25.940Z",
+      "endedAt": null,
+      "summary": null,
+      "intent": "support",
+      "aiConfidence": 100,
+      "outcome": "PENDING",
+      "context": {
+        "budget": "0-200000",
+        "answers": {
+          "budget": "0-200000",
+          "concern": "hydration",
+          "skinType": "oily"
+        },
+        "categoryId": "fcdce578-5f4a-4e88-945b-da38d799ad10",
+        "categoryName": "cleanser"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "b31258cb-85c3-4160-9302-b8d53adf32b0",
+      "conversationId": "4543fda9-861f-4ef0-ab71-6f0295095190",
+      "role": "CUSTOMER",
+      "content": "Acne(eczema),brightening and hydration",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-15T10:51:14.952Z"
+    },
+    {
+      "id": "13dc7877-8fb6-4b04-8e0e-ab297bd74229",
+      "conversationId": "4543fda9-861f-4ef0-ab71-6f0295095190",
+      "role": "AI",
+      "content": "Welcome to Botanica. For dry skin with concerns like acne, eczema, brightening, and hydration, I'd recommend looking into products that provide gentle, nourishing care. However, I'm not sure which specific products from our catalog would best address these concerns. I can offer to connect you with our team for more personalized advice.",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 737,
+      "outputTokens": 91,
+      "createdAt": "2026-07-15T10:51:15.854Z"
+    },
+    {
+      "id": "27a6fcc5-ef13-4ff8-8590-8c15453b139e",
+      "conversationId": "4b0e139b-9b7b-4c00-9af3-1a64af517583",
+      "role": "CUSTOMER",
+      "content": "How do I pay",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-15T10:51:25.958Z"
+    },
+    {
+      "id": "92865b0c-d265-484e-b3ff-f9cd68db6567",
+      "conversationId": "4b0e139b-9b7b-4c00-9af3-1a64af517583",
+      "role": "AI",
+      "content": "I'm not sure about the payment options. I can connect you with our team to help with that.",
+      "intent": "support",
+      "recommendations": [],
+      "inputTokens": 338,
+      "outputTokens": 41,
+      "createdAt": "2026-07-15T10:51:26.506Z"
+    }
+  ]
+}

@@ -1,0 +1,794 @@
+{
+  "exportedAt": "2026-07-14T16:43:10.456Z",
+  "users": [
+    {
+      "id": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "orgId": "349138f1-346c-4676-98cc-2f72c04e7989",
+      "email": "olamideolanipekun75@gmail.com",
+      "passwordHash": "4d1f0b8c19181bfb1af082b5617415f1:b76b16a49491553a511f4dc2a52d14b2dafe14a18df1eb4c92a605c12fe985a8cbdff69328bb79f0d689a537189dbad1b59d7b476dae1448e77dc84048c34151",
+      "name": "olamide ola",
+      "role": "OWNER",
+      "avatarUrl": null,
+      "emailVerified": false,
+      "createdAt": "2026-07-09T05:22:01.327Z",
+      "updatedAt": "2026-07-09T05:23:34.571Z"
+    },
+    {
+      "id": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "orgId": "127c63cc-f729-4b8f-9157-c749e1db232c",
+      "email": "bondpierce0@gmail.com",
+      "passwordHash": "6d662119e211745b35e68f88485f5039:0b726bdf31a8253a7fc8d3ac964f8d230cd2e3c2ee949ee92df985060c8ac13ea56abc50a58b546737d6da6ecc30a0c48d973ebe50df68a13b9e8bc860c4a105",
+      "name": "Olamide Olanipekun",
+      "role": "OWNER",
+      "avatarUrl": null,
+      "emailVerified": false,
+      "createdAt": "2026-07-09T06:44:33.817Z",
+      "updatedAt": "2026-07-09T06:45:20.854Z"
+    },
+    {
+      "id": "533ada20-e1bd-4d3a-b54e-a3532421bb3f",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "email": "olanipekunolamide772@gmail.com",
+      "passwordHash": "40785953717a80aa9324f843dc8fcbd3:11bd25ef2c833dd282982aad2693d3eb0637d5a3c3ddcc17f3a782ffe071f3a9fcfd8f66a48930d162c29370486d9340849daa431085bc4ac4c714c4d4a5645a",
+      "name": "Olamide Olanipekun",
+      "role": "OWNER",
+      "avatarUrl": null,
+      "emailVerified": false,
+      "createdAt": "2026-07-13T14:56:07.632Z",
+      "updatedAt": "2026-07-13T14:57:45.923Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "24a180f6-c8db-4a8a-819e-b2aba2c8b446",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "597459b7d411d706ffe954a5aa98a2b84028582932cb58e0512863341286c449",
+      "expiresAt": "2026-08-08T05:22:01.349Z",
+      "createdAt": "2026-07-09T05:22:01.351Z"
+    },
+    {
+      "id": "89e460f5-8c83-4d9a-bb97-538b8436f1ee",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "0fa274bfa4e0055f914455e293ceb1b7bff770055f903c42dda49db85586a76a",
+      "expiresAt": "2026-08-08T07:20:42.737Z",
+      "createdAt": "2026-07-09T07:20:42.738Z"
+    },
+    {
+      "id": "25e3d6d0-58c6-4683-b9af-5dfb712ad9f7",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "bb5db2a18f3768cd5600520d9bbc017e3a3feb2306fd26d3f46e83f981240e32",
+      "expiresAt": "2026-08-08T07:20:51.362Z",
+      "createdAt": "2026-07-09T07:20:51.363Z"
+    },
+    {
+      "id": "ea428a29-3940-4d35-a2d2-29bb34b21d8f",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "ba953fce209d0755e4ce8df5d7c05e0a7a90363dc05697136606a66db912fac4",
+      "expiresAt": "2026-08-08T07:20:55.928Z",
+      "createdAt": "2026-07-09T07:20:55.929Z"
+    },
+    {
+      "id": "987876db-1c36-4f9b-a2b5-ce52037d066b",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "f1655059791d02c302a986aded176a170d9654498f516515f28f7b4c28814b25",
+      "expiresAt": "2026-08-08T07:21:01.917Z",
+      "createdAt": "2026-07-09T07:21:01.918Z"
+    },
+    {
+      "id": "be534bef-dc54-4cf6-8aed-d28cd0c32940",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "1da41f805c513d67b3cbd851966d29042e5b50173230225f15397ae103fcaabf",
+      "expiresAt": "2026-08-08T07:21:10.570Z",
+      "createdAt": "2026-07-09T07:21:10.571Z"
+    },
+    {
+      "id": "e2cbc009-7746-47e4-b27e-6571a4ca4828",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "db70f252ef88864b7946828f0bb6d19cee1e1efcc268d32520363b9bdea64f43",
+      "expiresAt": "2026-08-08T07:21:36.854Z",
+      "createdAt": "2026-07-09T07:21:36.855Z"
+    },
+    {
+      "id": "9ea6aa4d-0b4a-4c96-a407-debd9982cbe0",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "f139359675ea52cc99c4e712604d5fa68c852902e058abc315e26eeb604b495b",
+      "expiresAt": "2026-08-08T07:21:40.535Z",
+      "createdAt": "2026-07-09T07:21:40.536Z"
+    },
+    {
+      "id": "c6c9156b-c7dc-43b5-9be0-742b6af45271",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "52253f9986f0610462ae6d666e94d6a8f7695c10ac71ecb85232d09208ea7a4c",
+      "expiresAt": "2026-08-08T19:13:07.732Z",
+      "createdAt": "2026-07-09T19:13:07.733Z"
+    },
+    {
+      "id": "edcf2147-7843-4ea0-9575-0b250b1da5f5",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "7bfa8cc9253052b2c652228204f114a7f3c5840a5f16d2cdf6fcab88caff11cc",
+      "expiresAt": "2026-08-08T19:14:11.520Z",
+      "createdAt": "2026-07-09T19:14:11.521Z"
+    },
+    {
+      "id": "b2989848-bd68-4791-bb49-ab103cc006e4",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "8b6ebaebf613a0afd7499bddd615408cc29a2f115b5e2380bdedc1c5738272ef",
+      "expiresAt": "2026-08-08T22:16:51.940Z",
+      "createdAt": "2026-07-09T22:16:51.943Z"
+    },
+    {
+      "id": "6fe0ea0d-3521-4e85-9242-1f80a040c63e",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "9c88ba4058492be2b80666a5a88208bae53f93202b32104cc6251c8eb3a2b715",
+      "expiresAt": "2026-08-09T09:29:48.557Z",
+      "createdAt": "2026-07-10T09:29:48.559Z"
+    },
+    {
+      "id": "ca107675-a616-40b5-aefd-6881bd19f354",
+      "userId": "fb7cd769-d6b8-4dda-a482-e89a6fc2ea67",
+      "tokenHash": "b4ef45550d347cdbb23399a378da0862a2794ffdfd05fff66bf80c4217af205a",
+      "expiresAt": "2026-08-09T09:29:55.883Z",
+      "createdAt": "2026-07-10T09:29:55.884Z"
+    },
+    {
+      "id": "fea09d2f-fd3f-4237-afe7-d759f4476a02",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "0ce03a329f73078060cfa5b7980fdefd6b840fa4d5f9028aa2ab8193973e998b",
+      "expiresAt": "2026-08-09T10:12:33.466Z",
+      "createdAt": "2026-07-10T10:12:33.467Z"
+    },
+    {
+      "id": "18ac0192-2f9b-4678-aabf-df6d64f1e6f3",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "178b286fc78ca6847e571ac0a8dec7d6a61095b72c84f4169371b25fea6662f4",
+      "expiresAt": "2026-08-09T10:12:37.732Z",
+      "createdAt": "2026-07-10T10:12:37.734Z"
+    },
+    {
+      "id": "a1cc8509-0d78-4fb4-9ee0-656a83e07587",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "e4dc36004e2ac1a9ed48dc2fbdcd6e80cb798418b00da7781ddedda017eb5c05",
+      "expiresAt": "2026-08-09T10:13:02.819Z",
+      "createdAt": "2026-07-10T10:13:02.820Z"
+    },
+    {
+      "id": "621a7497-e650-42c5-82d4-67a46858fe39",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "fe0ccc58f46a6595b9b4ce8239725e7cef54ec8e6f41be76a92c445561b8f4e5",
+      "expiresAt": "2026-08-12T09:31:13.894Z",
+      "createdAt": "2026-07-13T09:31:13.895Z"
+    },
+    {
+      "id": "5dc626c3-b873-4bc5-a507-179fe1c480ca",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "1f8f7d6141f30bad0ddd958fcda078bf344b95fb1114512a481fc38c64d10b59",
+      "expiresAt": "2026-08-12T12:32:41.493Z",
+      "createdAt": "2026-07-13T12:32:41.494Z"
+    },
+    {
+      "id": "090ad7d3-9a40-4510-85af-b08e14d74dc1",
+      "userId": "533ada20-e1bd-4d3a-b54e-a3532421bb3f",
+      "tokenHash": "98b33e0b6fe30b0b066e435fc80fe0e479d33659db22988e188958a2c7ee6e48",
+      "expiresAt": "2026-08-12T14:56:07.676Z",
+      "createdAt": "2026-07-13T14:56:07.678Z"
+    },
+    {
+      "id": "22e14973-1df9-4593-86b0-cb9104bb3bbe",
+      "userId": "533ada20-e1bd-4d3a-b54e-a3532421bb3f",
+      "tokenHash": "49341902bbb92a35f94e8a27ee06008c1d7451ce2d008e60d8c483b4d917f678",
+      "expiresAt": "2026-08-13T06:01:09.742Z",
+      "createdAt": "2026-07-14T06:01:09.744Z"
+    },
+    {
+      "id": "9c699aa2-19a1-44fb-9abd-8dc1f8c623ef",
+      "userId": "533ada20-e1bd-4d3a-b54e-a3532421bb3f",
+      "tokenHash": "57c0ff2be3f8a379b2aaecb45df3f4e4793a6c018fdda89351bf66d51e895839",
+      "expiresAt": "2026-08-13T06:01:16.785Z",
+      "createdAt": "2026-07-14T06:01:16.786Z"
+    },
+    {
+      "id": "ceb2cd5a-58da-493e-9117-bbf029094cef",
+      "userId": "533ada20-e1bd-4d3a-b54e-a3532421bb3f",
+      "tokenHash": "1f4dfbe8f213af5b513d0793a1f48f7d730f32b5042cdb972164b291775b8bcc",
+      "expiresAt": "2026-08-13T06:01:23.697Z",
+      "createdAt": "2026-07-14T06:01:23.698Z"
+    },
+    {
+      "id": "e0763428-44f7-491a-be10-c99c0aaf3429",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "9bd0fee4623062ed47d5c6e0cd23eee981303363b608cdcbf3860a18bfd82a7b",
+      "expiresAt": "2026-08-13T06:20:54.098Z",
+      "createdAt": "2026-07-14T06:20:54.099Z"
+    },
+    {
+      "id": "db5cc172-7b6d-463f-b6c1-b8fb88fbfea9",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "df3deb10f8697ffe453b3afbfa65f289c3a909f2564943553f08c7e4b45a2200",
+      "expiresAt": "2026-08-13T06:20:59.785Z",
+      "createdAt": "2026-07-14T06:20:59.786Z"
+    },
+    {
+      "id": "74408d7c-2a6a-4e03-90e8-c1650fc5571f",
+      "userId": "4f1111cb-9fa1-470c-97ba-4e4b7fdb5b80",
+      "tokenHash": "a37d625cd76bc7663023105905abc2a2d32c6a13a4a17e5c345e1811d921e4ac",
+      "expiresAt": "2026-08-13T06:21:02.685Z",
+      "createdAt": "2026-07-14T06:21:02.686Z"
+    },
+    {
+      "id": "9ff3cf67-8a72-4cc1-b41e-b2a5598cd28e",
+      "userId": "533ada20-e1bd-4d3a-b54e-a3532421bb3f",
+      "tokenHash": "a834915c06c571ec2e80e35ffb3bead6a2e3978d7b1a45e22269ed1531fbaa9f",
+      "expiresAt": "2026-08-13T16:05:12.924Z",
+      "createdAt": "2026-07-14T16:05:12.935Z"
+    }
+  ],
+  "orgs": [
+    {
+      "id": "349138f1-346c-4676-98cc-2f72c04e7989",
+      "name": "MideTech solutions",
+      "slug": "midetech-solutions",
+      "websiteUrl": "midetechsolutions.com",
+      "industry": "Other",
+      "country": "Nigeria",
+      "currency": "NGN",
+      "logoUrl": null,
+      "settings": {
+        "tone": "professional",
+        "aiName": "Mide",
+        "channels": [
+          "wa",
+          "web",
+          "ig",
+          "fb"
+        ],
+        "features": {
+          "exitIntent": true,
+          "playSounds": true,
+          "showProductImages": true
+        },
+        "greeting": "Welcome to MideTech solutions . How may I assist you today?",
+        "neverSay": "",
+        "accentColor": "#1EE67A",
+        "businessHours": {
+          "open": "9:00 AM",
+          "close": "8:00 PM"
+        },
+        "whatsappNumber": "08065373055",
+        "engagementDelay": 5,
+        "sellsDescription": "Softwares "
+      },
+      "createdAt": "2026-07-09T05:23:34.561Z",
+      "updatedAt": "2026-07-14T16:30:51.452Z"
+    },
+    {
+      "id": "127c63cc-f729-4b8f-9157-c749e1db232c",
+      "name": "Bond fashion",
+      "slug": "bond-fashion",
+      "websiteUrl": "https://luxestyle.ng",
+      "industry": "Fashion & Retail",
+      "country": "Nigeria",
+      "currency": "NGN",
+      "logoUrl": null,
+      "settings": {
+        "tone": "professional",
+        "aiName": "Mide",
+        "channels": [
+          "wa",
+          "web"
+        ],
+        "features": {
+          "exitIntent": true,
+          "playSounds": true,
+          "showProductImages": true
+        },
+        "greeting": "Welcome to Bond fashion . How may I assist you today?",
+        "neverSay": "",
+        "accentColor": "#1EE67A",
+        "businessHours": {
+          "open": "10:00 AM",
+          "close": "8:00 PM"
+        },
+        "whatsappNumber": "09129997137",
+        "engagementDelay": 5,
+        "sellsDescription": "Wears "
+      },
+      "createdAt": "2026-07-09T06:45:20.838Z",
+      "updatedAt": "2026-07-14T16:30:52.011Z"
+    },
+    {
+      "id": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "name": "Midetech solutions",
+      "slug": "midetech-solutions-5efb",
+      "websiteUrl": "https://skincare-beta-five.vercel.app/",
+      "industry": "Professional Services",
+      "country": "Nigeria",
+      "currency": "NGN",
+      "logoUrl": null,
+      "settings": {
+        "tone": "professional",
+        "aiName": "Jarvis",
+        "channels": [
+          "web"
+        ],
+        "features": {
+          "exitIntent": true,
+          "playSounds": true,
+          "showProductImages": true
+        },
+        "greeting": "Welcome to Midetech solutions. How may I assist you today?",
+        "neverSay": "",
+        "accentColor": "#1EE67A",
+        "businessHours": {
+          "open": "8:00 AM",
+          "close": "24/7 (Always open)"
+        },
+        "whatsappNumber": "",
+        "engagementDelay": 5,
+        "sellsDescription": "Software Services"
+      },
+      "createdAt": "2026-07-13T14:57:45.913Z",
+      "updatedAt": "2026-07-14T16:38:09.990Z"
+    }
+  ],
+  "widgetKeys": [
+    {
+      "id": "b899cc44-73cd-44a1-9705-c73f9bc528cf",
+      "orgId": "349138f1-346c-4676-98cc-2f72c04e7989",
+      "publicKey": "mdv_pk_SzwjUUIcCr4nhe7-sTj5dCmh",
+      "label": "Default",
+      "allowedDomains": [
+        "midetechsolutions.com",
+        "www.midetechsolutions.com"
+      ],
+      "active": true,
+      "createdAt": "2026-07-09T05:23:34.571Z"
+    },
+    {
+      "id": "a0bcd8c3-6b8f-4a35-af4c-2c83dc4406b0",
+      "orgId": "127c63cc-f729-4b8f-9157-c749e1db232c",
+      "publicKey": "mdv_pk_-AT0pD6dSXPSZFWN4BPRRiFm",
+      "label": "Default",
+      "allowedDomains": [
+        "luxestyle.ng",
+        "www.luxestyle.ng"
+      ],
+      "active": true,
+      "createdAt": "2026-07-09T06:45:20.854Z"
+    },
+    {
+      "id": "a4fb42f5-34ba-4a6b-9dba-c1fb715fbe43",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "publicKey": "mdv_pk_BU6VhUXTrtgbOOxr6kdcox-B",
+      "label": "Default",
+      "allowedDomains": [
+        "midetechsolutions.com",
+        "www.midetechsolutions.com"
+      ],
+      "active": true,
+      "createdAt": "2026-07-13T14:57:45.923Z"
+    }
+  ],
+  "categories": [],
+  "products": [],
+  "knowledgeEntries": [],
+  "customers": [
+    {
+      "id": "29659105-b2d7-42b1-b34f-3f02af8ffdb3",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "externalId": "visitor-mrjd4t3e-3uobnyjl3of",
+      "name": null,
+      "email": null,
+      "phone": null,
+      "preferences": [],
+      "buyingStage": "EXPLORING",
+      "firstSeen": "2026-07-13T15:14:26.783Z",
+      "lastSeen": "2026-07-13T16:18:31.497Z"
+    },
+    {
+      "id": "53e1cdfd-eb74-47ac-ae52-fcb658585deb",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "externalId": "visitor-mrjd8k49-q3za73s37qs",
+      "name": null,
+      "email": null,
+      "phone": null,
+      "preferences": [],
+      "buyingStage": "EXPLORING",
+      "firstSeen": "2026-07-13T15:17:31.572Z",
+      "lastSeen": "2026-07-14T16:08:10.302Z"
+    }
+  ],
+  "conversations": [
+    {
+      "id": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "customerId": "29659105-b2d7-42b1-b34f-3f02af8ffdb3",
+      "channel": "WEBSITE",
+      "status": "ACTIVE",
+      "startedAt": "2026-07-13T15:14:26.854Z",
+      "endedAt": null,
+      "summary": null,
+      "intent": "greeting",
+      "aiConfidence": 100,
+      "outcome": "PENDING",
+      "context": {}
+    },
+    {
+      "id": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "customerId": "53e1cdfd-eb74-47ac-ae52-fcb658585deb",
+      "channel": "WEBSITE",
+      "status": "ACTIVE",
+      "startedAt": "2026-07-13T15:17:31.579Z",
+      "endedAt": null,
+      "summary": null,
+      "intent": "discovery",
+      "aiConfidence": 100,
+      "outcome": "PENDING",
+      "context": {
+        "answers": {},
+        "categoryId": null,
+        "categoryName": null
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "e8cba275-24af-455e-8c72-e9fcf7bc7c53",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "Hi",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:14:26.880Z"
+    },
+    {
+      "id": "6c63e795-5b65-4f12-b3b8-3dc3dc0cf620",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today?",
+      "intent": "greeting",
+      "recommendations": [],
+      "inputTokens": 287,
+      "outputTokens": 35,
+      "createdAt": "2026-07-13T15:14:27.545Z"
+    },
+    {
+      "id": "f7319668-129e-49ff-89ed-8717788e2028",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "I want to build a website",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:14:48.911Z"
+    },
+    {
+      "id": "b0df73a4-2740-4587-b7a0-38b6ff1beccd",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today? We offer various software services that can help you build a website. What specific services are you looking for?",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 317,
+      "outputTokens": 56,
+      "createdAt": "2026-07-13T15:14:50.070Z"
+    },
+    {
+      "id": "b4fcf2ce-6744-43dd-a626-a674ebe1cd69",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "Okay I want to build an e commerce website",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:15:07.953Z"
+    },
+    {
+      "id": "2ef5bb44-1177-46ea-9881-6d497054d888",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "AI",
+      "content": "We offer software services that can support your e-commerce website. What features are you looking for?",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 371,
+      "outputTokens": 40,
+      "createdAt": "2026-07-13T15:15:08.842Z"
+    },
+    {
+      "id": "1a136f35-3266-4c50-a0a9-44c0eec782fe",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "Okay which features can you recommend",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:15:26.450Z"
+    },
+    {
+      "id": "fff6818c-5e1a-457f-90c1-35a88ac8638a",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "CUSTOMER",
+      "content": "i want to build website",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:17:31.585Z"
+    },
+    {
+      "id": "564a9647-9e6f-4e70-a371-264905e1be74",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today? We offer software services that can help you build a website. What specific software services are you looking for?",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 291,
+      "outputTokens": 56,
+      "createdAt": "2026-07-13T15:17:31.996Z"
+    },
+    {
+      "id": "2cefeb1a-ef4b-4a03-a9ab-70f8e6768eb8",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "CUSTOMER",
+      "content": "business website",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:17:52.813Z"
+    },
+    {
+      "id": "34e1da7a-c5ab-47cf-a345-e1020c1172b5",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today? We offer software services that can help you build a business website. Unfortunately, I don't have a list of specific products to recommend at this time.",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 338,
+      "outputTokens": 65,
+      "createdAt": "2026-07-13T15:17:53.542Z"
+    },
+    {
+      "id": "bb497bb7-9133-4c9a-bbd9-41f5f12a71f1",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "Hi",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:49:59.064Z"
+    },
+    {
+      "id": "9adae361-ef52-464a-97bc-0302a91a80fa",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today?",
+      "intent": "greeting",
+      "recommendations": [],
+      "inputTokens": 412,
+      "outputTokens": 35,
+      "createdAt": "2026-07-13T15:49:59.483Z"
+    },
+    {
+      "id": "527aa545-9a0c-4203-8f24-31c26b97dab6",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "Okay what services do you offer",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:50:24.292Z"
+    },
+    {
+      "id": "1325aa8a-a9d5-4aab-84db-e2d20a52fe3a",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today? We offer software services, but I'm not sure which specific ones would be the best fit for your needs. I'd be happy to try and help you find what you're looking for.",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 442,
+      "outputTokens": 73,
+      "createdAt": "2026-07-13T15:50:24.933Z"
+    },
+    {
+      "id": "ce390241-93d4-4e72-bbac-9fd7b99f3f75",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "Ai system",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:50:38.945Z"
+    },
+    {
+      "id": "a8a69657-3f0e-4103-b39a-b1f0c64dc739",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "AI",
+      "content": "We offer software services, but I'm not sure if we have an AI system that fits your needs. I can try to connect you with our team to discuss further.",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 500,
+      "outputTokens": 55,
+      "createdAt": "2026-07-13T15:50:39.495Z"
+    },
+    {
+      "id": "a44adc96-f83e-4746-bc8c-f87dad6668fd",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "Okay do that",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T15:50:54.399Z"
+    },
+    {
+      "id": "5ccd4fb9-c00c-4c50-881a-45b8c997c3d9",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "CUSTOMER",
+      "content": "What do you sell?",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-13T16:18:31.581Z"
+    },
+    {
+      "id": "05cad729-39d1-4dce-92c9-ff9c66a7f879",
+      "conversationId": "fa535e8e-23c9-4d63-aecf-50d62fb84dbe",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today? We sell software services.",
+      "intent": "greeting",
+      "recommendations": [],
+      "inputTokens": 487,
+      "outputTokens": 40,
+      "createdAt": "2026-07-13T16:18:32.642Z"
+    },
+    {
+      "id": "bef9bc4f-1936-46ac-9088-9b6691fc1597",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "CUSTOMER",
+      "content": "Recommend something for me",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-14T00:21:18.344Z"
+    },
+    {
+      "id": "9e4f6cef-08c1-4923-a879-36102af115e9",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today? Unfortunately, I don't have a list of specific products to recommend at this time.",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 396,
+      "outputTokens": 52,
+      "createdAt": "2026-07-14T00:21:18.831Z"
+    },
+    {
+      "id": "6087494d-c672-42cf-abcd-21dff4d3848f",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "CUSTOMER",
+      "content": "what is midetech solutions",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-14T16:03:47.870Z"
+    },
+    {
+      "id": "1dd8a2d8-902d-4643-b11b-5e550812986a",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today? Midetech solutions is an online store that sells software services.",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 443,
+      "outputTokens": 48,
+      "createdAt": "2026-07-14T16:03:49.824Z"
+    },
+    {
+      "id": "a2cc271a-5af3-4ace-ad27-8571c60c778c",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "CUSTOMER",
+      "content": "okay i need a software how do i go about it",
+      "intent": null,
+      "recommendations": [],
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "createdAt": "2026-07-14T16:04:09.607Z"
+    },
+    {
+      "id": "30e7709a-dbb9-4f88-acec-136e4e1fd313",
+      "conversationId": "e5d4bf64-8667-4009-abfb-c108e12e6018",
+      "role": "AI",
+      "content": "Welcome to Midetech solutions. How may I assist you today? To find the right software for your needs, could you please provide more details about the type of software you're looking for?",
+      "intent": "discovery",
+      "recommendations": [],
+      "inputTokens": 491,
+      "outputTokens": 60,
+      "createdAt": "2026-07-14T16:04:10.126Z"
+    }
+  ],
+  "customerEvents": [
+    {
+      "id": "4c8027d5-65e7-409a-b33b-55c08f549ada",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "customerId": "53e1cdfd-eb74-47ac-ae52-fcb658585deb",
+      "eventType": "widget_opened",
+      "pageUrl": "https://www.midetechsolutions.com/",
+      "metadata": {
+        "view": "welcome"
+      },
+      "createdAt": "2026-07-14T16:03:31.760Z"
+    },
+    {
+      "id": "9c48f7bd-7849-4698-bd3c-8bf292666911",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "customerId": "53e1cdfd-eb74-47ac-ae52-fcb658585deb",
+      "eventType": "conversation_started",
+      "pageUrl": "https://www.midetechsolutions.com/",
+      "metadata": {},
+      "createdAt": "2026-07-14T16:03:47.493Z"
+    },
+    {
+      "id": "6f94bb40-a7e2-4225-8383-026512adbb50",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "customerId": "53e1cdfd-eb74-47ac-ae52-fcb658585deb",
+      "eventType": "widget_dismissed",
+      "pageUrl": "https://www.midetechsolutions.com/",
+      "metadata": {
+        "view": "conversation"
+      },
+      "createdAt": "2026-07-14T16:08:10.310Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "ff79e327-677d-4b66-815f-c7124821b6fb",
+      "orgId": "349138f1-346c-4676-98cc-2f72c04e7989",
+      "planId": "e27b9d98-1b8b-476e-96e7-cd32b66819a6",
+      "status": "TRIALING",
+      "paystackCustomerCode": null,
+      "paystackSubscriptionCode": null,
+      "trialEndsAt": "2026-07-24T06:14:15.225Z",
+      "currentPeriodEnd": null,
+      "createdAt": "2026-07-10T06:14:15.232Z",
+      "updatedAt": "2026-07-10T06:14:15.232Z"
+    },
+    {
+      "id": "ba6d4d8b-d68d-4a61-b32a-d8d9b4be9b74",
+      "orgId": "127c63cc-f729-4b8f-9157-c749e1db232c",
+      "planId": "e27b9d98-1b8b-476e-96e7-cd32b66819a6",
+      "status": "TRIALING",
+      "paystackCustomerCode": null,
+      "paystackSubscriptionCode": null,
+      "trialEndsAt": "2026-07-24T06:14:15.793Z",
+      "currentPeriodEnd": null,
+      "createdAt": "2026-07-10T06:14:15.796Z",
+      "updatedAt": "2026-07-10T06:14:15.796Z"
+    },
+    {
+      "id": "aa8612c7-4305-4db9-96b8-95e9829e9c6e",
+      "orgId": "1244a87e-b250-4310-a0b4-16de44d8eefe",
+      "planId": "eb9edb89-0fb4-4944-94b5-fdedcf7f6337",
+      "status": "ACTIVE",
+      "paystackCustomerCode": "CUS_0x34vlayp8qgjo6",
+      "paystackSubscriptionCode": null,
+      "trialEndsAt": "2026-07-27T14:57:45.957Z",
+      "currentPeriodEnd": "2026-08-13T00:31:08.000Z",
+      "createdAt": "2026-07-13T14:57:45.958Z",
+      "updatedAt": "2026-07-14T00:31:09.892Z"
+    }
+  ],
+  "usageRecords": []
+}

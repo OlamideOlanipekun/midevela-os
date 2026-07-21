@@ -9,10 +9,15 @@ import { getUsageStatus, recordAiUsage } from "@/server/billing/usage";
 import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
 import type { ChatMessage } from "@/server/conversation/llm";
 import { tryAdaptiveDiscovery } from "@/server/widget/adaptiveDiscovery";
-import { classifyFollowUpIntent, handleFollowUp } from "@/server/widget/followUpHandler";
-import type { RecommendedProduct } from "@/server/widget/recommend";
-import { getInitialMode, modeForAdaptiveResult, modeForFollowUpType } from "@/server/widget/conversationModes";
-import type { ConversationMode } from "@/server/widget/conversationModes";
+import { routeConversation } from "@/server/widget/intentRouter";
+import type { RouteIntent } from "@/server/widget/intentRouter";
+import { contextToState, stateToContext, resetShoppingState } from "@/server/widget/conversationState";
+import type { ConversationState } from "@/server/widget/conversationState";
+import { resolveProductReference } from "@/server/widget/referenceResolver";
+import { getProductDetails } from "@/server/widget/productDetails";
+import { compareProducts } from "@/server/widget/compare";
+import { recommendProducts, type RecommendedProduct } from "@/server/widget/recommend";
+import { listCategoriesForWidget } from "@/server/catalog/categories";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
@@ -253,10 +258,7 @@ export async function POST(req: NextRequest) {
       data: { conversationId: conversation.id, role: "CUSTOMER", content: messageText },
     });
 
-    const stored = (org.settings ?? {}) as Partial<OrgSettings>;
-    const settings = { ...defaultOrgSettings, ...stored };
-
-    const shoppingContext = {
+    const shoppingContextRaw = {
       categoryName: typeof mergedContext.categoryName === "string" ? mergedContext.categoryName : undefined,
       budget: typeof mergedContext.budget === "string" ? mergedContext.budget : undefined,
       brand: typeof mergedContext.brand === "string" ? mergedContext.brand : undefined,
@@ -266,48 +268,37 @@ export async function POST(req: NextRequest) {
           : undefined,
     };
 
-    // Extract stored recommendations from context for RECOMMENDATION mode
-    const storedRecs: RecommendedProduct[] = Array.isArray(mergedContext.lastRecommendations)
-      ? (mergedContext.lastRecommendations as unknown as RecommendedProduct[])
-      : [];
-
-    // ──────── CONVERSATION STATE MACHINE ────────
-    // Every message is routed based on the current conversation mode, which
-    // is stored in conversation.context.mode. This prevents adaptive discovery
-    // from re-entering after recommendations have already been shown.
+    // ──────── CONVERSATION MANAGER v1 ────────
+    // Every message passes through the intent router before any LLM call.
+    // The router classifies the message using pure pattern matching (no LLM
+    // cost) and returns a RouteIntent. The state machine then dispatches to
+    // the correct handler.
     //
-    //   DISCOVERY       → run adaptive discovery
-    //   QUALIFICATION   → run adaptive discovery (still collecting info)
-    //   RECOMMENDATION  → classify & handle follow-ups; only new_search or
-    //                     unrelated fall through
-    //   GENERAL_CHAT    → normal LLM conversation turn
+    //   RouteIntent             → Handler
+    //   ───────────               ───────
+    //   PRODUCT_SELECTION       → resolve product → PRODUCT_DETAILS handler
+    //   PRODUCT_DETAILS         → getProductDetails() from DB
+    //   COMPARE                 → compareProducts() engine
+    //   CHEAPER_ALTERNATIVE     → re-recommend with relaxed constraints
+    //   NEW_SHOPPING_JOURNEY    → resetShoppingState() → adaptive discovery
+    //   DISCOVERY               → tryAdaptiveDiscovery() or LLM
+    //   GENERAL_CHAT            → processConversationTurn()
     //
-    const currentMode: ConversationMode =
-      (typeof mergedContext.mode === "string" &&
-        ["DISCOVERY", "QUALIFICATION", "RECOMMENDATION", "GENERAL_CHAT"].includes(mergedContext.mode as string))
-        ? (mergedContext.mode as ConversationMode)
-        : getInitialMode();
+    const state: ConversationState = contextToState(mergedContext);
 
-    // Helper: save AI response + update context mode + persist
+    // Layout helper types used by the handlers below
+    type ProductSummaryItem = { id: string; name: string };
+    const recSummaries = (state.recommendedProducts ?? [])
+      .map((id, i) => ({ id, name: `product-${i}` }));
+
+    // Helper: save AI response + update conversation state + persist
     async function saveResponse(
       replyText: string,
       intent: string,
       recs: unknown[],
-      newMode: ConversationMode,
-      contextChanges?: Record<string, unknown>,
+      newState: ConversationState,
     ) {
-      const updatedContext: Record<string, unknown> = {
-        ...mergedContext,
-        mode: newMode,
-        ...(contextChanges ?? {}),
-      };
-
-      // Persist recommendations in context so RECOMMENDATION mode can use them
-      // even after a page refresh.
-      if (newMode === "RECOMMENDATION" && recs.length > 0) {
-        updatedContext.lastRecommendations = recs;
-      }
-
+      const contextData = stateToContext(newState);
       await prisma.$transaction([
         prisma.message.create({
           data: {
@@ -320,95 +311,214 @@ export async function POST(req: NextRequest) {
         }),
         prisma.conversation.update({
           where: { id: conversation!.id },
-          data: { context: updatedContext as unknown as Prisma.InputJsonValue },
+          data: { context: contextData as unknown as Prisma.InputJsonValue },
         }),
       ]);
     }
 
-    // ── RECOMMENDATION mode: route follow-ups to dedicated handlers ──
-    if (currentMode === "RECOMMENDATION") {
-      const recs = storedRecs.length > 0 ? storedRecs : [];
-      let handled = false;
+    // ── 1. Run the intent router ────────────────────────────────────────
+    const route = routeConversation(messageText, state);
 
-      if (recs.length > 0) {
-        const followUp = await classifyFollowUpIntent(messageText, recs);
-        const nextMode = modeForFollowUpType(followUp?.type ?? null);
+    // ── 2. Dispatch based on the routed intent ───────────────────────────
 
-        if (followUp && nextMode === "RECOMMENDATION") {
-          const result = await handleFollowUp(org.id, followUp, recs, shoppingContext);
-          if (result) {
-            await saveResponse(
-              result.replyText,
-              followUp.type === "compare" ? "comparison" : "discovery",
-              result.recommendations,
-              "RECOMMENDATION",
-            );
-            return NextResponse.json(
-              { replyText: result.replyText, intent: "discovery", recommendations: result.recommendations, isNewConversation },
-              { headers },
-            );
-          }
-          handled = true;
-        }
+    // ── PRODUCT_SELECTION ──────────────────────────────────────────────
+    // Resolve "the first one", "the moisturizer", "number 2" to a product ID,
+    // then show product details.
+    if (route.intent === "PRODUCT_SELECTION" && state.recommendedProducts?.length) {
+      // Fetch recommended product names for resolution
+      const products = await prisma.product.findMany({
+        where: { id: { in: state.recommendedProducts }, orgId: org.id },
+        select: { id: true, name: true },
+      });
+      const summaries: ProductSummaryItem[] = state.recommendedProducts
+        .map((id) => products.find((p) => p.id === id))
+        .filter((p): p is ProductSummaryItem => Boolean(p));
 
-        if (followUp && nextMode === "DISCOVERY") {
-          // User explicitly started a new search — transition to discovery
-          await saveResponse("", "", [], "DISCOVERY", { lastRecommendations: null });
-          // Fall through to adaptive discovery below with fresh mode
+      const resolved = resolveProductReference(messageText, summaries);
+
+      if (resolved) {
+        const details = await getProductDetails({ productId: resolved.productId, orgId: org.id });
+        if (details) {
+          const newState = { ...state, mode: "PRODUCT_DETAILS" as const, activeProductId: resolved.productId };
+          await saveResponse(details.replyText, "discovery", [], newState);
+          return NextResponse.json(
+            { replyText: details.replyText, intent: "discovery", recommendations: [], isNewConversation },
+            { headers },
+          );
         }
       }
 
-      if (!handled) {
-        // Fall through to normal chat for unrelated messages in RECOMMENDATION mode
-        const result = await processConversationTurn({
-          orgId: org.id, orgName: org.name, settings, messageText, history, shoppingContext,
+      // Fall through: couldn't resolve — ask which product
+      const names = summaries.map((p) => p.name).join(", ");
+      const fallback = `Which product would you like to know more about? I have: ${names}`;
+      await saveResponse(fallback, "unknown", [], { ...state, mode: "RECOMMENDATION" });
+      return NextResponse.json(
+        { replyText: fallback, intent: "unknown", recommendations: [], isNewConversation },
+        { headers },
+      );
+    }
+
+    // ── PRODUCT_DETAILS ────────────────────────────────────────────────
+    // When the user asks about a product and we have an active one or can
+    // resolve it.
+    if (route.intent === "PRODUCT_DETAILS") {
+      let targetId = state.activeProductId;
+
+      // Try to resolve from the message if no active product
+      if (!targetId && state.recommendedProducts?.length) {
+        const products = await prisma.product.findMany({
+          where: { id: { in: state.recommendedProducts }, orgId: org.id },
+          select: { id: true, name: true },
         });
-        const newMode: ConversationMode = result.intent === "unknown" ? "RECOMMENDATION" : "GENERAL_CHAT";
-        await saveResponse(result.replyText, result.intent, result.recommendations, newMode);
-        await recordAiUsage(org.id);
+        const summaries: ProductSummaryItem[] = state.recommendedProducts
+          .map((id) => products.find((p) => p.id === id))
+          .filter((p): p is ProductSummaryItem => Boolean(p));
+
+        const resolved = resolveProductReference(messageText, summaries);
+        if (resolved) targetId = resolved.productId;
+      }
+
+      if (targetId) {
+        const details = await getProductDetails({ productId: targetId, orgId: org.id });
+        if (details) {
+          const newState: ConversationState = {
+            ...state,
+            mode: "PRODUCT_DETAILS",
+            activeProductId: targetId,
+          };
+          await saveResponse(details.replyText, "discovery", [], newState);
+          return NextResponse.json(
+            { replyText: details.replyText, intent: "discovery", recommendations: [], isNewConversation },
+            { headers },
+          );
+        }
+      }
+
+      // No active or resolvable product — try adaptive discovery as fallback
+      // in case the message also contains a shopping intent.
+    }
+
+    // ── COMPARE ────────────────────────────────────────────────────────
+    if (route.intent === "COMPARE" && (state.recommendedProducts?.length ?? 0) >= 2) {
+      const recIds = state.recommendedProducts!.slice(0, 2);
+      try {
+        const compareResult = await compareProducts(org.id, recIds);
+        const rowsText = compareResult.rows
+          .map((r) => `${r.label}: ${r.values.join(" vs ")}`)
+          .join("\n");
+        const replyText = [
+          `Here's a comparison:\n`,
+          rowsText,
+          ``,
+          compareResult.recommendation,
+        ].join("\n");
+
+        const newState: ConversationState = {
+          ...state,
+          mode: "COMPARE",
+          comparedProducts: recIds,
+        };
+        await saveResponse(replyText, "comparison", [], newState);
         return NextResponse.json(
-          { replyText: result.replyText, intent: result.intent, recommendations: result.recommendations, isNewConversation },
+          { replyText, intent: "comparison", recommendations: [], isNewConversation },
           { headers },
         );
+      } catch {
+        // Fall through to general chat on error
       }
     }
 
-    // ── DISCOVERY / QUALIFICATION / GENERAL_CHAT: adaptive discovery ──
-    if (currentMode !== "GENERAL_CHAT") {
-      const adaptiveResult = await tryAdaptiveDiscovery(
+    // ── CHEAPER_ALTERNATIVE ────────────────────────────────────────────
+    if (route.intent === "CHEAPER_ALTERNATIVE" && state.categoryId && state.recommendedProducts?.length) {
+      const existingBudget = state.budget?.max;
+      const products = await prisma.product.findMany({
+        where: { id: { in: state.recommendedProducts }, orgId: org.id },
+        select: { price: true },
+      });
+      const minPrice = products.length > 0
+        ? Math.min(...products.map((p) => Number(p.price)))
+        : 0;
+      const newMax = Math.max(1000, Math.floor(minPrice * 0.7));
+
+      const answers: Record<string, string> = {};
+      if (state.categoryId) answers.budget = `0-${newMax}`;
+
+      const newRecs = await recommendProducts({
+        orgId: org.id,
+        categoryId: state.categoryId,
+        answers,
+      });
+
+      if (newRecs.length > 0) {
+        const top = newRecs[0];
+        const restLines = newRecs.slice(1).map((p) => `**${p.name}** — ${p.price}`).join("\n");
+        const replyText = restLines
+          ? `Here are some more affordable options:\n\n**${top.name}** — ${top.price}\n${restLines}\n\nWould you like more details on any of these?`
+          : `I found **${top.name}** — ${top.price}. Would you like to know more?`;
+
+        const newState: ConversationState = {
+          ...state,
+          mode: "RECOMMENDATION",
+          recommendedProducts: newRecs.map((p) => p.id),
+          budget: { ...(state.budget ?? {}), max: newMax },
+        };
+        await saveResponse(replyText, "discovery", newRecs, newState);
+        return NextResponse.json(
+          { replyText, intent: "discovery", recommendations: newRecs, isNewConversation },
+          { headers },
+        );
+      }
+
+      // No cheaper products found
+      const noResultsReply = `I couldn't find any products under that price range in this category. Would you like to try a different category or adjust your preferences?`;
+      await saveResponse(noResultsReply, "unknown", [], { ...state, mode: "RECOMMENDATION" });
+      return NextResponse.json(
+        { replyText: noResultsReply, intent: "unknown", recommendations: [], isNewConversation },
+        { headers },
+      );
+    }
+
+    // ── NEW_SHOPPING_JOURNEY ───────────────────────────────────────────
+    if (route.intent === "NEW_SHOPPING_JOURNEY") {
+      const freshState = resetShoppingState(state);
+      await saveResponse("", "", [], freshState);
+      // Fall through to adaptive discovery below with the fresh state
+    }
+
+    // ── DISCOVERY — try adaptive discovery ─────────────────────────────
+    if (route.intent === "DISCOVERY" || route.intent === "NEW_SHOPPING_JOURNEY") {
+      const result = await tryAdaptiveDiscovery(
         org.id,
         messageText,
-        shoppingContext.categoryName || shoppingContext.budget || shoppingContext.brand || shoppingContext.answers
-          ? shoppingContext
+        shoppingContextRaw.categoryName || shoppingContextRaw.budget || shoppingContextRaw.brand || shoppingContextRaw.answers
+          ? shoppingContextRaw
           : null,
       );
 
-      if (adaptiveResult) {
-        const newMode = modeForAdaptiveResult(
-          adaptiveResult.recommendations.length > 0,
-          !adaptiveResult.fromEngine,
-        );
+      if (result) {
+        const newMode = result.recommendations.length > 0
+          ? ("RECOMMENDATION" as const)
+          : result.fromEngine === false
+            ? ("QUALIFICATION" as const)
+            : ("DISCOVERY" as const);
+        const newState: ConversationState = {
+          ...state,
+          mode: newMode,
+          recommendedProducts: result.recommendations.map((p) => p.id),
+          ...(result.shoppingContext.categoryName
+            ? { categoryName: result.shoppingContext.categoryName }
+            : {}),
+          ...(result.shoppingContext.budget
+            ? { budget: parseBudgetLabel(result.shoppingContext.budget) }
+            : {}),
+        };
 
-        // Update shopping context in mergedContext with any newly extracted info
-        const contextChanges: Record<string, unknown> = {};
-        if (adaptiveResult.shoppingContext.categoryName) contextChanges.categoryName = adaptiveResult.shoppingContext.categoryName;
-        if (adaptiveResult.shoppingContext.budget) contextChanges.budget = adaptiveResult.shoppingContext.budget;
-        if (adaptiveResult.shoppingContext.brand) contextChanges.brand = adaptiveResult.shoppingContext.brand;
-        if (adaptiveResult.shoppingContext.answers) contextChanges.answers = adaptiveResult.shoppingContext.answers;
-
-        await saveResponse(
-          adaptiveResult.replyText,
-          adaptiveResult.recommendations.length > 0 ? "discovery" : "unknown",
-          adaptiveResult.recommendations,
-          newMode,
-          contextChanges,
-        );
-
+        await saveResponse(result.replyText, "discovery", result.recommendations, newState);
         return NextResponse.json(
           {
-            replyText: adaptiveResult.replyText,
-            intent: adaptiveResult.recommendations.length > 0 ? "discovery" : "unknown",
-            recommendations: adaptiveResult.recommendations,
+            replyText: result.replyText,
+            intent: "discovery",
+            recommendations: result.recommendations,
             isNewConversation,
           },
           { headers },
@@ -416,20 +526,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── Fall through to normal LLM conversation ──
-    const result = await processConversationTurn({
-      orgId: org.id, orgName: org.name, settings, messageText, history, shoppingContext,
+    // ── GENERAL_CHAT — normal LLM conversation ─────────────────────────
+    // Also catches any PRODUCT_DETAILS or COMPARE that didn't resolve above.
+    const stored = (org.settings ?? {}) as Partial<OrgSettings>;
+    const settings = { ...defaultOrgSettings, ...stored };
+
+    const llmResult = await processConversationTurn({
+      orgId: org.id,
+      orgName: org.name,
+      settings,
+      messageText,
+      history,
+      shoppingContext: shoppingContextRaw,
     });
 
-    const nextMode: ConversationMode = result.intent === "discovery" ? "DISCOVERY" : "GENERAL_CHAT";
-    await saveResponse(result.replyText, result.intent, result.recommendations, nextMode);
+    const llmMode: ConversationState["mode"] =
+      llmResult.intent === "discovery" ? "DISCOVERY" : "GENERAL_CHAT";
+    const newState: ConversationState = { ...state, mode: llmMode };
+    await saveResponse(llmResult.replyText, llmResult.intent, llmResult.recommendations, newState);
     await recordAiUsage(org.id);
 
     return NextResponse.json(
       {
-        replyText: result.replyText,
-        intent: result.intent,
-        recommendations: result.recommendations,
+        replyText: llmResult.replyText,
+        intent: llmResult.intent,
+        recommendations: llmResult.recommendations,
         isNewConversation,
       },
       { headers },
@@ -441,4 +562,14 @@ export async function POST(req: NextRequest) {
       { status: 500, headers }
     );
   }
+}
+
+/** Parse a budget label like "0-50000" or "10000-20000" into min/max numbers */
+function parseBudgetLabel(label: string): { min?: number; max?: number } | undefined {
+  const parts = label.split("-").map(Number);
+  if (parts.length !== 2 || parts.some((n) => !Number.isFinite(n))) return undefined;
+  const result: { min?: number; max?: number } = {};
+  if (parts[0] > 0) result.min = parts[0];
+  if (parts[1] > 0) result.max = parts[1];
+  return result.min !== undefined || result.max !== undefined ? result : undefined;
 }

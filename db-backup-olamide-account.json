@@ -1,0 +1,88 @@
+{
+  "exportedAt": "2026-07-15T09:04:42.907Z",
+  "user": {
+    "id": "2786cf9d-2333-4a48-b2c3-aaf8a2285c90",
+    "orgId": "b2751810-aa13-4169-8fd6-315e44528fe9",
+    "email": "olamideolanipekun75@gmail.com",
+    "passwordHash": "9b2e78b0ad99778996480a40a13da1fa:3dedf197916e9bcf1f0bb25a5a81ed0e44ad5ad23d1047daa1dca0ef8a174fffef9ec02e52709d0c51ba21addbe638615ff8b0a02b81c1172098522a7375fd37",
+    "name": "Olamide Olanipekun",
+    "role": "OWNER",
+    "avatarUrl": null,
+    "emailVerified": false,
+    "createdAt": "2026-07-14T16:47:28.936Z",
+    "updatedAt": "2026-07-14T16:48:36.139Z"
+  },
+  "org": {
+    "id": "b2751810-aa13-4169-8fd6-315e44528fe9",
+    "name": "skincare",
+    "slug": "skincare",
+    "websiteUrl": "https://skincare-beta-five.vercel.app/",
+    "industry": "Beauty & Cosmetics",
+    "country": "Nigeria",
+    "currency": "NGN",
+    "logoUrl": null,
+    "settings": {
+      "tone": "professional",
+      "aiName": "Lumi",
+      "channels": [
+        "web"
+      ],
+      "features": {
+        "exitIntent": true,
+        "playSounds": true,
+        "showProductImages": true
+      },
+      "greeting": "Welcome to skincare . How may I assist you today?",
+      "neverSay": "",
+      "accentColor": "#1EE67A",
+      "businessHours": {
+        "open": "10:00 AM",
+        "close": "8:00 PM"
+      },
+      "whatsappNumber": "",
+      "engagementDelay": 5,
+      "sellsDescription": "skinacre"
+    },
+    "createdAt": "2026-07-14T16:48:36.128Z",
+    "updatedAt": "2026-07-14T16:48:36.128Z"
+  },
+  "products": [],
+  "categories": [],
+  "widgetKeys": [
+    {
+      "id": "1e0ace51-4280-43d8-8421-744e9f16077e",
+      "orgId": "b2751810-aa13-4169-8fd6-315e44528fe9",
+      "publicKey": "mdv_pk_elrJrW7MraB6vyOiTlB98FGB",
+      "label": "Default",
+      "allowedDomains": [
+        "skincare-beta-five.vercel.app",
+        "www.skincare-beta-five.vercel.app"
+      ],
+      "active": true,
+      "createdAt": "2026-07-14T16:48:36.139Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "70a945a3-de98-4bfe-a199-a87ff58cc81c",
+      "orgId": "b2751810-aa13-4169-8fd6-315e44528fe9",
+      "planId": "e27b9d98-1b8b-476e-96e7-cd32b66819a6",
+      "status": "TRIALING",
+      "paystackCustomerCode": null,
+      "paystackSubscriptionCode": null,
+      "trialEndsAt": "2026-07-28T16:48:36.184Z",
+      "currentPeriodEnd": null,
+      "createdAt": "2026-07-14T16:48:36.185Z",
+      "updatedAt": "2026-07-14T16:48:36.185Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "8e284d0f-cf13-436a-bcf3-3c555c41eabc",
+      "userId": "2786cf9d-2333-4a48-b2c3-aaf8a2285c90",
+      "tokenHash": "4b9c92bc914ac0f17102748b589c6cbe59820d72f22175d33063d74cd60978dc",
+      "expiresAt": "2026-08-13T18:13:36.268Z",
+      "createdAt": "2026-07-14T18:13:36.269Z"
+    }
+  ]
+}

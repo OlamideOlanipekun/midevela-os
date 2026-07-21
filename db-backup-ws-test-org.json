@@ -1,0 +1,292 @@
+{
+  "exportedAt": "2026-07-15T09:01:54.417Z",
+  "org": {
+    "id": "18fd7c95-a83b-4013-935b-9739a2533b09",
+    "name": "WS Backend Store",
+    "slug": "ws-backend-store",
+    "websiteUrl": "https://example.com",
+    "industry": null,
+    "country": "Nigeria",
+    "currency": "NGN",
+    "logoUrl": null,
+    "settings": {
+      "tone": "friendly",
+      "aiName": "Lumi",
+      "channels": [
+        "website"
+      ],
+      "features": {
+        "exitIntent": true,
+        "playSounds": true,
+        "showProductImages": true
+      },
+      "greeting": "Good day! Welcome. How can I help you today?",
+      "neverSay": "",
+      "accentColor": "#1EE67A",
+      "businessHours": {
+        "open": "9:00 AM",
+        "close": "6:00 PM"
+      },
+      "whatsappNumber": "",
+      "engagementDelay": 5,
+      "sellsDescription": ""
+    },
+    "createdAt": "2026-07-14T17:46:14.856Z",
+    "updatedAt": "2026-07-14T17:47:01.070Z"
+  },
+  "users": [
+    {
+      "id": "e6c71a0c-0776-4178-bc0b-c5a9d9566415",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "email": "ws-backend-test@midevela.dev",
+      "passwordHash": "445d390104238df4f0c8df1cfbf76061:d9cafe789070f41f63dd31331244a0dc5b00be90cc7cd6123d34dffb9c733d4a68b297f6cf7ef618fd7a173881a747b9eeadc780a0bdb5cff05b005d6930df69",
+      "name": "WS Tester",
+      "role": "OWNER",
+      "avatarUrl": null,
+      "emailVerified": false,
+      "createdAt": "2026-07-14T17:46:10.360Z",
+      "updatedAt": "2026-07-14T17:46:15.421Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "ba7235eb-2d44-4de6-86df-c2c6096de67f",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "categoryId": "ec74c76c-8847-4105-a661-4d892878f4ef",
+      "name": "MacBook Air M3",
+      "brand": "Apple",
+      "description": "13-inch M3, 16GB RAM, great for design and dev work",
+      "price": "1450000",
+      "currency": "NGN",
+      "images": [
+        "https://example.com/mac.jpg"
+      ],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-14T17:46:33.186Z",
+      "updatedAt": "2026-07-14T17:46:33.186Z"
+    },
+    {
+      "id": "e04c42bc-3e52-412b-bda5-93c2844f6dbf",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "categoryId": "ec74c76c-8847-4105-a661-4d892878f4ef",
+      "name": "Dell XPS 15",
+      "brand": "Dell",
+      "description": "15-inch OLED creator laptop with i7 and 1TB SSD",
+      "price": "1200000",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-14T17:46:37.471Z",
+      "updatedAt": "2026-07-14T17:46:37.471Z"
+    },
+    {
+      "id": "be9184bc-161e-499b-92fc-6ee013f21173",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "categoryId": "ec74c76c-8847-4105-a661-4d892878f4ef",
+      "name": "MacBook Air M3",
+      "brand": null,
+      "description": null,
+      "price": "1450000",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-14T17:46:40.174Z",
+      "updatedAt": "2026-07-14T17:46:40.174Z"
+    },
+    {
+      "id": "a26eebb0-2d8f-4ffc-a00e-8dbd3ab44092",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "categoryId": "f28c6030-f18a-4e1d-b515-df0ae3cf9850",
+      "name": "Bad Image Item",
+      "brand": null,
+      "description": "short",
+      "price": "5000",
+      "currency": "NGN",
+      "images": [],
+      "attributes": {},
+      "inventoryStatus": "IN_STOCK",
+      "source": "IMPORT",
+      "sourceUrl": null,
+      "aiDescription": null,
+      "createdAt": "2026-07-14T17:46:43.656Z",
+      "updatedAt": "2026-07-14T17:46:43.656Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "ec74c76c-8847-4105-a661-4d892878f4ef",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "name": "Laptops",
+      "slug": "laptops",
+      "image": null,
+      "icon": "📦",
+      "displayOrder": 0,
+      "qualificationFlow": [
+        {
+          "id": "purpose",
+          "key": "purpose",
+          "type": "single",
+          "options": [
+            {
+              "icon": "💻",
+              "label": "Programming",
+              "value": "programming"
+            },
+            {
+              "icon": "🎮",
+              "label": "Gaming",
+              "value": "gaming"
+            },
+            {
+              "icon": "📊",
+              "label": "Office work",
+              "value": "office"
+            },
+            {
+              "icon": "🎓",
+              "label": "School",
+              "value": "school"
+            },
+            {
+              "icon": "🎬",
+              "label": "Video editing",
+              "value": "video_editing"
+            }
+          ],
+          "question": "What will you use your laptop for?"
+        },
+        {
+          "id": "budget",
+          "key": "budget",
+          "type": "budget",
+          "options": [
+            {
+              "label": "Under ₦200,000",
+              "value": "0-200000"
+            },
+            {
+              "label": "₦200k – ₦500k",
+              "value": "200000-500000"
+            },
+            {
+              "label": "₦500k – ₦1M",
+              "value": "500000-1000000"
+            },
+            {
+              "label": "Above ₦1M",
+              "value": "1000000-"
+            }
+          ],
+          "question": "What's your budget?"
+        },
+        {
+          "id": "brand",
+          "key": "brand",
+          "type": "single",
+          "options": [
+            {
+              "label": "Apple",
+              "value": "Apple"
+            },
+            {
+              "label": "Dell",
+              "value": "Dell"
+            },
+            {
+              "label": "HP",
+              "value": "HP"
+            },
+            {
+              "label": "Lenovo",
+              "value": "Lenovo"
+            },
+            {
+              "label": "No preference",
+              "value": ""
+            }
+          ],
+          "question": "Any preferred brand?"
+        }
+      ],
+      "parentId": null,
+      "createdAt": "2026-07-14T17:46:32.133Z"
+    },
+    {
+      "id": "f28c6030-f18a-4e1d-b515-df0ae3cf9850",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "name": "Accessories",
+      "slug": "accessories",
+      "image": null,
+      "icon": "📦",
+      "displayOrder": 1,
+      "qualificationFlow": [
+        {
+          "id": "budget",
+          "key": "budget",
+          "type": "budget",
+          "options": [
+            {
+              "label": "Under ₦200,000",
+              "value": "0-200000"
+            },
+            {
+              "label": "₦200k – ₦500k",
+              "value": "200000-500000"
+            },
+            {
+              "label": "₦500k – ₦1M",
+              "value": "500000-1000000"
+            },
+            {
+              "label": "Above ₦1M",
+              "value": "1000000-"
+            }
+          ],
+          "question": "What's your budget?"
+        }
+      ],
+      "parentId": null,
+      "createdAt": "2026-07-14T17:46:43.245Z"
+    }
+  ],
+  "widgetKeys": [
+    {
+      "id": "5c5ae853-fa86-413e-b52d-13bddeb5dbf6",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "publicKey": "mdv_pk_0-X_ip8kv8DrfkxbxntctKOQ",
+      "label": "Default",
+      "allowedDomains": [
+        "mystore.com",
+        "shop.mystore.com"
+      ],
+      "active": true,
+      "createdAt": "2026-07-14T17:46:15.421Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "f383093b-bbda-4b4c-8cc4-4e108373bdbb",
+      "orgId": "18fd7c95-a83b-4013-935b-9739a2533b09",
+      "planId": "e27b9d98-1b8b-476e-96e7-cd32b66819a6",
+      "status": "TRIALING",
+      "paystackCustomerCode": null,
+      "paystackSubscriptionCode": null,
+      "trialEndsAt": "2026-07-28T17:46:18.388Z",
+      "currentPeriodEnd": null,
+      "createdAt": "2026-07-14T17:46:18.393Z",
+      "updatedAt": "2026-07-14T17:46:18.393Z"
+    }
+  ]
+}
