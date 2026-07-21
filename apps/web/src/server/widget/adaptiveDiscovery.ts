@@ -27,6 +27,12 @@ export interface AdaptiveResult {
   shoppingContext: ShoppingContext;
 }
 
+interface SemanticMatch {
+  matchedCategory: { id: string; name: string } | null;
+  ambiguous: boolean;
+  ambiguousCategories: string[];
+}
+
 // ── Extraction prompt ──────────────────────────────────────────────────────
 
 function buildExtractionPrompt(messageText: string, existingContext: ShoppingContext | null): string {
@@ -59,7 +65,7 @@ function buildExtractionPrompt(messageText: string, existingContext: ShoppingCon
     `  "attributes": {}`,
     `}`,
     `hasShoppingIntent is true when the shopper is looking for a product to buy or asking for recommendations.`,
-    `categoryName should match an actual product category from the store.`,
+    `categoryName: the product type the shopper mentioned, using their exact natural language phrase (e.g., "skin care", "running shoes", "phone charger"). Do NOT force it to match a merchant category name — just capture what they said.`,
     `budget should use numeric values (not formatted currency strings).`,
     `attributes holds any other product requirements mentioned (skinType, concern, material, size, etc.).`,
   ].join("\n");
@@ -150,26 +156,88 @@ function mergeRequirements(
   return merged;
 }
 
-// ── Category matching ────────────────────────────────────────────────────
+// ── Semantic category resolution ─────────────────────────────────────────
 
-async function findCategoryByName(
+function buildSemanticPrompt(
+  shopperIntent: string,
+  extracted: ExtractedRequirements,
+  categories: Array<{ name: string }>,
+): string {
+  const categoryList = categories.map((c) => `  - "${c.name}"`).join("\n");
+
+  return [
+    `The shopper is looking for products and described what they want as: "${shopperIntent}"`,
+    extracted.purpose ? `Additional context — purpose: "${extracted.purpose}"` : "",
+    extracted.brand ? `Brand preference: "${extracted.brand}"` : "",
+    Object.keys(extracted.attributes).length > 0
+      ? `Other attributes: ${JSON.stringify(extracted.attributes)}`
+      : "",
+    "",
+    `The merchant offers these categories:\n${categoryList}`,
+    "",
+    `Which category best matches what the shopper is looking for?`,
+    ``,
+    `If one category is clearly the best match, return its exact name as matchedCategory.`,
+    `If TWO OR MORE categories are equally close (genuinely ambiguous), return "__ambiguous__" and list the clashing names in ambiguousCategories.`,
+    `If no category reasonably matches, return null for matchedCategory.`,
+    ``,
+    `Examples:`,
+    `  shopper says "skin care", merchant has ["Skincare", "Makeup", "Bath & Body"] → "Skincare"`,
+    `  shopper says "running shoes", merchant has ["Footwear", "Activewear"] → "Footwear"`,
+    `  shopper says "face wash", merchant has ["Cleansers", "Moisturizers"] → "Cleansers"`,
+    `  shopper says "phone charger", merchant has ["Electronics", "Accessories"] → "Electronics"`,
+    `  shopper says "lipstick", merchant has ["Makeup", "Lip Care"] → "Makeup" (not ambiguous — lipstick clearly belongs to Makeup)`,
+    `  shopper says "beauty product", merchant has ["Skincare", "Makeup", "Hair Care"] → "__ambiguous__"`,
+    `  shopper says "spaceship", merchant has ["Skincare", "Makeup"] → null (no match)`,
+    ``,
+    `Do NOT ask the shopper to choose when there is a clear semantic match. Only flag ambiguity when two or more categories are genuinely equally close.`,
+    ``,
+    `Respond with ONLY JSON:`,
+    `{`,
+    `  "matchedCategory": string | null,`,
+    `  "ambiguousCategories": string[]`,
+    `}`,
+  ].filter(Boolean).join("\n");
+}
+
+async function resolveCategorySemantically(
   orgId: string,
-  categoryName: string,
-): Promise<{ id: string; name: string } | null> {
-  const normalized = categoryName.toLowerCase().trim();
-  const categories = await listCategoriesForWidget(orgId);
+  extracted: ExtractedRequirements,
+  merged: ShoppingContext,
+  categories: Array<{ id: string; name: string }>,
+): Promise<SemanticMatch> {
+  const shopperIntent = extracted.categoryName || merged.categoryName || "";
 
-  // Exact match first
-  const exact = categories.find((c) => c.name.toLowerCase() === normalized);
-  if (exact) return { id: exact.id, name: exact.name };
+  const prompt = buildSemanticPrompt(shopperIntent, extracted, categories);
+  const messages = [{ role: "system" as const, content: prompt }];
 
-  // Partial match — find the closest by inclusion
-  const partial = categories.find(
-    (c) => normalized.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(normalized),
-  );
-  if (partial) return { id: partial.id, name: partial.name };
+  const result = await completeJson(messages);
+  const parsed = tryParseJson(result.raw);
 
-  return null;
+  if (!parsed || typeof parsed.matchedCategory !== "string") {
+    return { matchedCategory: null, ambiguous: false, ambiguousCategories: [] };
+  }
+
+  // No category matches
+  if (parsed.matchedCategory === "none" || parsed.matchedCategory === "") {
+    return { matchedCategory: null, ambiguous: false, ambiguousCategories: [] };
+  }
+
+  // Genuinely ambiguous — 2+ categories equally close
+  if (parsed.matchedCategory === "__ambiguous__") {
+    const cats = Array.isArray(parsed.ambiguousCategories) ? parsed.ambiguousCategories : [];
+    return { matchedCategory: null, ambiguous: true, ambiguousCategories: cats };
+  }
+
+  // Find the matched category in the merchant's list
+  const matchName = String(parsed.matchedCategory);
+  const cat = categories.find((c) => c.name.toLowerCase() === matchName.toLowerCase());
+
+  if (cat) {
+    return { matchedCategory: { id: cat.id, name: cat.name }, ambiguous: false, ambiguousCategories: [] };
+  }
+
+  return { matchedCategory: null, ambiguous: false, ambiguousCategories: [] };
 }
 
 // ── Decision logic ─────────────────────────────────────────────────────────
@@ -254,26 +322,37 @@ export async function tryAdaptiveDiscovery(
     // Step 3: Check if we have enough to make a useful recommendation
     if (!hasMeaningfulFilters(merged)) return null;
 
-    // Step 4: Try to find a category
+    // Step 4: Try to resolve category semantically
     let categoryId: string | null = null;
     let categoryName = "";
 
     if (merged.categoryName) {
-      const cat = await findCategoryByName(orgId, merged.categoryName);
-      if (cat) {
-        categoryId = cat.id;
-        categoryName = cat.name;
-      }
-    }
+      const categories = await listCategoriesForWidget(orgId);
+      const semantic = await resolveCategorySemantically(orgId, extracted, merged, categories);
 
-    // If we have category info but can't find it, we need to ask
-    if (merged.categoryName && !categoryId) {
-      return {
-        replyText: `I'm not sure which category "${merged.categoryName}" falls under. Could you pick from the available categories?`,
-        recommendations: [],
-        fromEngine: false,
-        shoppingContext: merged,
-      };
+      if (semantic.matchedCategory) {
+        categoryId = semantic.matchedCategory.id;
+        categoryName = semantic.matchedCategory.name;
+      } else if (semantic.ambiguous) {
+        const options = semantic.ambiguousCategories.length > 0
+          ? semantic.ambiguousCategories.map((c) => `"${c}"`).join(" or ")
+          : "";
+        return {
+          replyText: options
+            ? `Are you looking for ${options}?`
+            : "Which category did you have in mind?",
+          recommendations: [],
+          fromEngine: false,
+          shoppingContext: merged,
+        };
+      } else {
+        return {
+          replyText: `I couldn't find a category matching "${merged.categoryName}". Could you try a different product type?`,
+          recommendations: [],
+          fromEngine: false,
+          shoppingContext: merged,
+        };
+      }
     }
 
     // If we don't have a category yet, ask
