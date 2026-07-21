@@ -23,6 +23,10 @@ export interface OrgSettings {
   whatsappNumber: string;
   sellsDescription: string;
   businessHours: { open: string; close: string };
+  /** Merchant's own Paystack secret key for product payment links */
+  paystackSecretKey?: string;
+  /** Merchant's Paystack public key (returned to frontend if needed) */
+  paystackPublicKey?: string;
 }
 
 export const defaultOrgSettings: OrgSettings = {

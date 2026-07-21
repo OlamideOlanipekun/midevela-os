@@ -10,6 +10,7 @@ export interface ProductDetailsInput {
 
 export interface ProductDetailsResult {
   replyText: string;
+  nextAction?: "offer_checkout";
   product: {
     id: string;
     name: string;
@@ -56,6 +57,7 @@ export async function getProductDetails(
       attributes,
       input.otherProductNames,
     ),
+    nextAction: "offer_checkout",
     product: {
       id: dbProduct.id,
       name: dbProduct.name,
@@ -137,6 +139,7 @@ function formatDetailsReply(
       prompts.push(`Would you like to compare it with **${compareNames[0]}** or **${compareNames[1]}**?`);
     }
   }
+  prompts.push("I can hold this for you and send a payment link if you'd like.");
   prompts.push("Would you like to see another product?");
 
   parts.push(prompts.join("\n"));

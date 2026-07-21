@@ -23,6 +23,7 @@ import { directConversation } from "@/server/widget/conversationDirector";
 import { answerBusinessQuestion } from "@/server/widget/businessBrain";
 import { handleBrowse } from "@/server/widget/browseHandler";
 import { escalate } from "@/server/widget/escalationEngine";
+import { generatePaymentLink } from "@/server/widget/checkoutHandler";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
@@ -380,24 +381,52 @@ export async function POST(req: NextRequest) {
 
     // ── CHECKOUT ──────────────────────────────────────────────────────
     if (decision.route === "CHECKOUT" && state.activeProductId) {
-      const product = await prisma.product.findFirst({
-        where: { id: state.activeProductId, orgId: org.id },
-        select: { name: true, sourceUrl: true },
+      const linkResult = await generatePaymentLink({
+        productId: state.activeProductId,
+        orgId: org.id,
+        customerEmail: customer.email ?? undefined,
       });
-      const replyText = product?.sourceUrl
-        ? [
-            `**${product.name}** — great choice!`,
+
+      if (linkResult) {
+        if (linkResult.isPaystack) {
+          const replyText = [
+            `**${linkResult.productName}** — ${linkResult.productPrice}`,
             ``,
-            `Ready to view it?`,
-            `→ ${product.sourceUrl}`,
+            `I've reserved this for you. Click the secure link below to complete your purchase:`,
+            ``,
+            `🔗 ${linkResult.paymentUrl}`,
             ``,
             `Would you like to continue shopping or do you need anything else?`,
-          ].join("\n")
-        : [
-            `Excellent choice!`,
-            ``,
-            `Would you like to continue browsing or compare it with another product?`,
           ].join("\n");
+          nextState = { ...nextState, mode: "GENERAL_CHAT" };
+          await saveResponse(replyText, "checkout", [], nextState);
+          return NextResponse.json(
+            { replyText, intent: "checkout", recommendations: [], isNewConversation },
+            { headers },
+          );
+        }
+
+        // Fallback: merchant's product page URL
+        const replyText = [
+          `**${linkResult.productName}** — ${linkResult.productPrice}`,
+          ``,
+          `You can view this product here:`,
+          `→ ${linkResult.paymentUrl}`,
+          ``,
+          `Would you like to continue shopping or compare it with another product?`,
+        ].join("\n");
+        nextState = { ...nextState, mode: "GENERAL_CHAT" };
+        await saveResponse(replyText, "checkout", [], nextState);
+        return NextResponse.json(
+          { replyText, intent: "checkout", recommendations: [], isNewConversation },
+          { headers },
+        );
+      }
+
+      // No link could be generated — simple acknowledgment
+      const replyText = [
+        `Great choice! Would you like to compare it with another product or see more options?`,
+      ].join("\n");
       nextState = { ...nextState, mode: "GENERAL_CHAT" };
       await saveResponse(replyText, "checkout", [], nextState);
       return NextResponse.json(
@@ -430,7 +459,12 @@ export async function POST(req: NextRequest) {
           .map((p) => p.name);
         const details = await getProductDetails({ productId: resolved.productId, orgId: org.id, otherProductNames: otherNames });
         if (details) {
-          const newState = { ...state, mode: "PRODUCT_DETAILS" as const, activeProductId: resolved.productId };
+          const newState = {
+            ...state,
+            mode: "PRODUCT_DETAILS" as const,
+            activeProductId: resolved.productId,
+            waitingFor: details.nextAction === "offer_checkout" ? "checkout_confirmation" : undefined,
+          };
           await saveResponse(details.replyText, "discovery", [], newState);
           return NextResponse.json(
             { replyText: details.replyText, intent: "discovery", recommendations: [], isNewConversation },
@@ -486,6 +520,7 @@ export async function POST(req: NextRequest) {
             ...state,
             mode: "PRODUCT_DETAILS",
             activeProductId: targetId,
+            waitingFor: details.nextAction === "offer_checkout" ? "checkout_confirmation" : undefined,
           };
           await saveResponse(details.replyText, "discovery", [], newState);
           return NextResponse.json(

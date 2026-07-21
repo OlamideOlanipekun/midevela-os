@@ -47,6 +47,14 @@ const CHECKOUT_PATTERNS = [
   /\bhow\s+(?:do\s+)?(?:i|can)\s+(?:buy|order|get|purchase)\b/i,
 ];
 
+const CHECKOUT_AGREEMENT_PATTERNS = [
+  /^(?:yes|yeah|sure|ok|okay|go\s+ahead|do\s+it|send\s+(?:it|me|the))\s*$/i,
+  /\bhold\s+(?:it|this|that|one)\b/i,
+  /\bsend\s+(?:me\s+)?(?:the\s+)?(?:link|payment\s+link|checkout)\b/i,
+  /\bi['']?ll\s+(?:take|buy|get)\s+(?:it|this|that)\b/i,
+  /\bgive\s+(?:me|it)\s+(?:the\s+)?(?:link|details?\s+to\s+buy)\b/i,
+];
+
 const OBJECTION_PATTERNS = [
   /\b(?:too\s+expensive|out\s+of\s+(?:my\s+)?budget|i\s+don't\s+like|costly|overpriced)\b/i,
   /\b(?:cheaper|more\s+affordable|lower\s+price|better\s+deal)\b/i,
@@ -100,12 +108,27 @@ export function directConversation(
     };
   }
 
-  // 3. Checkout intent
+  // 3. Checkout intent — direct "I'll take it"
   if (matchesAny(lower, CHECKOUT_PATTERNS) && state.activeProductId) {
     return {
       route: "CHECKOUT",
       intent: "PRODUCT_SELECTION",
       routeResult: { intent: "PRODUCT_SELECTION" },
+      goal: "CHECKOUT",
+      nextBestAction: "Would you like to continue shopping?",
+    };
+  }
+
+  // 3b. Checkout agreement — "yes", "hold it", "send link" when the
+  //     assistant previously offered to create a payment link.
+  if (
+    matchesAny(lower, CHECKOUT_AGREEMENT_PATTERNS) &&
+    state.waitingFor === "checkout_confirmation"
+  ) {
+    return {
+      route: "CHECKOUT",
+      intent: "GENERAL_CHAT",
+      routeResult: { intent: "GENERAL_CHAT" },
       goal: "CHECKOUT",
       nextBestAction: "Would you like to continue shopping?",
     };
