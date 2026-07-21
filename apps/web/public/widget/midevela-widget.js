@@ -849,6 +849,230 @@
     .footer-brand a { color: var(--muted); text-decoration: none; font-weight: 500; transition: color 0.18s; }
     .footer-brand a:hover { color: var(--text); }
 
+    /* ─── WELCOME SCREEN ─── */
+    .welcome-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 8px;
+      animation: msgIn 0.3s var(--ease-out);
+    }
+
+    .welcome-back-prefix {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 12px;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .welcome-back-explored {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .welcome-back-category {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      margin: 6px 0 20px;
+      line-height: 1.3;
+    }
+
+    .welcome-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 70%, #000) 100%);
+      color: var(--on-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 28px;
+      flex-shrink: 0;
+      margin-bottom: 16px;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), 0 8px 24px rgba(37, 99, 235, 0.15);
+      animation: welcomeAvatarIn 0.4s var(--ease-out);
+    }
+
+    @keyframes welcomeAvatarIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .welcome-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .welcome-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.55;
+      max-width: 320px;
+      margin-bottom: 22px;
+    }
+
+    .welcome-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      min-height: 72px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: var(--font);
+      text-align: left;
+      transition: transform 0.2s var(--ease-out), box-shadow 0.2s, border-color 0.2s, background 0.2s;
+      animation: welcomeCardIn 0.35s var(--ease-out) both;
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+
+    .welcome-card:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .welcome-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+    }
+
+    .welcome-card:active {
+      background: color-mix(in srgb, var(--primary) 6%, var(--bg));
+      transform: translateY(0);
+    }
+
+    @keyframes welcomeCardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .welcome-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .welcome-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .welcome-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .welcome-card-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .welcome-suggestions-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      margin: 6px 0 10px;
+      text-align: center;
+      width: 100%;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .welcome-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding-bottom: 4px;
+    }
+
+    .welcome-suggestion-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: background 0.18s, border-color 0.18s, color 0.18s;
+    }
+    .welcome-suggestion-chip:hover {
+      background: var(--bg-soft);
+      border-color: var(--primary);
+      color: var(--text);
+    }
+
+    /* ─── EMPTY CONVERSATION ─── */
+    .empty-conversation {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 48px 24px;
+      animation: msgIn 0.3s var(--ease-out);
+    }
+
+    .empty-conversation-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--bg-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .empty-conversation-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .empty-conversation-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.55;
+      max-width: 280px;
+    }
+
     /* ─── TYPING INDICATOR ─── */
     .typing {
       display: flex;
@@ -1243,8 +1467,112 @@
       funnel.view = 'welcome';
       persistFunnel();
       clearBody();
-      appendAiBubble(greeting);
-      renderCategoryGridAndChips();
+
+      var screen = document.createElement('div');
+      screen.className = 'welcome-screen';
+
+      // Avatar
+      var avatar = document.createElement('div');
+      avatar.className = 'welcome-avatar';
+      avatar.textContent = avatarLetter;
+      screen.appendChild(avatar);
+
+      // Title
+      var title = document.createElement('div');
+      title.className = 'welcome-title';
+      var businessName = config.business && config.business.name ? config.business.name : '';
+      title.textContent = 'Welcome to ' + (businessName || 'our store');
+      screen.appendChild(title);
+
+      // Subtitle
+      var subtitle = document.createElement('div');
+      subtitle.className = 'welcome-subtitle';
+      subtitle.textContent = "I'm " + aiName + ", your AI shopping assistant. I can help you find products, compare options, and answer your questions.";
+      screen.appendChild(subtitle);
+
+      // Action cards
+      var actions = [
+        {
+          icon: '🛍',
+          title: 'Start Shopping',
+          desc: 'Find products with AI recommendations',
+          fn: function () {
+            clearBody();
+            appendAiBubble(greeting);
+            renderCategoryGridAndChips();
+            scrollToBottom();
+          },
+        },
+        {
+          icon: '📂',
+          title: 'Browse Categories',
+          desc: 'Explore everything we offer',
+          fn: function () {
+            clearBody();
+            appendAiBubble(greeting);
+            renderCategoryGridAndChips();
+            scrollToBottom();
+          },
+        },
+        {
+          icon: '💬',
+          title: 'Ask a Question',
+          desc: 'Shipping, returns, delivery and more',
+          fn: function () {
+            funnel.view = 'conversation';
+            persistFunnel();
+            renderEmptyConversation();
+            input.focus();
+          },
+        },
+      ];
+
+      actions.forEach(function (card, i) {
+        var el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'welcome-card';
+        el.setAttribute('style', '--i: ' + i);
+        el.innerHTML =
+          '<span class="welcome-card-icon">' + card.icon + '</span>' +
+          '<span class="welcome-card-body">' +
+            '<span class="welcome-card-title">' + escapeHtml(card.title) + '</span>' +
+            '<span class="welcome-card-desc">' + escapeHtml(card.desc) + '</span>' +
+          '</span>';
+        el.addEventListener('click', card.fn);
+        screen.appendChild(el);
+      });
+
+      // Suggested questions
+      var label = document.createElement('div');
+      label.className = 'welcome-suggestions-label';
+      label.textContent = 'Popular questions';
+      screen.appendChild(label);
+
+      var suggestionsWrap = document.createElement('div');
+      suggestionsWrap.className = 'welcome-suggestions';
+      var questions = [
+        'Do you ship internationally?',
+        "What's best for acne?",
+        "Show today's deals",
+        'Track my order',
+      ];
+      questions.forEach(function (q) {
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'welcome-suggestion-chip';
+        chip.textContent = q;
+        chip.addEventListener('click', function () {
+          funnel.view = 'conversation';
+          persistFunnel();
+          renderEmptyConversation();
+          input.value = q;
+          input.focus();
+        });
+        suggestionsWrap.appendChild(chip);
+      });
+      screen.appendChild(suggestionsWrap);
+
+      body.appendChild(screen);
     }
 
     // Shown instead of renderWelcome() on a new visit when the visitor has
@@ -1258,27 +1586,95 @@
       funnel.view = 'welcome';
       persistFunnel();
       clearBody();
-      appendAiBubble(`Welcome back 👋 You were exploring ${cat.name} last time.`);
 
-      const continueRow = document.createElement('div');
-      continueRow.className = 'msg-row ai';
-      const continueAvatar = document.createElement('div');
-      continueAvatar.className = 'msg-avatar';
-      continueAvatar.style.visibility = 'hidden';
-      const continueCol = document.createElement('div');
-      continueCol.className = 'msg-col';
-      const continueBtn = document.createElement('button');
-      continueBtn.type = 'button';
-      continueBtn.className = 'chip';
-      continueBtn.textContent = `Continue with ${cat.name}`;
-      continueBtn.addEventListener('click', () => selectCategory(cat));
-      continueCol.appendChild(continueBtn);
-      continueRow.appendChild(continueAvatar);
-      continueRow.appendChild(continueCol);
-      body.appendChild(continueRow);
+      var screen = document.createElement('div');
+      screen.className = 'welcome-screen';
 
-      appendAiBubble('Or explore something else:');
-      renderCategoryGridAndChips();
+      // Back prefix
+      var prefix = document.createElement('div');
+      prefix.className = 'welcome-back-prefix';
+      prefix.textContent = 'Welcome back 👋';
+      screen.appendChild(prefix);
+
+      // Last explored
+      var explored = document.createElement('div');
+      explored.className = 'welcome-back-explored';
+      explored.textContent = 'Last time you explored';
+      screen.appendChild(explored);
+
+      // Category
+      var catEl = document.createElement('div');
+      catEl.className = 'welcome-back-category';
+      catEl.textContent = escapeHtml(cat.name);
+      screen.appendChild(catEl);
+
+      // Action cards
+      var actions = [
+        {
+          icon: '🛍',
+          title: 'Continue with ' + cat.name,
+          desc: 'Pick up where you left off',
+          fn: function () { selectCategory(cat); },
+        },
+        {
+          icon: '📂',
+          title: 'Browse Categories',
+          desc: 'Explore everything we offer',
+          fn: function () {
+            clearBody();
+            appendAiBubble(greeting);
+            renderCategoryGridAndChips();
+            scrollToBottom();
+          },
+        },
+        {
+          icon: '🔄',
+          title: 'Something Else',
+          desc: 'Start fresh with a new search',
+          fn: function () { renderWelcome(); },
+        },
+      ];
+
+      actions.forEach(function (card, i) {
+        var el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'welcome-card';
+        el.setAttribute('style', '--i: ' + i);
+        el.innerHTML =
+          '<span class="welcome-card-icon">' + card.icon + '</span>' +
+          '<span class="welcome-card-body">' +
+            '<span class="welcome-card-title">' + escapeHtml(card.title) + '</span>' +
+            '<span class="welcome-card-desc">' + escapeHtml(card.desc) + '</span>' +
+          '</span>';
+        el.addEventListener('click', card.fn);
+        screen.appendChild(el);
+      });
+
+      body.appendChild(screen);
+    }
+
+    function renderEmptyConversation() {
+      clearBody();
+
+      var container = document.createElement('div');
+      container.className = 'empty-conversation';
+
+      var icon = document.createElement('div');
+      icon.className = 'empty-conversation-icon';
+      icon.textContent = '💬';
+      container.appendChild(icon);
+
+      var title = document.createElement('div');
+      title.className = 'empty-conversation-title';
+      title.textContent = 'How can I help you?';
+      container.appendChild(title);
+
+      var subtitle = document.createElement('div');
+      subtitle.className = 'empty-conversation-subtitle';
+      subtitle.textContent = "Ask me anything about our products, orders, or store policies. I'm here to help!";
+      container.appendChild(subtitle);
+
+      body.appendChild(container);
     }
 
     function selectCategory(cat) {
