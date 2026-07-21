@@ -18,6 +18,11 @@ import { getProductDetails } from "@/server/widget/productDetails";
 import { compareProducts } from "@/server/widget/compare";
 import { recommendProducts, type RecommendedProduct } from "@/server/widget/recommend";
 import { listCategoriesForWidget } from "@/server/catalog/categories";
+import { tryRecovery } from "@/server/widget/recoveryEngine";
+import { directConversation } from "@/server/widget/conversationDirector";
+import { answerBusinessQuestion } from "@/server/widget/businessBrain";
+import { handleBrowse } from "@/server/widget/browseHandler";
+import { escalate } from "@/server/widget/escalationEngine";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
@@ -316,10 +321,93 @@ export async function POST(req: NextRequest) {
       ]);
     }
 
-    // ── 1. Run the intent router ────────────────────────────────────────
-    const route = routeConversation(messageText, state);
+    // ── 1. Conversation Director ──────────────────────────────────────
+    // Every message goes through the Conversation Director before any
+    // engine. The director decides the route based on Sales Memory and
+    // patterns, then the dispatch block calls the appropriate handler.
+    //
+    //   Route               → Engine/Handler
+    //   ────────────────      ─────────────────────────────────
+    //   BUSINESS_SUPPORT    → answerBusinessQuestion()       (no LLM)
+    //   BROWSE_CATEGORIES   → handleBrowse()                 (no LLM)
+    //   CHECKOUT            → Checkout handler
+    //   OBJECTION_HANDLING  → Cheaper alternative handler
+    //   SHOPPING            → Intent-router dispatch
+    //   GENERAL_CHAT        → processConversationTurn()      (LLM)
+    //   ESCALATION          → escalate()                     (no LLM)
+    //
+    const decision = directConversation(messageText, state);
+    const route = decision.routeResult;
 
-    // ── 2. Dispatch based on the routed intent ───────────────────────────
+    // Track the decision for Sales Memory
+    let nextState: ConversationState = {
+      ...state,
+      goal: decision.goal,
+      nextBestAction: decision.nextBestAction,
+    };
+
+    // ── 2. Dispatch based on the director's decision ──────────────────
+
+    // ── BUSINESS_SUPPORT ──────────────────────────────────────────────
+    // Answers shipping, returns, hours, payment, contact questions from
+    // KnowledgeEntry + OrgSettings — no LLM call.
+    if (decision.route === "BUSINESS_SUPPORT") {
+      const stored = (org.settings ?? {}) as Partial<OrgSettings>;
+      const settings = { ...defaultOrgSettings, ...stored, name: org.name };
+      const answer = await answerBusinessQuestion(messageText, settings, org.id);
+
+      if (answer) {
+        nextState = { ...nextState, mode: "GENERAL_CHAT", lastBusinessTopic: answer.topic };
+        await saveResponse(answer.replyText, "business", [], nextState);
+        return NextResponse.json(
+          { replyText: answer.replyText, intent: "business", recommendations: [], isNewConversation },
+          { headers },
+        );
+      }
+      // Fall through to GENERAL_CHAT if no business answer found
+    }
+
+    // ── BROWSE_CATEGORIES ─────────────────────────────────────────────
+    if (decision.route === "BROWSE_CATEGORIES") {
+      const browseResult = await handleBrowse(org.id);
+      nextState = { ...nextState, mode: "DISCOVERY" };
+      await saveResponse(browseResult.replyText, "browse", [], nextState);
+      return NextResponse.json(
+        { replyText: browseResult.replyText, intent: "browse", recommendations: [], isNewConversation },
+        { headers },
+      );
+    }
+
+    // ── CHECKOUT ──────────────────────────────────────────────────────
+    if (decision.route === "CHECKOUT" && state.activeProductId) {
+      const product = await prisma.product.findFirst({
+        where: { id: state.activeProductId, orgId: org.id },
+        select: { name: true, sourceUrl: true },
+      });
+      const replyText = product?.sourceUrl
+        ? [
+            `**${product.name}** — great choice!`,
+            ``,
+            `Ready to view it?`,
+            `→ ${product.sourceUrl}`,
+            ``,
+            `Would you like to continue shopping or do you need anything else?`,
+          ].join("\n")
+        : [
+            `Excellent choice!`,
+            ``,
+            `Would you like to continue browsing or compare it with another product?`,
+          ].join("\n");
+      nextState = { ...nextState, mode: "GENERAL_CHAT" };
+      await saveResponse(replyText, "checkout", [], nextState);
+      return NextResponse.json(
+        { replyText, intent: "checkout", recommendations: [], isNewConversation },
+        { headers },
+      );
+    }
+
+    // ── SHOPPING — Intent-router based dispatch ───────────────────────
+    // All shopping intents go through the existing intent-router dispatch
 
     // ── PRODUCT_SELECTION ──────────────────────────────────────────────
     // Resolve "the first one", "the moisturizer", "number 2" to a product ID,
@@ -337,7 +425,10 @@ export async function POST(req: NextRequest) {
       const resolved = resolveProductReference(messageText, summaries);
 
       if (resolved) {
-        const details = await getProductDetails({ productId: resolved.productId, orgId: org.id });
+        const otherNames = summaries
+          .filter((p) => p.id !== resolved.productId)
+          .map((p) => p.name);
+        const details = await getProductDetails({ productId: resolved.productId, orgId: org.id, otherProductNames: otherNames });
         if (details) {
           const newState = { ...state, mode: "PRODUCT_DETAILS" as const, activeProductId: resolved.productId };
           await saveResponse(details.replyText, "discovery", [], newState);
@@ -379,7 +470,17 @@ export async function POST(req: NextRequest) {
       }
 
       if (targetId) {
-        const details = await getProductDetails({ productId: targetId, orgId: org.id });
+        // Resolve names for comparison suggestions
+        const prodNames = state.recommendedProducts?.length
+          ? await prisma.product.findMany({
+              where: { id: { in: state.recommendedProducts }, orgId: org.id },
+              select: { id: true, name: true },
+            })
+          : [];
+        const otherNames = prodNames
+          .filter((p) => p.id !== targetId)
+          .map((p) => p.name);
+        const details = await getProductDetails({ productId: targetId, orgId: org.id, otherProductNames: otherNames });
         if (details) {
           const newState: ConversationState = {
             ...state,
@@ -404,13 +505,16 @@ export async function POST(req: NextRequest) {
       try {
         const compareResult = await compareProducts(org.id, recIds);
         const rowsText = compareResult.rows
-          .map((r) => `${r.label}: ${r.values.join(" vs ")}`)
+          .map((r) => `• ${r.label}: ${r.values.join(" vs ")}`)
           .join("\n");
         const replyText = [
-          `Here's a comparison:\n`,
+          `Here's how **${compareResult.products[0].name}** and **${compareResult.products[1].name}** compare:`,
+          ``,
           rowsText,
           ``,
           compareResult.recommendation,
+          ``,
+          `Would you like to know more about either of these?`,
         ].join("\n");
 
         const newState: ConversationState = {
@@ -450,11 +554,16 @@ export async function POST(req: NextRequest) {
       });
 
       if (newRecs.length > 0) {
-        const top = newRecs[0];
-        const restLines = newRecs.slice(1).map((p) => `**${p.name}** — ${p.price}`).join("\n");
-        const replyText = restLines
-          ? `Here are some more affordable options:\n\n**${top.name}** — ${top.price}\n${restLines}\n\nWould you like more details on any of these?`
-          : `I found **${top.name}** — ${top.price}. Would you like to know more?`;
+        const lines = newRecs.map((p) => `**${p.name}** — ${p.price}`);
+        const replyText = lines.length === 1
+          ? [`I found **${newRecs[0].name}** — ${newRecs[0].price}. Would you like to know more?`].join("\n")
+          : [
+              `Here are some more affordable options:`,
+              ``,
+              ...lines,
+              ``,
+              `Would you like more details on any of these?`,
+            ].join("\n");
 
         const newState: ConversationState = {
           ...state,
@@ -470,7 +579,14 @@ export async function POST(req: NextRequest) {
       }
 
       // No cheaper products found
-      const noResultsReply = `I couldn't find any products under that price range in this category. Would you like to try a different category or adjust your preferences?`;
+      const noResultsReply = [
+        `I couldn't find any products under that price range in this category.`,
+        ``,
+        `Would you like to:`,
+        `• Try a different category`,
+        `• Adjust your budget`,
+        `• See the original recommendations again`,
+      ].join("\n");
       await saveResponse(noResultsReply, "unknown", [], { ...state, mode: "RECOMMENDATION" });
       return NextResponse.json(
         { replyText: noResultsReply, intent: "unknown", recommendations: [], isNewConversation },
@@ -513,6 +629,41 @@ export async function POST(req: NextRequest) {
             : {}),
         };
 
+        // Recovery: when adaptive discovery found no products and didn't
+        // ask a follow-up question, try broadening the search.
+        if (
+          result.recommendations.length === 0 &&
+          result.fromEngine !== false
+        ) {
+          const recovery = await tryRecovery({
+            orgId: org.id,
+            messageText,
+            categoryId: newState.categoryId,
+            categoryName: newState.categoryName,
+            budget: newState.budget,
+            answers: shoppingContextRaw.answers ?? {},
+          });
+
+          if (recovery) {
+            newState.recommendedProducts = recovery.recommendations.map((p) => p.id);
+            newState.mode = recovery.recommendations.length > 0
+              ? "RECOMMENDATION"
+              : "DISCOVERY";
+            if (recovery.relaxedBudget) newState.budget = recovery.relaxedBudget;
+
+            await saveResponse(recovery.replyText, "discovery", recovery.recommendations, newState);
+            return NextResponse.json(
+              {
+                replyText: recovery.replyText,
+                intent: "discovery",
+                recommendations: recovery.recommendations,
+                isNewConversation,
+              },
+              { headers },
+            );
+          }
+        }
+
         await saveResponse(result.replyText, "discovery", result.recommendations, newState);
         return NextResponse.json(
           {
@@ -524,6 +675,20 @@ export async function POST(req: NextRequest) {
           { headers },
         );
       }
+    }
+
+    // ── ESCALATION — low-confidence handoff ──────────────────────────
+    if (decision.route === "ESCALATION") {
+      const stored = (org.settings ?? {}) as Partial<OrgSettings>;
+      const settings = { ...defaultOrgSettings, ...stored, name: org.name };
+      const result = escalate("low_confidence", settings);
+      nextState = { ...nextState, mode: "GENERAL_CHAT" };
+      await saveResponse(result.replyText, "escalation", [], nextState);
+      await recordAiUsage(org.id);
+      return NextResponse.json(
+        { replyText: result.replyText, intent: "escalation", recommendations: [], isNewConversation },
+        { headers },
+      );
     }
 
     // ── GENERAL_CHAT — normal LLM conversation ─────────────────────────

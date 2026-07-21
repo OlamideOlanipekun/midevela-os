@@ -4,6 +4,8 @@ import { formatMoney } from "@/server/catalog/money";
 export interface ProductDetailsInput {
   productId: string;
   orgId: string;
+  /** Names of other recommended products to suggest comparisons */
+  otherProductNames?: string[];
 }
 
 export interface ProductDetailsResult {
@@ -42,7 +44,18 @@ export async function getProductDetails(
       : {};
 
   return {
-    replyText: formatDetailsReply(dbProduct, price, attributes),
+    replyText: formatDetailsReply(
+      {
+        name: dbProduct.name,
+        brand: dbProduct.brand,
+        description: dbProduct.description,
+        aiDescription: dbProduct.aiDescription,
+        inventoryStatus: dbProduct.inventoryStatus,
+      },
+      price,
+      attributes,
+      input.otherProductNames,
+    ),
     product: {
       id: dbProduct.id,
       name: dbProduct.name,
@@ -68,17 +81,18 @@ function formatDetailsReply(
   },
   price: string,
   attributes: Record<string, unknown>,
+  otherProductNames?: string[],
 ): string {
   const parts: string[] = [];
 
-  // Summary: name + price
+  // Name + price
   parts.push(`**${product.name}** — ${price}`);
 
-  // Description
-  if (product.description) {
-    parts.push(product.description);
-  } else if (product.aiDescription) {
-    parts.push(product.aiDescription);
+  // Short benefit summary (first sentence of description or the aiDescription)
+  const fullDesc = product.description || product.aiDescription;
+  const snippet = fullDesc ? fullDesc.split(".")[0].trim() + "." : null;
+  if (snippet && snippet.length > 10) {
+    parts.push(snippet);
   }
 
   // Brand
@@ -93,17 +107,39 @@ function formatDetailsReply(
       : "Currently out of stock.",
   );
 
-  // Key attributes
+  // Key attributes (filter to the most informative 4-5)
   const attrLines: string[] = [];
+  const skipKeys = new Set(["ingredients", "howToUse", "warnings"]);
+  let count = 0;
   for (const [key, value] of Object.entries(attributes)) {
-    if (value && value !== "—" && value !== "") {
+    if (value && value !== "—" && value !== "" && !skipKeys.has(key) && count < 5) {
       const label = key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
       attrLines.push(`${label}: ${value}`);
+      count++;
     }
   }
   if (attrLines.length > 0) {
     parts.push(attrLines.join("\n"));
   }
+
+  // Full description when it adds detail beyond the snippet
+  if (fullDesc && fullDesc.length > (snippet?.length ?? 0)) {
+    parts.push(fullDesc);
+  }
+
+  // Closing action prompts
+  const prompts: string[] = [];
+  if (otherProductNames && otherProductNames.length > 0) {
+    const compareNames = otherProductNames.slice(0, 2);
+    if (compareNames.length === 1) {
+      prompts.push(`Would you like to compare it with **${compareNames[0]}**?`);
+    } else if (compareNames.length === 2) {
+      prompts.push(`Would you like to compare it with **${compareNames[0]}** or **${compareNames[1]}**?`);
+    }
+  }
+  prompts.push("Would you like to see another product?");
+
+  parts.push(prompts.join("\n"));
 
   return parts.join("\n\n");
 }
