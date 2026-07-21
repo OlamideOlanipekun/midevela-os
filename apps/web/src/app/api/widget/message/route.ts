@@ -11,6 +11,8 @@ import type { ChatMessage } from "@/server/conversation/llm";
 import { tryAdaptiveDiscovery } from "@/server/widget/adaptiveDiscovery";
 import { classifyFollowUpIntent, handleFollowUp } from "@/server/widget/followUpHandler";
 import type { RecommendedProduct } from "@/server/widget/recommend";
+import { getInitialMode, modeForAdaptiveResult, modeForFollowUpType } from "@/server/widget/conversationModes";
+import type { ConversationMode } from "@/server/widget/conversationModes";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
@@ -264,138 +266,163 @@ export async function POST(req: NextRequest) {
           : undefined,
     };
 
-    // ─── Follow-up classification: if the last AI message had recommendations,
-    // check whether the shopper is asking about them before running adaptive
-    // discovery or the LLM conversation turn. This follows the priority order:
-    //   1. Referring to previously recommended products
-    //   2. Asking to compare products
-    //   3. Asking for more details
-    //   4. Changing constraints (budget/category/brand)
-    //   5. Starting a new shopping request → adaptive discovery
-    //   6. Unrelated → normal chat
-    const lastAiMsg = priorMessages.length > 0 && priorMessages[0].role === "AI"
-      ? priorMessages[0]
-      : null;
-    const lastRecommendations: RecommendedProduct[] = lastAiMsg?.recommendations
-      ? (lastAiMsg.recommendations as unknown as RecommendedProduct[])
+    // Extract stored recommendations from context for RECOMMENDATION mode
+    const storedRecs: RecommendedProduct[] = Array.isArray(mergedContext.lastRecommendations)
+      ? (mergedContext.lastRecommendations as unknown as RecommendedProduct[])
       : [];
 
-    if (lastRecommendations.length > 0) {
-      const followUp = await classifyFollowUpIntent(messageText, lastRecommendations);
+    // ──────── CONVERSATION STATE MACHINE ────────
+    // Every message is routed based on the current conversation mode, which
+    // is stored in conversation.context.mode. This prevents adaptive discovery
+    // from re-entering after recommendations have already been shown.
+    //
+    //   DISCOVERY       → run adaptive discovery
+    //   QUALIFICATION   → run adaptive discovery (still collecting info)
+    //   RECOMMENDATION  → classify & handle follow-ups; only new_search or
+    //                     unrelated fall through
+    //   GENERAL_CHAT    → normal LLM conversation turn
+    //
+    const currentMode: ConversationMode =
+      (typeof mergedContext.mode === "string" &&
+        ["DISCOVERY", "QUALIFICATION", "RECOMMENDATION", "GENERAL_CHAT"].includes(mergedContext.mode as string))
+        ? (mergedContext.mode as ConversationMode)
+        : getInitialMode();
 
-      if (followUp && followUp.type !== "new_search" && followUp.type !== "unrelated") {
-        const followUpResult = await handleFollowUp(
-          org.id,
-          followUp,
-          lastRecommendations,
-          shoppingContext,
-        );
+    // Helper: save AI response + update context mode + persist
+    async function saveResponse(
+      replyText: string,
+      intent: string,
+      recs: unknown[],
+      newMode: ConversationMode,
+      contextChanges?: Record<string, unknown>,
+    ) {
+      const updatedContext: Record<string, unknown> = {
+        ...mergedContext,
+        mode: newMode,
+        ...(contextChanges ?? {}),
+      };
 
-        if (followUpResult) {
-          await prisma.message.create({
-            data: {
-              conversationId: conversation.id,
-              role: "AI",
-              content: followUpResult.replyText,
-              intent: followUp.type === "compare" ? "comparison" : "discovery",
-              recommendations: followUpResult.recommendations as unknown as Prisma.InputJsonValue,
-            },
-          });
+      // Persist recommendations in context so RECOMMENDATION mode can use them
+      // even after a page refresh.
+      if (newMode === "RECOMMENDATION" && recs.length > 0) {
+        updatedContext.lastRecommendations = recs;
+      }
 
-          return NextResponse.json(
-            {
-              replyText: followUpResult.replyText,
-              intent: followUp.type === "compare" ? "comparison" : "discovery",
-              recommendations: followUpResult.recommendations,
-              isNewConversation,
-            },
-            { headers }
-          );
+      await prisma.$transaction([
+        prisma.message.create({
+          data: {
+            conversationId: conversation!.id,
+            role: "AI",
+            content: replyText,
+            intent,
+            recommendations: recs as unknown as Prisma.InputJsonValue,
+          },
+        }),
+        prisma.conversation.update({
+          where: { id: conversation!.id },
+          data: { context: updatedContext as unknown as Prisma.InputJsonValue },
+        }),
+      ]);
+    }
+
+    // ── RECOMMENDATION mode: route follow-ups to dedicated handlers ──
+    if (currentMode === "RECOMMENDATION") {
+      const recs = storedRecs.length > 0 ? storedRecs : [];
+      let handled = false;
+
+      if (recs.length > 0) {
+        const followUp = await classifyFollowUpIntent(messageText, recs);
+        const nextMode = modeForFollowUpType(followUp?.type ?? null);
+
+        if (followUp && nextMode === "RECOMMENDATION") {
+          const result = await handleFollowUp(org.id, followUp, recs, shoppingContext);
+          if (result) {
+            await saveResponse(
+              result.replyText,
+              followUp.type === "compare" ? "comparison" : "discovery",
+              result.recommendations,
+              "RECOMMENDATION",
+            );
+            return NextResponse.json(
+              { replyText: result.replyText, intent: "discovery", recommendations: result.recommendations, isNewConversation },
+              { headers },
+            );
+          }
+          handled = true;
+        }
+
+        if (followUp && nextMode === "DISCOVERY") {
+          // User explicitly started a new search — transition to discovery
+          await saveResponse("", "", [], "DISCOVERY", { lastRecommendations: null });
+          // Fall through to adaptive discovery below with fresh mode
         }
       }
-    }
 
-    // ─── Adaptive discovery: extract shopping requirements from free-form
-    // messages and call the deterministic product engine directly. When it
-    // returns results or a follow-up question, we skip the LLM call for that
-    // turn — saving cost and keeping product data grounded in real DB rows.
-    const adaptiveResult = await tryAdaptiveDiscovery(
-      org.id,
-      messageText,
-      shoppingContext.categoryName || shoppingContext.budget || shoppingContext.brand || shoppingContext.answers
-        ? shoppingContext
-        : null,
-    );
-
-    if (adaptiveResult) {
-      // Update conversation context with any newly extracted requirements
-      if (adaptiveResult.shoppingContext !== shoppingContext) {
-        const updatedContext = {
-          ...mergedContext,
-          categoryName: adaptiveResult.shoppingContext.categoryName ?? mergedContext.categoryName,
-          budget: adaptiveResult.shoppingContext.budget ?? mergedContext.budget,
-          brand: adaptiveResult.shoppingContext.brand ?? mergedContext.brand,
-          ...(adaptiveResult.shoppingContext.answers
-            ? { answers: { ...(mergedContext.answers as Record<string, unknown> ?? {}), ...adaptiveResult.shoppingContext.answers } }
-            : {}),
-        };
-        await prisma.conversation.update({
-          where: { id: conversation.id },
-          data: { context: updatedContext as unknown as Prisma.InputJsonValue },
+      if (!handled) {
+        // Fall through to normal chat for unrelated messages in RECOMMENDATION mode
+        const result = await processConversationTurn({
+          orgId: org.id, orgName: org.name, settings, messageText, history, shoppingContext,
         });
+        const newMode: ConversationMode = result.intent === "unknown" ? "RECOMMENDATION" : "GENERAL_CHAT";
+        await saveResponse(result.replyText, result.intent, result.recommendations, newMode);
+        await recordAiUsage(org.id);
+        return NextResponse.json(
+          { replyText: result.replyText, intent: result.intent, recommendations: result.recommendations, isNewConversation },
+          { headers },
+        );
       }
-
-      await prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          role: "AI",
-          content: adaptiveResult.replyText,
-          intent: adaptiveResult.recommendations.length > 0 ? "discovery" : "unknown",
-          recommendations: adaptiveResult.recommendations as unknown as Prisma.InputJsonValue,
-        },
-      });
-
-      return NextResponse.json(
-        {
-          replyText: adaptiveResult.replyText,
-          intent: adaptiveResult.recommendations.length > 0 ? "discovery" : "unknown",
-          recommendations: adaptiveResult.recommendations,
-          isNewConversation,
-        },
-        { headers }
-      );
     }
 
+    // ── DISCOVERY / QUALIFICATION / GENERAL_CHAT: adaptive discovery ──
+    if (currentMode !== "GENERAL_CHAT") {
+      const adaptiveResult = await tryAdaptiveDiscovery(
+        org.id,
+        messageText,
+        shoppingContext.categoryName || shoppingContext.budget || shoppingContext.brand || shoppingContext.answers
+          ? shoppingContext
+          : null,
+      );
+
+      if (adaptiveResult) {
+        const newMode = modeForAdaptiveResult(
+          adaptiveResult.recommendations.length > 0,
+          !adaptiveResult.fromEngine,
+        );
+
+        // Update shopping context in mergedContext with any newly extracted info
+        const contextChanges: Record<string, unknown> = {};
+        if (adaptiveResult.shoppingContext.categoryName) contextChanges.categoryName = adaptiveResult.shoppingContext.categoryName;
+        if (adaptiveResult.shoppingContext.budget) contextChanges.budget = adaptiveResult.shoppingContext.budget;
+        if (adaptiveResult.shoppingContext.brand) contextChanges.brand = adaptiveResult.shoppingContext.brand;
+        if (adaptiveResult.shoppingContext.answers) contextChanges.answers = adaptiveResult.shoppingContext.answers;
+
+        await saveResponse(
+          adaptiveResult.replyText,
+          adaptiveResult.recommendations.length > 0 ? "discovery" : "unknown",
+          adaptiveResult.recommendations,
+          newMode,
+          contextChanges,
+        );
+
+        return NextResponse.json(
+          {
+            replyText: adaptiveResult.replyText,
+            intent: adaptiveResult.recommendations.length > 0 ? "discovery" : "unknown",
+            recommendations: adaptiveResult.recommendations,
+            isNewConversation,
+          },
+          { headers },
+        );
+      }
+    }
+
+    // ── Fall through to normal LLM conversation ──
     const result = await processConversationTurn({
-      orgId: org.id,
-      orgName: org.name,
-      settings,
-      messageText,
-      history,
-      shoppingContext,
+      orgId: org.id, orgName: org.name, settings, messageText, history, shoppingContext,
     });
 
-    await prisma.$transaction([
-      prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          role: "AI",
-          content: result.replyText,
-          intent: result.intent,
-          recommendations: result.recommendations as unknown as Prisma.InputJsonValue,
-          inputTokens: result.inputTokens,
-          outputTokens: result.outputTokens,
-        },
-      }),
-      prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { intent: result.intent, aiConfidence: result.aiConfidence },
-      }),
-    ]);
-
-    // Durable per-plan usage counter — the real basis for the monthly cap
-    // check above and the dashboard's usage display. Best-effort: a failure
-    // here must never break a reply that already succeeded.
+    const nextMode: ConversationMode = result.intent === "discovery" ? "DISCOVERY" : "GENERAL_CHAT";
+    await saveResponse(result.replyText, result.intent, result.recommendations, nextMode);
     await recordAiUsage(org.id);
 
     return NextResponse.json(
@@ -405,7 +432,7 @@ export async function POST(req: NextRequest) {
         recommendations: result.recommendations,
         isNewConversation,
       },
-      { headers }
+      { headers },
     );
   } catch (err) {
     console.error("Widget message error:", err);

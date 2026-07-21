@@ -19,9 +19,21 @@ vi.mock("@/server/widget/compare", () => ({
   compareProducts: vi.fn(),
 }));
 
+// Mock category listing
+vi.mock("@/server/catalog/categories", () => ({
+  listCategoriesForWidget: vi.fn(),
+}));
+
+// Mock the deterministic product engine
+vi.mock("@/server/widget/recommend", () => ({
+  recommendProducts: vi.fn(),
+}));
+
 import { completeJson } from "@/server/conversation/llm";
 import prisma from "@/lib/prisma";
 import { compareProducts } from "@/server/widget/compare";
+import { listCategoriesForWidget } from "@/server/catalog/categories";
+import { recommendProducts } from "@/server/widget/recommend";
 import { classifyFollowUpIntent, handleFollowUp } from "../followUpHandler";
 import type { RecommendedProduct } from "../recommend";
 import type { ShoppingContext } from "@/server/conversation/engine";
@@ -29,6 +41,8 @@ import type { ShoppingContext } from "@/server/conversation/engine";
 const mockCompleteJson = completeJson as unknown as ReturnType<typeof vi.fn>;
 const mockFindFirst = prisma.product.findFirst as unknown as ReturnType<typeof vi.fn>;
 const mockCompare = compareProducts as unknown as ReturnType<typeof vi.fn>;
+const mockListCategories = listCategoriesForWidget as unknown as ReturnType<typeof vi.fn>;
+const mockRecommend = recommendProducts as unknown as ReturnType<typeof vi.fn>;
 
 const sampleRecs: RecommendedProduct[] = [
   { id: "p1", name: "Hydrating Moisturizer", brand: "BrandA", price: "₦25,000", imageUrl: null, url: null, inStock: true },
@@ -40,6 +54,12 @@ const emptyContext: ShoppingContext = {};
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockListCategories.mockResolvedValue([
+    { id: "cat-moisturizer", name: "Moisturizers", icon: "💧" },
+    { id: "cat-serum", name: "Serums", icon: "✨" },
+    { id: "cat-cleanser", name: "Cleansers", icon: "🧼" },
+    { id: "cat-skincare", name: "Skincare", icon: "🧴" },
+  ]);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -412,7 +432,16 @@ describe("handleFollowUp — compare", () => {
 });
 
 describe("handleFollowUp — constraint_change", () => {
-  it("returns a response for vague budget change", async () => {
+  it("re-recommends with a lower budget for vague budget change", async () => {
+    mockRecommend.mockResolvedValue([
+      { id: "p10", name: "Budget Option", brand: "BrandX", price: "₦10,000", imageUrl: null, url: null, inStock: true },
+    ]);
+    mockListCategories.mockResolvedValue([
+      { id: "cat-moisturizer", name: "Moisturizers", icon: "💧" },
+    ]);
+
+    const contextWithCategory: ShoppingContext = { categoryName: "Moisturizers", budget: "0-50000" };
+
     const result = await handleFollowUp(
       "org-1",
       {
@@ -422,11 +451,18 @@ describe("handleFollowUp — constraint_change", () => {
         userMessage: "show me cheaper ones",
       },
       sampleRecs,
-      emptyContext,
+      contextWithCategory,
     );
 
     expect(result).not.toBeNull();
-    expect(result!.replyText).toContain("₦20k");
+    expect(result!.recommendations).toHaveLength(1);
+    expect(result!.recommendations[0].name).toBe("Budget Option");
+    // Should have called recommendProducts with a reduced budget ceiling
+    expect(mockRecommend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        answers: expect.objectContaining({ budget: expect.stringMatching(/^0-\d+$/) }),
+      }),
+    );
   });
 });
 

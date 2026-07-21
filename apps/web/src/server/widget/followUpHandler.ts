@@ -1,7 +1,8 @@
 import { completeJson } from "@/server/conversation/llm";
 import prisma from "@/lib/prisma";
 import { compareProducts } from "@/server/widget/compare";
-import type { RecommendedProduct } from "@/server/widget/recommend";
+import { recommendProducts, type RecommendedProduct } from "@/server/widget/recommend";
+import { listCategoriesForWidget } from "@/server/catalog/categories";
 import type { ShoppingContext } from "@/server/conversation/engine";
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -296,40 +297,79 @@ async function handleCompare(
   }
 }
 
-/** Handle constraint_change — update context and re-recommend */
+/** Handle constraint_change — re-run recommendations with updated constraints */
 async function handleConstraintChange(
   orgId: string,
   classification: FollowUpClassification,
   lastRecommendations: RecommendedProduct[],
   existingContext: ShoppingContext,
 ): Promise<FollowUpResult | null> {
-  // For vague "show me cheaper ones" without a specific budget, compute one
-  // from the cheapest product in the last recommendations.
-  if (
-    classification.constraintCategory === "budget" &&
-    !classification.constraintValue &&
-    lastRecommendations.length > 0
-  ) {
-    const cheapest = [...lastRecommendations].sort(
-      (a, b) => parsePrice(a.price) - parsePrice(b.price),
-    )[0];
-    const cheapestPrice = parsePrice(cheapest.price);
-    // Set budget ceiling below the cheapest product
-    const newMax = Math.max(1000, Math.floor(cheapestPrice * 0.8));
-    return {
-      replyText: `Sure! Let me look for options under ${formatRoughPrice(newMax)}.`,
-      recommendations: lastRecommendations,
-    };
+  // Build updated answers from existing context + constraint change
+  const answers: Record<string, string> = {};
+
+  if (existingContext.budget) answers.budget = existingContext.budget;
+  if (existingContext.brand) answers.brand = existingContext.brand;
+  if (existingContext.answers) {
+    for (const [k, v] of Object.entries(existingContext.answers)) {
+      if (v) answers[k] = v;
+    }
   }
 
-  // For specific constraint changes, fall through to adaptive discovery
-  // which will extract and apply the new constraint.
-  return null;
-}
+  // Apply the constraint change
+  if (classification.constraintCategory === "budget") {
+    if (classification.constraintValue) {
+      answers.budget = classification.constraintValue;
+    } else if (lastRecommendations.length > 0) {
+      // "show me cheaper ones" — set ceiling below cheapest product
+      const cheapest = [...lastRecommendations].sort(
+        (a, b) => parsePrice(a.price) - parsePrice(b.price),
+      )[0];
+      const cheapestPrice = parsePrice(cheapest.price);
+      const newMax = Math.max(1000, Math.floor(cheapestPrice * 0.8));
+      answers.budget = `0-${newMax}`;
+    }
+  }
 
-function formatRoughPrice(amount: number): string {
-  if (amount >= 1000) return `₦${(amount / 1000).toFixed(0)}k`;
-  return `₦${amount}`;
+  if (classification.constraintCategory === "brand" && classification.constraintValue) {
+    answers.brand = classification.constraintValue;
+  }
+
+  // Resolve category from existing context
+  const categoryName = existingContext.categoryName;
+  if (!categoryName) {
+    // No category known — fall through to adaptive discovery
+    return null;
+  }
+
+  const categories = await listCategoriesForWidget(orgId);
+  const category = categories.find((c) => c.name.toLowerCase() === categoryName.toLowerCase());
+  if (!category) return null;
+
+  const products = await recommendProducts({
+    orgId,
+    categoryId: category.id,
+    answers,
+  });
+
+  if (products.length > 0) {
+    const top = products[0];
+    const productLine = products.length > 1
+      ? `Here are some updated options I found:\n\n**${top.name}** — ${top.price}`
+      : `I found **${top.name}** — ${top.price}.`;
+
+    const restLines = products.slice(1).map((p) => `**${p.name}** — ${p.price}`).join("\n");
+
+    const replyText = restLines
+      ? `${productLine}\n${restLines}\n\nWould you like more details on any of these?`
+      : `${productLine}\n\nWould you like to know more about it?`;
+
+    return { replyText, recommendations: products };
+  }
+
+  return {
+    replyText: `I couldn't find any products matching your updated preferences in ${categoryName}. Would you like to try different options?`,
+    recommendations: lastRecommendations,
+  };
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────
