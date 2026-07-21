@@ -271,62 +271,104 @@
       --primary: ${config.theme.accentColor};
       --on-primary: ${onPrimary};
       --bg: #ffffff;
-      --bg-soft: #f6f7f9;
-      --text: #14181f;
+      --bg-soft: #f8fafc;
+      --text: #111827;
       --muted: #6b7280;
-      --border: #e9ebee;
+      --border: #e5e7eb;
       --card: #ffffff;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --success: #22c55e;
+      --radius-sm: 8px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-xl: 28px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+      --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.16);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ─── FAB BUTTON ─── */
+    /* ─── FAB LAUNCHER ─── */
     .fab {
       position: fixed;
       bottom: 24px;
       right: 24px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 8px 24px rgba(20, 24, 31, 0.18);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       z-index: 999999;
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+      cursor: pointer;
       border: none;
       outline: none;
+      background: var(--primary);
+      border-radius: 22px;
+      padding: 0;
+      box-shadow: 0 8px 28px rgba(37, 99, 235, 0.28);
+      transition: transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out);
+      display: flex;
+      align-items: center;
+      font-family: var(--font);
+      overflow: hidden;
     }
 
     .fab:hover {
-      transform: translateY(-2px) scale(1.04);
-      box-shadow: 0 12px 30px rgba(20, 24, 31, 0.26);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(37, 99, 235, 0.35);
     }
-
     .fab:active { transform: scale(0.96); }
 
-    .fab svg {
-      width: 26px;
-      height: 26px;
-      fill: var(--on-primary);
-      transition: transform 0.3s;
+    .fab-inner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
     }
 
-    .fab.open svg {
-      transform: rotate(90deg) scale(0.9);
+    .fab.open .fab-inner {
+      opacity: 0;
+      transform: scale(0.8);
+      pointer-events: none;
+    }
+
+    .fab-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .fab-icon svg { width: 16px; height: 16px; fill: var(--on-primary); }
+
+    .fab-text { text-align: left; color: var(--on-primary); }
+    .fab-text-top { font-size: 13px; font-weight: 500; opacity: 0.9; display: block; line-height: 1.3; }
+    .fab-text-bot { font-size: 15px; font-weight: 700; display: block; line-height: 1.3; }
+
+    .fab-close-icon {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+      pointer-events: none;
+    }
+    .fab-close-icon svg { width: 22px; height: 22px; fill: var(--on-primary); }
+    .fab.open .fab-close-icon {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
     }
 
     .fab-pulse-ring {
       position: absolute;
       inset: -4px;
-      border-radius: 50%;
+      border-radius: 24px;
       border: 2px solid var(--primary);
       animation: pulseRing 2.4s infinite;
       pointer-events: none;
@@ -334,62 +376,61 @@
 
     @keyframes pulseRing {
       0% { transform: scale(1); opacity: 0.35; }
-      100% { transform: scale(1.7); opacity: 0; }
+      100% { transform: scale(1.5); opacity: 0; }
     }
 
-    /* No page-blocking backdrop — this is a docked sidebar. The page stays
-       fully visible and interactive while the assistant is open, so a
-       shopper can keep browsing products while they chat. */
-    .backdrop {
-      display: none;
-    }
+    .backdrop { display: none; }
 
-    /* ─── CHAT PANEL (Right-docked sidebar; bottom sheet on mobile) ─── */
+    /* ─── CHAT PANEL ─── */
     .chat-panel {
       position: fixed;
-      top: 0;
-      right: 0;
-      height: 100%;
+      top: 50%;
+      right: 24px;
+      transform: translateY(-50%) translateX(calc(100% + 24px));
       width: 400px;
-      max-width: 100vw;
+      height: min(700px, calc(100vh - 48px));
+      max-width: calc(100vw - 48px);
       background: var(--bg);
-      border-left: 1px solid var(--border);
-      box-shadow: -14px 0 50px rgba(20, 24, 31, 0.14);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
       display: flex;
       flex-direction: column;
       overflow: hidden;
       z-index: 999999;
       font-family: var(--font);
-      transform: translateX(100%);
       pointer-events: none;
-      transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.32s var(--ease-out), opacity 0.24s var(--ease-out);
+      opacity: 0;
     }
 
     .chat-panel.open {
-      transform: translateX(0);
+      transform: translateY(-50%) translateX(0);
       pointer-events: all;
+      opacity: 1;
     }
 
-    /* Header */
+    /* ─── HEADER ─── */
     .header {
-      background: var(--bg);
-      padding: 15px 18px;
+      padding: 20px 22px 16px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .header-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
     }
 
     .header-info {
       display: flex;
       align-items: center;
-      gap: 11px;
+      gap: 12px;
     }
 
     .header-avatar {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: var(--primary);
       color: var(--on-primary);
@@ -397,77 +438,91 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 16px;
       flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
 
-    .header-title {
-      font-size: 14.5px;
-      font-weight: 600;
+    .header-name {
+      font-size: 15px;
+      font-weight: 700;
       color: var(--text);
       line-height: 1.2;
     }
 
     .header-status {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--muted);
       display: flex;
       align-items: center;
-      gap: 5px;
-      margin-top: 2px;
+      gap: 6px;
+      margin-top: 3px;
     }
 
     .header-status-dot {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: #22c55e;
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
     }
 
-    .close-btn {
+    .header-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .header-btn {
       background: none;
       border: none;
-      color: var(--muted);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 18px;
-      line-height: 1;
-      padding: 4px 6px;
-      border-radius: 8px;
-      transition: color 0.2s, background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      transition: background 0.18s var(--ease-out), color 0.18s;
+    }
+    .header-btn:hover { background: var(--bg-soft); color: var(--text); }
+    .header-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    .header-divider {
+      height: 1px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--border) 60%, transparent 100%);
+      margin-top: 14px;
+      opacity: 0.5;
     }
 
-    .close-btn:hover {
-      color: var(--text);
-      background: var(--bg-soft);
-    }
-
-    /* Body — swapped per funnel state */
+    /* ─── BODY ─── */
     .body {
       flex: 1;
       overflow-y: auto;
-      padding: 18px 16px;
+      padding: 22px 22px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
       background: var(--bg-soft);
+      scroll-behavior: smooth;
     }
 
-    .body::-webkit-scrollbar { width: 6px; }
-    .body::-webkit-scrollbar-thumb { background: rgba(20, 24, 31, 0.14); border-radius: 3px; }
+    .body::-webkit-scrollbar { width: 4px; }
+    .body::-webkit-scrollbar-track { background: transparent; }
+    .body::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.08); border-radius: 2px; }
 
+    /* ─── MESSAGES ─── */
     .msg-row {
       display: flex;
       gap: 8px;
       max-width: 88%;
-      animation: msgIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: msgIn 0.26s var(--ease-out);
     }
-
     .msg-row.ai { align-self: flex-start; }
     .msg-row.customer { align-self: flex-end; }
 
     @keyframes msgIn {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -490,10 +545,10 @@
     .customer .msg-col { align-items: flex-end; }
 
     .msg-bubble {
-      padding: 10px 14px;
-      border-radius: 16px;
-      font-size: 13.5px;
-      line-height: 1.5;
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.55;
       color: var(--text);
       word-wrap: break-word;
       overflow-wrap: anywhere;
@@ -502,153 +557,145 @@
     .customer .msg-bubble {
       background: var(--primary);
       color: var(--on-primary);
-      border-bottom-right-radius: 5px;
+      border-bottom-right-radius: 4px;
     }
 
     .ai .msg-bubble {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-bottom-left-radius: 5px;
+      border-bottom-left-radius: 4px;
+      box-shadow: var(--shadow-sm);
     }
 
     .msg-time {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--muted);
-      margin-top: 4px;
+      margin-top: 5px;
     }
 
-    /* Chips — used for quick replies, category grid buttons, and
-       qualification/budget options (same visual language throughout). */
+    /* ─── CHIPS ─── */
     .chips {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       padding: 2px 0 2px 36px;
-      animation: msgIn 0.3s ease;
+      animation: msgIn 0.26s var(--ease-out);
     }
 
     .chip {
       background: var(--bg);
-      border: 1px solid var(--primary);
+      border: 1px solid var(--border);
       color: var(--text);
-      border-radius: 100px;
-      padding: 7px 13px;
-      font-size: 12.5px;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
       font-family: var(--font);
-      transition: background 0.18s, transform 0.18s;
+      transition: background 0.18s, transform 0.18s, border-color 0.18s;
     }
-
-    .chip:hover { background: var(--bg-soft); transform: translateY(-1px); }
+    .chip:hover { background: var(--bg-soft); border-color: var(--primary); transform: translateY(-1px); }
     .chip:active { transform: scale(0.97); }
-    .chip:disabled { opacity: 0.5; cursor: default; transform: none; }
+    .chip:disabled { opacity: 0.4; cursor: default; transform: none; }
 
-    /* Category grid (Welcome Card) */
+    /* ─── CATEGORY GRID ─── */
     .cat-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
       padding-left: 36px;
-      animation: msgIn 0.3s ease;
+      animation: msgIn 0.3s var(--ease-out);
     }
 
     .cat-tile {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 10px;
+      border-radius: 18px;
+      padding: 14px 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       cursor: pointer;
-      transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+      transition: transform 0.2s var(--ease-out), box-shadow 0.2s, border-color 0.2s;
       font-family: var(--font);
       text-align: center;
     }
-
     .cat-tile:hover {
       transform: translateY(-2px);
       border-color: var(--primary);
-      box-shadow: 0 8px 20px rgba(20, 24, 31, 0.08);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     }
 
     .cat-tile-icon {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       background: var(--bg-soft);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 19px;
+      font-size: 20px;
       overflow: hidden;
     }
-
     .cat-tile-icon img { width: 100%; height: 100%; object-fit: cover; }
 
     .cat-tile-name {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text);
     }
 
-    /* Product recommendation cards */
+    /* ─── RECOMMENDATION CARDS ─── */
     .reco-container {
       display: flex;
       gap: 12px;
       overflow-x: auto;
-      padding: 8px 0;
+      padding: 10px 0;
       width: 100%;
       scrollbar-width: none;
     }
-
     .reco-container::-webkit-scrollbar { display: none; }
 
     .reco-card {
       flex-shrink: 0;
-      width: 158px;
+      width: 170px;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 18px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s var(--ease-out), box-shadow 0.2s;
     }
-
     .reco-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(20, 24, 31, 0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
     }
-
     .reco-card.selected { border-color: var(--primary); border-width: 2px; }
 
     .reco-img {
       width: 100%;
-      height: 96px;
+      height: 108px;
       background: var(--bg-soft);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
+      font-size: 28px;
       overflow: hidden;
       cursor: pointer;
     }
-
     .reco-img img { width: 100%; height: 100%; object-fit: cover; }
 
     .reco-body {
-      padding: 10px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
       flex: 1;
     }
-
     .reco-name {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text);
       white-space: nowrap;
@@ -656,28 +703,25 @@
       text-overflow: ellipsis;
       cursor: pointer;
     }
-
-    .reco-price { font-size: 13px; color: var(--text); font-weight: 700; }
-
+    .reco-price { font-size: 14px; color: var(--text); font-weight: 700; }
     .reco-why {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--muted);
-      line-height: 1.35;
+      line-height: 1.4;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
-
     .reco-actions { display: flex; gap: 6px; }
 
     .reco-btn {
       flex: 1;
       display: block;
       text-align: center;
-      padding: 8px;
-      font-size: 11.5px;
+      padding: 9px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--on-primary);
       background: var(--primary);
@@ -685,9 +729,9 @@
       cursor: pointer;
       transition: filter 0.18s;
       border: none;
+      border-radius: 0;
     }
-
-    .reco-btn:hover { filter: brightness(0.95); }
+    .reco-btn:hover { filter: brightness(0.92); }
 
     .reco-compare-btn {
       flex-shrink: 0;
@@ -695,72 +739,92 @@
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 0;
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 600;
-      padding: 8px 8px;
+      padding: 9px 8px;
       cursor: pointer;
       font-family: var(--font);
     }
-
     .reco-compare-btn.active { border-color: var(--primary); color: var(--primary); }
 
-    /* Comparison table */
+    /* ─── COMPARE TABLE ─── */
     .compare-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11.5px;
+      font-size: 12px;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       overflow: hidden;
+      margin-top: 4px;
     }
-
     .compare-table th, .compare-table td {
-      padding: 7px 8px;
+      padding: 8px 10px;
       text-align: left;
       border-bottom: 1px solid var(--border);
     }
-
-    .compare-table th { color: var(--muted); font-weight: 600; font-size: 10.5px; }
+    .compare-table th { color: var(--muted); font-weight: 600; font-size: 11px; }
     .compare-table tr:last-child td { border-bottom: none; }
 
-    /* Chat Input */
+    /* ─── INPUT COMPOSER ─── */
     .input-area {
-      padding: 12px 14px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: 10px;
-      align-items: center;
+      padding: 14px 18px 14px;
       background: var(--bg);
       flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-soft);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 6px 6px 6px 18px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      background: var(--bg);
     }
 
     .input-field {
       flex: 1;
-      background: var(--bg-soft);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      padding: 11px 16px;
+      border: none;
+      background: transparent;
+      padding: 7px 0;
       color: var(--text);
-      font-size: 13.5px;
+      font-size: 14px;
       outline: none;
       font-family: var(--font);
-      transition: border-color 0.18s, background 0.18s;
+      min-width: 0;
     }
-
     .input-field::placeholder { color: var(--muted); }
 
-    .input-field:focus {
-      border-color: var(--primary);
-      background: var(--bg);
-    }
-
-    .send-btn {
-      background: var(--primary);
+    .input-placeholder-btn {
+      width: 32px;
+      height: 32px;
       border: none;
-      width: 40px;
-      height: 40px;
+      background: none;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      opacity: 0.4;
+      flex-shrink: 0;
+    }
+    .input-placeholder-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+    .input-send-btn {
+      width: 38px;
+      height: 38px;
+      border: none;
       border-radius: 50%;
+      background: var(--primary);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -768,46 +832,44 @@
       flex-shrink: 0;
       transition: transform 0.18s, filter 0.18s;
     }
+    .input-send-btn:hover { filter: brightness(0.92); }
+    .input-send-btn:active { transform: scale(0.9); }
+    .input-send-btn svg { width: 18px; height: 18px; fill: var(--on-primary); }
 
-    .send-btn:hover { filter: brightness(0.96); }
-    .send-btn:active { transform: scale(0.92); }
-
-    .send-btn svg { width: 17px; height: 17px; fill: var(--on-primary); }
-
+    /* ─── FOOTER ─── */
     .footer-brand {
       text-align: center;
-      padding: 8px 0;
-      font-size: 10px;
+      padding: 10px 0;
+      font-size: 11px;
       color: var(--muted);
       background: var(--bg);
       border-top: 1px solid var(--border);
       flex-shrink: 0;
     }
+    .footer-brand a { color: var(--muted); text-decoration: none; font-weight: 500; transition: color 0.18s; }
+    .footer-brand a:hover { color: var(--text); }
 
-    .footer-brand a { color: var(--text); text-decoration: none; font-weight: 600; }
-
-    /* Typing indicator */
+    /* ─── TYPING INDICATOR ─── */
     .typing {
       display: flex;
-      gap: 4px;
-      padding: 12px 14px;
+      gap: 5px;
+      padding: 14px 18px;
       align-self: flex-start;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      border-bottom-left-radius: 5px;
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
       margin-left: 36px;
-      animation: msgIn 0.28s ease;
+      animation: msgIn 0.26s var(--ease-out);
     }
 
     .typing span {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       background: var(--muted);
       border-radius: 50%;
       animation: dotPulse 1.4s infinite ease-in-out;
     }
-
     .typing span:nth-child(2) { animation-delay: 0.2s; }
     .typing span:nth-child(3) { animation-delay: 0.4s; }
 
@@ -816,25 +878,32 @@
       40% { transform: scale(1); opacity: 1; }
     }
 
-    /* Mobile: true bottom sheet, slides up from the bottom rather than in
-       from the side, with a drag-handle affordance. */
+    /* ─── MOBILE ─── */
     @media (max-width: 480px) {
+      .fab {
+        bottom: 16px;
+        right: 16px;
+      }
+      .fab-inner { padding: 12px 16px; gap: 8px; }
+      .fab-text-top { font-size: 12px; }
+      .fab-text-bot { font-size: 14px; }
+
       .chat-panel {
         top: auto;
         bottom: 0;
         left: 0;
         right: 0;
         width: 100%;
-        height: 85vh;
-        max-height: 85vh;
-        border-left: none;
-        border-top-left-radius: 20px;
-        border-top-right-radius: 20px;
+        height: 88vh;
+        max-width: 100vw;
+        border-radius: 24px 24px 0 0;
         transform: translateY(100%);
-        box-shadow: 0 -14px 50px rgba(20, 24, 31, 0.18);
+        opacity: 1;
       }
 
-      .chat-panel.open { transform: translateY(0); }
+      .chat-panel.open {
+        transform: translateY(0);
+      }
 
       .chat-panel::before {
         content: '';
@@ -846,9 +915,12 @@
         height: 4px;
         border-radius: 2px;
         background: var(--border);
+        z-index: 1;
       }
 
-      .header { padding-top: 20px; }
+      .header { padding-top: 24px; }
+
+      .body { padding: 18px 18px; }
     }
   `;
 
@@ -867,41 +939,60 @@
     wrapper.innerHTML = `
     <button class="fab" id="midevela-fab">
       <div class="fab-pulse-ring"></div>
-      <svg viewBox="0 0 24 24">
-        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
-      </svg>
+      <span class="fab-inner">
+        <span class="fab-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+        </span>
+        <span class="fab-text">
+          <span class="fab-text-top">Need help shopping?</span>
+          <span class="fab-text-bot">Ask ${escapeHtml(aiName)}</span>
+        </span>
+      </span>
+      <span class="fab-close-icon">
+        <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29a1 1 0 11-1.42 1.42L12 13.41l-5.88 5.89a1 1 0 01-1.42-1.42L10.59 12 4.7 5.71a1 1 0 011.42-1.42L12 10.59l5.88-5.88a1 1 0 111.42 1.42z"/></svg>
+      </span>
     </button>
 
     <div class="backdrop" id="midevela-backdrop"></div>
 
     <div class="chat-panel" id="midevela-chat">
       <div class="header">
-        <div class="header-info">
-          <div class="header-avatar">${escapeHtml(avatarLetter)}</div>
-          <div>
-            <div class="header-title">${escapeHtml(aiName)}</div>
-            <div class="header-status">
-              <span class="header-status-dot"></span>
-              Online
+        <div class="header-top">
+          <div class="header-info">
+            <div class="header-avatar">${escapeHtml(avatarLetter)}</div>
+            <div>
+              <div class="header-name">${escapeHtml(aiName)}</div>
+              <div class="header-status">
+                <span class="header-status-dot"></span>
+                Online
+              </div>
             </div>
           </div>
+          <div class="header-actions">
+            <button class="header-btn close-btn" id="midevela-close" aria-label="Close">
+              <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29a1 1 0 11-1.42 1.42L12 13.41l-5.88 5.89a1 1 0 01-1.42-1.42L10.59 12 4.7 5.71a1 1 0 011.42-1.42L12 10.59l5.88-5.88a1 1 0 111.42 1.42z"/></svg>
+            </button>
+          </div>
         </div>
-        <button class="close-btn" id="midevela-close">✕</button>
+        <div class="header-divider"></div>
       </div>
 
       <div class="body" id="midevela-body"></div>
 
       <div class="input-area">
-        <input type="text" class="input-field" id="midevela-input" maxlength="2000" placeholder="Ask anything…">
-        <button class="send-btn" id="midevela-send">
-          <svg viewBox="0 0 24 24">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-          </svg>
-        </button>
+        <div class="input-wrap">
+          <input type="text" class="input-field" id="midevela-input" maxlength="2000" placeholder="Ask anything…" aria-label="Type your message">
+          <button class="input-placeholder-btn" aria-hidden="true" tabindex="-1">
+            <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+          </button>
+          <button class="input-send-btn" id="midevela-send" aria-label="Send message">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
       </div>
 
       <div class="footer-brand">
-        Powered by <a href="https://midvella.com" target="_blank">Midevela</a>
+        Powered by <a href="https://midvella.com" target="_blank" rel="noopener">Midevela</a>
       </div>
     </div>
   `;
