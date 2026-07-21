@@ -9,6 +9,8 @@ import { getUsageStatus, recordAiUsage } from "@/server/billing/usage";
 import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
 import type { ChatMessage } from "@/server/conversation/llm";
 import { tryAdaptiveDiscovery } from "@/server/widget/adaptiveDiscovery";
+import { classifyFollowUpIntent, handleFollowUp } from "@/server/widget/followUpHandler";
+import type { RecommendedProduct } from "@/server/widget/recommend";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
@@ -261,6 +263,57 @@ export async function POST(req: NextRequest) {
           ? (mergedContext.answers as Record<string, string>)
           : undefined,
     };
+
+    // ─── Follow-up classification: if the last AI message had recommendations,
+    // check whether the shopper is asking about them before running adaptive
+    // discovery or the LLM conversation turn. This follows the priority order:
+    //   1. Referring to previously recommended products
+    //   2. Asking to compare products
+    //   3. Asking for more details
+    //   4. Changing constraints (budget/category/brand)
+    //   5. Starting a new shopping request → adaptive discovery
+    //   6. Unrelated → normal chat
+    const lastAiMsg = priorMessages.length > 0 && priorMessages[0].role === "AI"
+      ? priorMessages[0]
+      : null;
+    const lastRecommendations: RecommendedProduct[] = lastAiMsg?.recommendations
+      ? (lastAiMsg.recommendations as unknown as RecommendedProduct[])
+      : [];
+
+    if (lastRecommendations.length > 0) {
+      const followUp = await classifyFollowUpIntent(messageText, lastRecommendations);
+
+      if (followUp && followUp.type !== "new_search" && followUp.type !== "unrelated") {
+        const followUpResult = await handleFollowUp(
+          org.id,
+          followUp,
+          lastRecommendations,
+          shoppingContext,
+        );
+
+        if (followUpResult) {
+          await prisma.message.create({
+            data: {
+              conversationId: conversation.id,
+              role: "AI",
+              content: followUpResult.replyText,
+              intent: followUp.type === "compare" ? "comparison" : "discovery",
+              recommendations: followUpResult.recommendations as unknown as Prisma.InputJsonValue,
+            },
+          });
+
+          return NextResponse.json(
+            {
+              replyText: followUpResult.replyText,
+              intent: followUp.type === "compare" ? "comparison" : "discovery",
+              recommendations: followUpResult.recommendations,
+              isNewConversation,
+            },
+            { headers }
+          );
+        }
+      }
+    }
 
     // ─── Adaptive discovery: extract shopping requirements from free-form
     // messages and call the deterministic product engine directly. When it
