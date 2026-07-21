@@ -1122,10 +1122,17 @@
       display: flex;
       gap: 16px;
       margin-bottom: 24px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
     }
+    .compare-products-row::-webkit-scrollbar { display: none; }
 
     .compare-product-col {
       flex: 1;
+      min-width: 220px;
+      scroll-snap-align: start;
       display: flex;
       flex-direction: column;
       align-items: center;
