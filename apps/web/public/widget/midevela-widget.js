@@ -514,15 +514,16 @@
     /* ─── MESSAGES ─── */
     .msg-row {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       max-width: 88%;
-      animation: msgIn 0.26s var(--ease-out);
+      animation: msgIn 0.3s var(--ease-out);
+      margin-bottom: 12px;
     }
     .msg-row.ai { align-self: flex-start; }
     .msg-row.customer { align-self: flex-end; }
 
     @keyframes msgIn {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -530,56 +531,66 @@
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: var(--primary);
-      color: var(--on-primary);
+      background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 70%, #000) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 12px;
+      font-size: 15px;
       flex-shrink: 0;
-      align-self: flex-end;
+      align-self: flex-start;
+      margin-top: 2px;
     }
 
-    .msg-col { display: flex; flex-direction: column; min-width: 0; max-width: 100%; }
+    .msg-col { display: flex; flex-direction: column; min-width: 0; max-width: 100%; gap: 2px; }
     .customer .msg-col { align-items: flex-end; }
 
+    .msg-sender {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
     .msg-bubble {
-      padding: 12px 16px;
-      border-radius: 18px;
       font-size: 14px;
-      line-height: 1.55;
+      line-height: 1.65;
       color: var(--text);
       word-wrap: break-word;
       overflow-wrap: anywhere;
     }
 
+    .ai .msg-bubble {
+      background: transparent;
+      color: var(--text);
+      padding: 2px 0;
+      white-space: pre-wrap;
+    }
+
     .customer .msg-bubble {
       background: var(--primary);
       color: var(--on-primary);
+      border-radius: 18px;
       border-bottom-right-radius: 4px;
-    }
-
-    .ai .msg-bubble {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-bottom-left-radius: 4px;
-      box-shadow: var(--shadow-sm);
+      padding: 10px 16px;
     }
 
     .msg-time {
       font-size: 11px;
       color: var(--muted);
-      margin-top: 5px;
+      margin-top: 4px;
+      opacity: 0.7;
     }
+    .customer .msg-time { text-align: right; }
 
-    /* ─── CHIPS ─── */
+    /* ─── CHIPS (after message chip suggestions) ─── */
     .chips {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      padding: 2px 0 2px 36px;
-      animation: msgIn 0.26s var(--ease-out);
+      padding-left: 38px;
+      margin-top: -6px;
+      margin-bottom: 18px;
+      animation: msgIn 0.3s var(--ease-out);
     }
 
     .chip {
@@ -1073,29 +1084,105 @@
       max-width: 280px;
     }
 
+    /* ─── MEMORY STRIP ─── */
+    .memory-strip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      animation: msgIn 0.3s var(--ease-out);
+      flex-shrink: 0;
+    }
+
+    .memory-header {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .memory-items {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .memory-item {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .memory-item-empty {
+      font-size: 12px;
+      color: var(--muted);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .memory-edit {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 0 0;
+      font-family: var(--font);
+      transition: opacity 0.18s;
+    }
+    .memory-edit:hover { opacity: 0.75; text-decoration: underline; }
+
     /* ─── TYPING INDICATOR ─── */
     .typing {
       display: flex;
-      gap: 5px;
-      padding: 14px 18px;
+      gap: 10px;
       align-self: flex-start;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      border-bottom-left-radius: 4px;
-      margin-left: 36px;
       animation: msgIn 0.26s var(--ease-out);
+      margin-bottom: 12px;
     }
 
-    .typing span {
-      width: 8px;
-      height: 8px;
+    .typing-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 70%, #000) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .typing-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .typing-text {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      padding: 2px 0;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
       background: var(--muted);
       border-radius: 50%;
       animation: dotPulse 1.4s infinite ease-in-out;
     }
-    .typing span:nth-child(2) { animation-delay: 0.2s; }
-    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
     @keyframes dotPulse {
       0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; }
@@ -1267,43 +1354,284 @@
     }
 
     function appendAiBubble(text, extraHTML) {
-      const row = document.createElement('div');
+      var row = document.createElement('div');
       row.className = 'msg-row ai';
-      row.innerHTML = `
-        <div class="msg-avatar">${escapeHtml(avatarLetter)}</div>
-        <div class="msg-col">
-          <div class="msg-bubble">${escapeHtml(text)}</div>
-          ${extraHTML || ''}
-          <span class="msg-time">${nowTime()}</span>
-        </div>
-      `;
+      var avatar = document.createElement('div');
+      avatar.className = 'msg-avatar';
+      avatar.textContent = '\u{1F33F}';
+      var col = document.createElement('div');
+      col.className = 'msg-col';
+      var sender = document.createElement('div');
+      sender.className = 'msg-sender';
+      sender.textContent = aiName;
+      col.appendChild(sender);
+      var bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      bubble.textContent = text;
+      col.appendChild(bubble);
+      if (extraHTML) {
+        var extra = document.createElement('div');
+        extra.innerHTML = extraHTML;
+        col.appendChild(extra);
+      }
+      var time = document.createElement('span');
+      time.className = 'msg-time';
+      time.textContent = nowTime();
+      col.appendChild(time);
+      row.appendChild(avatar);
+      row.appendChild(col);
       body.appendChild(row);
       return row;
     }
 
     function appendCustomerBubble(text) {
-      const row = document.createElement('div');
+      var row = document.createElement('div');
       row.className = 'msg-row customer';
-      row.innerHTML = `
-        <div class="msg-col">
-          <div class="msg-bubble">${escapeHtml(text)}</div>
-          <span class="msg-time">${nowTime()}</span>
-        </div>
-      `;
+      var col = document.createElement('div');
+      col.className = 'msg-col';
+      var bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      bubble.textContent = text;
+      col.appendChild(bubble);
+      var time = document.createElement('span');
+      time.className = 'msg-time';
+      time.textContent = nowTime();
+      col.appendChild(time);
+      row.appendChild(col);
       body.appendChild(row);
     }
 
-    function appendTyping() {
-      const el = document.createElement('div');
+    function appendTyping(contextText) {
+      removeTyping();
+      var el = document.createElement('div');
       el.id = 'midevela-typing';
       el.className = 'typing';
-      el.innerHTML = '<span></span><span></span><span></span>';
+      el.innerHTML =
+        '<div class="typing-avatar">\u{1F33F}</div>' +
+        '<div class="typing-content">' +
+          '<span class="typing-text">' + escapeHtml(contextText || aiName + ' is thinking\u2026') + '</span>' +
+          '<span class="typing-dots">' +
+            '<span class="typing-dot"></span>' +
+            '<span class="typing-dot"></span>' +
+            '<span class="typing-dot"></span>' +
+          '</span>' +
+        '</div>';
       body.appendChild(el);
     }
 
     function removeTyping() {
-      const el = shadow.getElementById('midevela-typing');
+      var el = shadow.getElementById('midevela-typing');
       if (el) el.remove();
+    }
+
+    // ─── AI Memory Strip ───
+    // Displays what the assistant knows about the customer, auto-updates
+    // as new information is collected.
+    var memoryStripEl = null;
+    function renderMemoryStrip() {
+      removeMemoryStrip();
+      var strip = document.createElement('div');
+      strip.id = 'midevela-memory';
+      strip.className = 'memory-strip';
+      strip.innerHTML = '<div class="memory-header">\u{1F9E0} Here\'s what I know</div><div class="memory-items" id="midevela-memory-items"></div>';
+      var container = strip.querySelector('#midevela-memory-items');
+      renderMemoryItems(container);
+      var editBtn = document.createElement('button');
+      editBtn.className = 'memory-edit';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', function () {
+        funnel.answers = {};
+        funnel.categoryId = null;
+        funnel.categoryName = null;
+        persistFunnel();
+        renderWelcome();
+        trackEvent('memory_edit_clicked', {});
+      });
+      strip.appendChild(editBtn);
+      body.insertBefore(strip, body.firstChild);
+      memoryStripEl = strip;
+    }
+
+    function removeMemoryStrip() {
+      var el = shadow.getElementById('midevela-memory');
+      if (el) {
+        el.remove();
+        memoryStripEl = null;
+      }
+    }
+
+    function updateMemoryStrip() {
+      if (!memoryStripEl) return;
+      var container = shadow.getElementById('midevela-memory-items');
+      if (container) renderMemoryItems(container);
+    }
+
+    function renderMemoryItems(container) {
+      var items = [];
+      if (funnel.categoryName) items.push('Looking for ' + funnel.categoryName);
+      var knownLabels = {
+        budget: 'Budget',
+        brand: 'Preferred brand',
+        skinType: 'Skin type',
+        hairType: 'Hair type',
+        concern: 'Concern',
+        size: 'Size preference',
+      };
+      Object.keys(funnel.answers).forEach(function (k) {
+        var label = knownLabels[k] || k;
+        var val = funnel.answers[k];
+        var display = typeof val === 'string' ? val.replace(/-/g, ' ') : val;
+        // Convert slug-like values to readable text
+        display = display.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        items.push(label + ': ' + display);
+      });
+      if (items.length === 0) {
+        container.innerHTML = '<div class="memory-item-empty">No details yet — tell me what you\'re looking for!</div>';
+        return;
+      }
+      container.innerHTML = items.map(function (item) {
+        return '<div class="memory-item">\u2713 ' + escapeHtml(item) + '</div>';
+      }).join('');
+    }
+
+    // ─── Context-aware Suggestion Chips ───
+    function renderSuggestionChips(chips) {
+      var wrap = document.createElement('div');
+      wrap.className = 'chips';
+      chips.forEach(function (chip) {
+        var el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'chip';
+        el.textContent = (chip.icon || '') + (chip.icon ? ' ' : '') + chip.label;
+        el.addEventListener('click', function () { chip.action(); });
+        wrap.appendChild(el);
+      });
+      body.appendChild(wrap);
+      scrollToBottom();
+      return wrap;
+    }
+
+    // ─── Conversation State ───
+    // Different loading text depending on what the AI is doing
+    var stateTexts = {
+      thinking: '{name} is thinking\u2026',
+      searching: 'Searching products\u2026',
+      comparing: 'Comparing products\u2026',
+      answering: 'Looking through our knowledge base\u2026',
+      recommending: 'Putting together the best options\u2026',
+    };
+
+    function showState(stateKey) {
+      var text = stateTexts[stateKey] || stateTexts.thinking;
+      appendTyping(text.replace('{name}', aiName));
+      scrollToBottom();
+    }
+
+    // ─── Natural Response Helpers ───
+    // Conversational text templates that replace robotic prompts
+    function naturalGreeting() {
+      return 'Hi there! I\u2019m ' + aiName + ', your AI shopping assistant. I can help you find the perfect products, answer questions about our store, and make your shopping experience easy.';
+    }
+
+    function naturalAskCategory() {
+      return 'What type of product are you looking for today?';
+    }
+
+    function naturalAcknowledgeCategory(catName) {
+      return 'Great choice! Let\u2019s find the best ' + catName.toLowerCase() + ' for you.';
+    }
+
+    function naturalAskBudget() {
+      return 'What\u2019s your budget? That helps me avoid recommending products outside your price range.';
+    }
+
+    function naturalAskBrand() {
+      return 'Do you have a preferred brand? If not, I\u2019ll show you the best options available.';
+    }
+
+    function naturalAskSkinType() {
+      return 'What\u2019s your skin type? This helps me recommend products that will work best for you.';
+    }
+
+    function naturalAskHairType() {
+      return 'What\u2019s your hair type? This helps me find the right match.';
+    }
+
+    function naturalNoProducts() {
+      return 'I couldn\u2019t find an exact match for that just yet. Let\u2019s try a different approach \u2014 what else can I help with?';
+    }
+
+    function naturalRecommendationIntro() {
+      var items = [];
+      if (funnel.categoryName) items.push('fit your interest in ' + funnel.categoryName.toLowerCase());
+      if (funnel.answers.budget) items.push('fit your budget');
+      if (funnel.answers.brand) items.push('match ' + funnel.answers.brand);
+      if (funnel.answers.skinType) items.push('suit ' + funnel.answers.skinType.replace(/_/g, ' ') + ' skin');
+      if (items.length === 0) {
+        return 'Based on what you\u2019ve told me, here are the products I\u2019d recommend:';
+      }
+      return 'Based on what you\u2019ve told me, these are the products I\u2019d recommend. I chose them because they ' + items.join(', ') + ':';
+    }
+
+    function naturalComparison() {
+      return 'Here\u2019s how they compare:';
+    }
+
+    function naturalFollowUp() {
+      return 'Would you like to compare them, see cheaper options, learn more about a product, or ask something else?';
+    }
+
+    function naturalWelcomeBack(catName) {
+      return 'Welcome back! You were exploring ' + catName + ' last time. Would you like to continue where you left off?';
+    }
+
+    function naturalResumeQualification(catName) {
+      return 'Picking back up on ' + catName + ' \u2014 let\u2019s continue finding the perfect product for you.';
+    }
+
+    // Follow-up chips shown after recommendations
+    function recommendationFollowUpChips() {
+      return [
+        { icon: '\u{1F50D}', label: 'Compare them', action: function () {
+          // Trigger compare mode by selecting first two products
+          if (funnel.lastRecommendations && funnel.lastRecommendations.length >= 2) {
+            funnel.compareSelection = [funnel.lastRecommendations[0].id, funnel.lastRecommendations[1].id];
+            renderRecommendations(funnel.lastRecommendations);
+            runCompare();
+          }
+        } },
+        { icon: '\u{1F4B0}', label: 'Cheaper options', action: function () {
+          sendMessage('show me cheaper options');
+        } },
+        { icon: '\u{1F4D6}', label: 'Learn more', action: function () {
+          if (funnel.lastRecommendations && funnel.lastRecommendations.length > 0) {
+            sendMessage('tell me more about ' + funnel.lastRecommendations[0].name);
+          }
+        } },
+        { icon: '\u{1F4AC}', label: 'Ask something else', action: function () {
+          funnel.view = 'conversation';
+          persistFunnel();
+          clearBody();
+          renderEmptyConversation();
+          input.focus();
+        } },
+      ];
+    }
+
+    // After any business/support answer, offer to return to shopping
+    function businessFollowUpChips() {
+      return [
+        { icon: '\u{1F6CD}', label: 'Continue shopping', action: function () {
+          if (funnel.categoryId) {
+            selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
+          } else {
+            renderWelcome();
+          }
+        } },
+        { icon: '\u{1F4AC}', label: 'Ask another question', action: function () {
+          input.focus();
+        } },
+      ];
     }
 
     function renderRecoCard(r, source) {
@@ -1365,7 +1693,7 @@
 
     // ─── Compare ───
     function toggleCompareSelection(productId) {
-      const idx = funnel.compareSelection.indexOf(productId);
+      var idx = funnel.compareSelection.indexOf(productId);
       if (idx !== -1) {
         funnel.compareSelection.splice(idx, 1);
       } else {
@@ -1373,38 +1701,61 @@
         funnel.compareSelection.push(productId);
       }
       renderRecommendations(funnel.lastRecommendations || []);
+      // Remove follow-up chips to avoid stale suggestions
+      // (renderRecommendations will re-add them)
       if (funnel.compareSelection.length === 2) runCompare();
     }
 
     function runCompare() {
-      appendTyping();
+      showState('comparing');
       scrollToBottom();
       fetch(compareApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ widgetKey, productIds: funnel.compareSelection }),
       })
-        .then((res) => res.json())
-        .then((data) => {
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
           removeTyping();
           if (!data || !Array.isArray(data.rows)) {
-            appendAiBubble("I couldn't compare those two right now — please try again.");
+            appendAiBubble("I couldn\u2019t compare those two right now \u2014 please try again.");
             return;
           }
-          const table = document.createElement('table');
+          var table = document.createElement('table');
           table.className = 'compare-table';
-          const header = `<tr><th></th>${data.products.map((p) => `<th>${escapeHtml(p.name)}</th>`).join('')}</tr>`;
-          const rows = data.rows
-            .map((r) => `<tr><td>${escapeHtml(r.label)}</td>${r.values.map((v) => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`)
+          var header = '<tr><th></th>' + data.products.map(function (p) { return '<th>' + escapeHtml(p.name) + '</th>'; }).join('') + '</tr>';
+          var rows = data.rows
+            .map(function (r) { return '<tr><td>' + escapeHtml(r.label) + '</td>' + r.values.map(function (v) { return '<td>' + escapeHtml(v) + '</td>'; }).join('') + '</tr>'; })
             .join('');
           table.innerHTML = header + rows;
-          appendAiBubble(data.recommendation || 'Here\'s how they compare:', table.outerHTML);
+          appendAiBubble(data.recommendation || naturalComparison());
+          body.appendChild(table);
+          // Follow-up chips after comparison
+          renderSuggestionChips([
+            { icon: '\u{2705}', label: 'Pick one', action: function () {
+              if (funnel.compareSelection.length > 0) {
+                var picked = funnel.compareSelection[0];
+                trackEvent('comparison_pick', { productId: picked });
+                funnel.compareSelection = [];
+                if (funnel.lastRecommendations) {
+                  renderRecommendations(funnel.lastRecommendations);
+                }
+              }
+            } },
+            { icon: '\u{1F4AC}', label: 'Ask something else', action: function () {
+              funnel.view = 'conversation';
+              persistFunnel();
+              clearBody();
+              renderEmptyConversation();
+              input.focus();
+            } },
+          ]);
           trackEvent('comparison_viewed', { productIds: funnel.compareSelection });
           scrollToBottom();
         })
-        .catch(() => {
+        .catch(function () {
           removeTyping();
-          appendAiBubble("I couldn't compare those two right now — please try again.");
+          appendAiBubble("I couldn\u2019t compare those two right now \u2014 please try again.");
         });
     }
 
@@ -1414,48 +1765,60 @@
     // identical in both, just preceded by a different greeting.
     function renderCategoryGridAndChips() {
       if (config.categories.length > 0) {
-        const label = document.createElement('div');
-        label.className = 'msg-row ai';
-        label.innerHTML = `<div class="msg-avatar" style="visibility:hidden"></div><div class="msg-col"><div class="msg-bubble">What are you shopping for today?</div></div>`;
-        body.appendChild(label);
+        var row = document.createElement('div');
+        row.className = 'msg-row ai';
+        var avatar = document.createElement('div');
+        avatar.className = 'msg-avatar';
+        avatar.textContent = '\u{1F33F}';
+        var col = document.createElement('div');
+        col.className = 'msg-col';
+        var sender = document.createElement('div');
+        sender.className = 'msg-sender';
+        sender.textContent = aiName;
+        col.appendChild(sender);
+        var bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+        bubble.textContent = naturalAskCategory();
+        col.appendChild(bubble);
+        row.appendChild(avatar);
+        row.appendChild(col);
+        body.appendChild(row);
 
-        const grid = document.createElement('div');
+        var grid = document.createElement('div');
         grid.className = 'cat-grid';
-        config.categories.forEach((cat) => {
-          const tile = document.createElement('button');
+        config.categories.forEach(function (cat) {
+          var tile = document.createElement('button');
           tile.type = 'button';
           tile.className = 'cat-tile';
-          const catImage = isHttpUrl(cat.image) ? cat.image : '';
-          tile.innerHTML = `
-            <div class="cat-tile-icon">${catImage ? `<img src="${escapeHtml(catImage)}" alt="">` : escapeHtml(cat.icon || '📦')}</div>
-            <span class="cat-tile-name">${escapeHtml(cat.name)}</span>
-          `;
+          var catImage = isHttpUrl(cat.image) ? cat.image : '';
+          tile.innerHTML =
+            '<div class="cat-tile-icon">' + (catImage ? '<img src="' + escapeHtml(catImage) + '" alt="">' : escapeHtml(cat.icon || '\u{1F4E6}')) + '</div>' +
+            '<span class="cat-tile-name">' + escapeHtml(cat.name) + '</span>';
           if (catImage) {
-            const img = tile.querySelector('.cat-tile-icon img');
-            if (img) {
-              img.addEventListener('error', () => {
-                const iconEl = tile.querySelector('.cat-tile-icon');
-                if (iconEl) iconEl.textContent = cat.icon || '📦';
+            (function (imgEl) {
+              imgEl.addEventListener('error', function () {
+                var iconEl = tile.querySelector('.cat-tile-icon');
+                if (iconEl) iconEl.textContent = cat.icon || '\u{1F4E6}';
               }, { once: true });
-            }
+            })(tile.querySelector('.cat-tile-icon img'));
           }
-          tile.addEventListener('click', () => selectCategory(cat));
+          tile.addEventListener('click', function () { selectCategory(cat); });
           grid.appendChild(tile);
         });
         body.appendChild(grid);
       }
 
-      const chipsWrap = document.createElement('div');
+      var chipsWrap = document.createElement('div');
       chipsWrap.className = 'chips';
-      const askChip = document.createElement('button');
+      var askChip = document.createElement('button');
       askChip.type = 'button';
       askChip.className = 'chip';
-      askChip.textContent = '💬 Ask anything';
-      askChip.addEventListener('click', () => {
+      askChip.textContent = '\u{1F4AC} Ask anything';
+      askChip.addEventListener('click', function () {
         funnel.view = 'conversation';
         persistFunnel();
         clearBody();
-        appendAiBubble("Sure — what would you like to know?");
+        renderEmptyConversation();
         input.focus();
       });
       chipsWrap.appendChild(askChip);
@@ -1493,29 +1856,29 @@
       // Action cards
       var actions = [
         {
-          icon: '🛍',
+          icon: '\u{1F6CD}',
           title: 'Start Shopping',
           desc: 'Find products with AI recommendations',
           fn: function () {
             clearBody();
-            appendAiBubble(greeting);
+            appendAiBubble(naturalGreeting());
             renderCategoryGridAndChips();
             scrollToBottom();
           },
         },
         {
-          icon: '📂',
+          icon: '\u{1F4C2}',
           title: 'Browse Categories',
           desc: 'Explore everything we offer',
           fn: function () {
             clearBody();
-            appendAiBubble(greeting);
+            appendAiBubble(naturalGreeting());
             renderCategoryGridAndChips();
             scrollToBottom();
           },
         },
         {
-          icon: '💬',
+          icon: '\u{1F4AC}',
           title: 'Ask a Question',
           desc: 'Shipping, returns, delivery and more',
           fn: function () {
@@ -1622,7 +1985,7 @@
           desc: 'Explore everything we offer',
           fn: function () {
             clearBody();
-            appendAiBubble(greeting);
+            appendAiBubble(naturalGreeting());
             renderCategoryGridAndChips();
             scrollToBottom();
           },
@@ -1683,21 +2046,24 @@
       funnel.answers = {};
       trackEvent('category_selected', { categoryId: cat.id, categoryName: cat.name });
       appendCustomerBubble(cat.name);
+      // Show acknowledgment and render memory strip
+      appendAiBubble(naturalAcknowledgeCategory(cat.name));
+      updateMemoryStrip();
       fetchQualificationStep();
     }
 
     function fetchQualificationStep() {
       funnel.view = 'qualification';
       persistFunnel();
-      appendTyping();
+      showState('thinking');
       scrollToBottom();
       fetch(qualificationApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ widgetKey, categoryId: funnel.categoryId, answers: funnel.answers }),
       })
-        .then((res) => res.json())
-        .then((data) => {
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
           removeTyping();
           if (data && data.done) {
             fetchRecommendations();
@@ -1709,24 +2075,31 @@
             fetchRecommendations();
           }
         })
-        .catch(() => {
+        .catch(function () {
           removeTyping();
-          // Config walk failed — degrade straight to recommendations rather
-          // than dead-end the funnel.
           fetchRecommendations();
         });
     }
 
     function renderQualificationStep(step) {
-      appendAiBubble(step.question);
-      const chipsWrap = document.createElement('div');
+      renderMemoryStrip();
+      // Use natural response templates for known question keys
+      var questionMap = {
+        budget: naturalAskBudget,
+        brand: naturalAskBrand,
+        skinType: naturalAskSkinType,
+        hairType: naturalAskHairType,
+      };
+      var questionText = (questionMap[step.key] ? questionMap[step.key]() : step.question);
+      appendAiBubble(questionText);
+      var chipsWrap = document.createElement('div');
       chipsWrap.className = 'chips';
-      (step.options || []).forEach((opt) => {
-        const chip = document.createElement('button');
+      (step.options || []).forEach(function (opt) {
+        var chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'chip';
         chip.textContent = (opt.icon ? opt.icon + ' ' : '') + opt.label;
-        chip.addEventListener('click', () => answerQualificationStep(step, opt, chipsWrap));
+        chip.addEventListener('click', function () { answerQualificationStep(step, opt, chipsWrap); });
         chipsWrap.appendChild(chip);
       });
       body.appendChild(chipsWrap);
@@ -1734,39 +2107,52 @@
     }
 
     function answerQualificationStep(step, opt, chipsWrap) {
-      Array.prototype.forEach.call(chipsWrap.querySelectorAll('.chip'), (c) => (c.disabled = true));
+      Array.prototype.forEach.call(chipsWrap.querySelectorAll('.chip'), function (c) { c.disabled = true; });
       funnel.answers[step.key] = opt.value;
       persistFunnel();
       trackEvent('qualification_answered', { step: step.key, value: opt.value });
       if (step.key === 'budget') trackEvent('budget_selected', { value: opt.value });
       appendCustomerBubble(opt.label);
+      updateMemoryStrip();
       fetchQualificationStep();
     }
 
     function fetchRecommendations() {
-      appendTyping();
+      showState('recommending');
       scrollToBottom();
       fetch(recommendApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ widgetKey, categoryId: funnel.categoryId, answers: funnel.answers }),
       })
-        .then((res) => res.json())
-        .then((data) => {
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
           removeTyping();
-          const products = Array.isArray(data && data.products) ? data.products : [];
+          var products = Array.isArray(data && data.products) ? data.products : [];
           funnel.lastRecommendations = products;
           if (products.length === 0) {
-            appendAiBubble("I couldn't find a match for that just yet — ask me anything and I'll help directly.");
+            appendAiBubble(naturalNoProducts());
             funnel.view = 'conversation';
             persistFunnel();
+            renderSuggestionChips([
+              { icon: '\u{1F504}', label: 'Try different budget', action: function () {
+                sendMessage('show me options with a different budget');
+              } },
+              { icon: '\u{1F4AC}', label: 'Ask something else', action: function () {
+                funnel.view = 'conversation';
+                persistFunnel();
+                clearBody();
+                renderEmptyConversation();
+                input.focus();
+              } },
+            ]);
             return;
           }
           renderRecommendations(products);
         })
-        .catch(() => {
+        .catch(function () {
           removeTyping();
-          appendAiBubble("I couldn't load recommendations right now — ask me anything and I'll help directly.");
+          appendAiBubble("I couldn\u2019t load recommendations right now \u2014 ask me anything and I\u2019ll help directly.");
           funnel.view = 'conversation';
           persistFunnel();
         });
@@ -1777,24 +2163,30 @@
       funnel.lastRecommendations = products;
       persistFunnel();
 
-      // Replace any prior recommendation block (re-render on compare toggle)
-      const prior = shadow.getElementById('midevela-reco-block');
+      var prior = shadow.getElementById('midevela-reco-block');
       if (prior) prior.remove();
 
-      const block = document.createElement('div');
+      // Natural intro text explaining why these products were chosen
+      appendAiBubble(naturalRecommendationIntro());
+
+      var block = document.createElement('div');
       block.id = 'midevela-reco-block';
       block.appendChild(renderRecoContainer(products, 'funnel'));
       body.appendChild(block);
-      trackEvent('recommendation_shown', { productIds: products.map((p) => p.id) });
+
+      // Follow-up suggestions
+      renderSuggestionChips(recommendationFollowUpChips());
+
+      trackEvent('recommendation_shown', { productIds: products.map(function (p) { return p.id; }) });
       scrollToBottom();
     }
 
     // ─── Free-form conversation (typed messages bypass the funnel anytime) ───
     function sendMessage(raw) {
-      const text = String(raw || '').trim();
+      var text = String(raw || '').trim();
       if (!text) return;
 
-      const isFirstMessage = !funnel.conversationStarted;
+      var isFirstMessage = !funnel.conversationStarted;
       funnel.conversationStarted = true;
       funnel.view = 'conversation';
       persistFunnel();
@@ -1803,10 +2195,18 @@
 
       appendCustomerBubble(text);
       scrollToBottom();
-      appendTyping();
+
+      // Detect intent for appropriate state text
+      var stateKey = 'thinking';
+      var lower = text.toLowerCase();
+      if (lower.indexOf('compar') !== -1 || lower.indexOf('vs ') !== -1) stateKey = 'comparing';
+      else if (lower.indexOf('cheap') !== -1 || lower.indexOf('affordable') !== -1 || lower.indexOf('budget') !== -1) stateKey = 'searching';
+      else if (lower.indexOf('shipping') !== -1 || lower.indexOf('return') !== -1 || lower.indexOf('delivery') !== -1 || lower.indexOf('contact') !== -1) stateKey = 'answering';
+      else if (lower.indexOf('recommend') !== -1 || lower.indexOf('suggest') !== -1 || lower.indexOf('best') !== -1) stateKey = 'searching';
+      showState(stateKey);
       scrollToBottom();
 
-      const contextPatch = isFirstMessage
+      var contextPatch = isFirstMessage
         ? {
             categoryId: funnel.categoryId,
             categoryName: funnel.categoryName,
@@ -1821,63 +2221,67 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ widgetKey, customerId, messageText: text, context: contextPatch }),
       })
-        .then((res) => {
+        .then(function (res) {
           if (!res.ok) throw new Error('Widget API request failed with status ' + res.status);
           return res.json();
         })
-        .then((data) => {
+        .then(function (data) {
           removeTyping();
           handleAIResponse(data);
         })
-        .catch((err) => {
+        .catch(function (err) {
           console.error('Midevela widget error:', err);
           removeTyping();
-          appendAiBubble("Sorry, I'm having trouble connecting right now. Please try again in a moment.");
+          appendAiBubble("Sorry, I\u2019m having trouble connecting right now. Please try again in a moment.");
         });
     }
 
     function handleAIResponse(data) {
-      // Server is the source of truth on the conversation/visit boundary —
-      // if it just started a fresh conversation (this pageview's own
-      // boot-time guess can be stale, e.g. an open tab left idle across the
-      // window), resync local state so the NEXT boot doesn't resurrect it.
       if (data && data.isNewConversation) {
         resetVisitLocalState();
       }
 
-      const replyText = (data && data.replyText) || "Sorry, I didn't quite catch that. Could you rephrase?";
-      const recommendations = Array.isArray(data && data.recommendations) ? data.recommendations : [];
+      var replyText = (data && data.replyText) || "Sorry, I didn\u2019t quite catch that. Could you rephrase?";
+      var recommendations = Array.isArray(data && data.recommendations) ? data.recommendations : [];
 
-      // Built as real DOM nodes (not an HTML string) so the recommendation
-      // cards' click listeners (checkout/compare/view tracking) survive —
-      // serializing to outerHTML and reparsing would silently drop them.
-      const row = document.createElement('div');
-      row.className = 'msg-row ai';
-
-      const avatar = document.createElement('div');
-      avatar.className = 'msg-avatar';
-      avatar.textContent = avatarLetter;
-
-      const col = document.createElement('div');
-      col.className = 'msg-col';
-
-      const bubble = document.createElement('div');
-      bubble.className = 'msg-bubble';
-      bubble.textContent = replyText;
-      col.appendChild(bubble);
-
-      if (recommendations.length > 0) {
-        col.appendChild(renderRecoContainer(recommendations, 'chat'));
+      // Update memory strip if we have context
+      if (data && data.contextSnapshot) {
+        if (data.contextSnapshot.categoryName) funnel.categoryName = data.contextSnapshot.categoryName;
+        if (data.contextSnapshot.answers) funnel.answers = data.contextSnapshot.answers;
+        if (data.contextSnapshot.categoryId) funnel.categoryId = data.contextSnapshot.categoryId;
+        persistFunnel();
       }
 
-      const time = document.createElement('span');
-      time.className = 'msg-time';
-      time.textContent = nowTime();
-      col.appendChild(time);
+      // Render AI message with new format
+      if (recommendations.length > 0) {
+        // Show recommendations with natural intro
+        appendAiBubble(naturalRecommendationIntro());
+        var container = renderRecoContainer(recommendations, 'chat');
+        var block = document.createElement('div');
+        block.id = 'midevela-reco-block';
+        block.appendChild(container);
+        body.appendChild(block);
+        renderSuggestionChips(recommendationFollowUpChips());
+        funnel.lastRecommendations = recommendations;
+      } else {
+        appendAiBubble(replyText);
+        // Intelligent follow-up chips based on conversation content
+        var lowerReply = replyText.toLowerCase();
+        var chips = [];
+        // Check if reply contains business/support info
+        if (lowerReply.indexOf('shipping') !== -1 || lowerReply.indexOf('return') !== -1 ||
+            lowerReply.indexOf('hour') !== -1 || lowerReply.indexOf('payment') !== -1 ||
+            lowerReply.indexOf('contact') !== -1) {
+          chips = businessFollowUpChips();
+        } else if (lowerReply.indexOf('product') !== -1 || lowerReply.indexOf('recommend') !== -1) {
+          chips = recommendationFollowUpChips();
+        }
+        if (chips.length > 0) {
+          renderSuggestionChips(chips);
+        }
+      }
 
-      row.appendChild(avatar);
-      row.appendChild(col);
-      body.appendChild(row);
+      updateMemoryStrip();
       scrollToBottom();
     }
 
@@ -1917,21 +2321,18 @@
       funnel.answers = saved.answers || {};
       funnel.view = 'conversation';
       clearBody();
-      appendAiBubble(
-        saved.categoryName
-          ? `Welcome back! Continuing from ${saved.categoryName} — ask me anything.`
-          : "Welcome back! What else can I help you find?"
-      );
-      // Note: the message transcript itself isn't replayed on a fresh page
-      // load (no message-history endpoint in v1) — but the category/budget/
-      // brand context IS remembered, both here and server-side on the
-      // Conversation, so the shopper never has to re-answer qualification.
+      var welcomeBackText = saved.categoryName
+        ? naturalWelcomeBack(saved.categoryName)
+        : "Welcome back! What else can I help you find?";
+      appendAiBubble(welcomeBackText);
+      renderMemoryStrip();
     } else if (saved && saved.categoryId && saved.view === 'qualification') {
       funnel.categoryId = saved.categoryId;
       funnel.categoryName = saved.categoryName;
       funnel.answers = saved.answers || {};
       clearBody();
-      appendAiBubble(`Picking back up on ${saved.categoryName}…`);
+      appendAiBubble(naturalResumeQualification(saved.categoryName));
+      renderMemoryStrip();
       fetchQualificationStep();
     } else if (config.lastCategory) {
       renderWelcomeBack(config.lastCategory);
@@ -1960,7 +2361,6 @@
       .then(function (data) {
         if (!data || !Array.isArray(data.messages) || data.messages.length === 0) return;
 
-        // Replace the boot-time body with the historical transcript
         clearBody();
 
         data.messages.forEach(function (msg) {
@@ -1971,9 +2371,13 @@
             row.className = 'msg-row ai';
             var avatar = document.createElement('div');
             avatar.className = 'msg-avatar';
-            avatar.textContent = avatarLetter;
+            avatar.textContent = '\u{1F33F}';
             var col = document.createElement('div');
             col.className = 'msg-col';
+            var sender = document.createElement('div');
+            sender.className = 'msg-sender';
+            sender.textContent = aiName;
+            col.appendChild(sender);
             var bubble = document.createElement('div');
             bubble.className = 'msg-bubble';
             bubble.textContent = msg.content;
@@ -1990,6 +2394,14 @@
             body.appendChild(row);
           }
         });
+
+        // Restore memory from conversation data
+        if (data.categoryName || data.answers) {
+          if (data.categoryName) funnel.categoryName = data.categoryName;
+          if (data.answers) funnel.answers = data.answers;
+          persistFunnel();
+          renderMemoryStrip();
+        }
 
         funnel.conversationStarted = true;
         funnel.view = 'conversation';
