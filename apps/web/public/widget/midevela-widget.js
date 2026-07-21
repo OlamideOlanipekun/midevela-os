@@ -673,103 +673,737 @@
     /* ─── RECOMMENDATION CARDS ─── */
     .reco-container {
       display: flex;
-      gap: 12px;
+      gap: 16px;
       overflow-x: auto;
-      padding: 10px 0;
+      padding: 12px 0 16px;
       width: 100%;
       scrollbar-width: none;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
     }
     .reco-container::-webkit-scrollbar { display: none; }
 
+    @keyframes recoCardIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
     .reco-card {
       flex-shrink: 0;
-      width: 170px;
+      width: 220px;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 18px;
+      border-radius: 20px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      transition: transform 0.2s var(--ease-out), box-shadow 0.2s;
+      scroll-snap-align: start;
+      transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+      animation: recoCardIn 0.3s var(--ease-out) both;
     }
     .reco-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
     }
     .reco-card.selected { border-color: var(--primary); border-width: 2px; }
 
     .reco-img {
+      position: relative;
       width: 100%;
-      height: 108px;
+      height: 200px;
       background: var(--bg-soft);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
+      font-size: 32px;
       overflow: hidden;
       cursor: pointer;
+      flex-shrink: 0;
     }
-    .reco-img img { width: 100%; height: 100%; object-fit: cover; }
+    .reco-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s var(--ease-out), opacity 0.3s;
+    }
+    .reco-card:hover .reco-img img { transform: scale(1.04); }
 
-    .reco-body {
-      padding: 12px;
+    .reco-img-shimmer {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, var(--bg-soft) 25%, color-mix(in srgb, var(--primary) 6%, var(--bg)) 50%, var(--bg-soft) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.6s infinite;
+    }
+
+    .reco-img-fallback {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .reco-img-fallback span { font-size: 32px; }
+
+    .reco-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      z-index: 1;
+    }
+
+    .reco-body {
+      padding: 14px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
       flex: 1;
     }
+
     .reco-name {
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 15px;
+      font-weight: 700;
       color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: pointer;
-    }
-    .reco-price { font-size: 14px; color: var(--text); font-weight: 700; }
-    .reco-why {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.4;
+      line-height: 1.3;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      margin-bottom: 4px;
+      cursor: pointer;
     }
-    .reco-actions { display: flex; gap: 6px; }
+
+    .reco-rating {
+      font-size: 13px;
+      color: #f59e0b;
+      letter-spacing: 1px;
+    }
+
+    .reco-price {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.2;
+    }
+
+    .reco-why {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .reco-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .reco-feature-chip {
+      background: var(--bg-soft);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 999px;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .reco-footer {
+      font-size: 11px;
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0 14px 8px;
+    }
+    .reco-footer-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+    }
+    .reco-footer-out { color: var(--muted); }
+    .reco-footer-out .reco-footer-dot { background: var(--muted); }
+
+    .reco-actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 14px 14px;
+    }
 
     .reco-btn {
       flex: 1;
       display: block;
       text-align: center;
-      padding: 9px;
-      font-size: 12px;
+      padding: 11px 10px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--on-primary);
       background: var(--primary);
       text-decoration: none;
       cursor: pointer;
-      transition: filter 0.18s;
+      transition: filter 0.18s, transform 0.18s;
       border: none;
-      border-radius: 0;
+      border-radius: 999px;
     }
     .reco-btn:hover { filter: brightness(0.92); }
+    .reco-btn:active { transform: scale(0.97); }
 
     .reco-compare-btn {
       flex-shrink: 0;
       background: var(--bg);
       color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 0;
-      font-size: 11px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
       font-weight: 600;
-      padding: 9px 8px;
+      padding: 11px 14px;
       cursor: pointer;
       font-family: var(--font);
+      transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+      white-space: nowrap;
     }
-    .reco-compare-btn.active { border-color: var(--primary); color: var(--primary); }
+    .reco-compare-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .reco-compare-btn:active { transform: scale(0.97); }
+    .reco-compare-btn.active {
+      background: color-mix(in srgb, var(--primary) 8%, var(--bg));
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* ─── EXPANDED PRODUCT DETAILS ─── */
+    .reco-expand {
+      border-top: 1px solid var(--border);
+      margin: 0 14px;
+      padding: 10px 0 12px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .reco-expand.open { display: flex; }
+
+    .reco-expand-toggle {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 14px 8px;
+      font-family: var(--font);
+      text-align: left;
+      transition: color 0.18s;
+    }
+    .reco-expand-toggle:hover { color: var(--text); }
+
+    .reco-expand-section {
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .reco-expand-text {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ─── COMPARE BAR ─── */
+    .compare-bar {
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      animation: compareBarUp 0.25s var(--ease-out);
+      z-index: 2;
+      margin-top: -1px;
+    }
+
+    @keyframes compareBarUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .compare-bar-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .compare-bar-count {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--on-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .compare-bar-btn {
+      background: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: filter 0.18s, transform 0.18s;
+    }
+    .compare-bar-btn:hover { filter: brightness(0.92); }
+    .compare-bar-btn:active { transform: scale(0.97); }
+    .compare-bar-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+    /* ─── COMPARISON OVERLAY ─── */
+    .compare-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      animation: compareOverlayIn 0.3s var(--ease-out);
+      overflow: hidden;
+    }
+
+    @keyframes compareOverlayIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .compare-overlay-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .compare-overlay-back {
+      background: none;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      font-size: 18px;
+      transition: background 0.18s;
+    }
+    .compare-overlay-back:hover { background: var(--bg-soft); }
+
+    .compare-overlay-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .compare-overlay-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      scrollbar-width: none;
+    }
+    .compare-overlay-scroll::-webkit-scrollbar { display: none; }
+
+    /* Product header row */
+    .compare-products-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .compare-product-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      padding: 16px;
+      background: var(--bg-soft);
+      border-radius: 18px;
+      position: relative;
+      animation: compareProductIn 0.3s var(--ease-out) both;
+    }
+    .compare-product-col:nth-child(2) { animation-delay: 60ms; }
+
+    @keyframes compareProductIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .compare-product-img {
+      width: 100%;
+      height: 140px;
+      border-radius: 14px;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      overflow: hidden;
+    }
+    .compare-product-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    .compare-product-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .compare-product-price {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .compare-product-availability {
+      font-size: 11px;
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .compare-product-availability-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .compare-product-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .compare-product-action-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font);
+      color: var(--muted);
+      transition: border-color 0.18s, color 0.18s;
+    }
+    .compare-product-action-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    .compare-vs {
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* Winner badge */
+    .compare-winner-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      animation: badgePop 0.35s var(--ease-out) both;
+      animation-delay: 0.3s;
+    }
+    @keyframes badgePop {
+      from { transform: scale(0); }
+      60% { transform: scale(1.2); }
+      to { transform: scale(1); }
+    }
+
+    /* Difference summary */
+    .compare-section {
+      margin-bottom: 20px;
+    }
+    .compare-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .compare-diff-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .compare-diff-chip {
+      background: color-mix(in srgb, var(--primary) 8%, var(--bg));
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 999px;
+      line-height: 1.3;
+      animation: chipIn 0.25s var(--ease-out) both;
+    }
+    .compare-sim-chip {
+      background: var(--bg-soft);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 999px;
+      line-height: 1.3;
+      animation: chipIn 0.25s var(--ease-out) both;
+    }
+    @keyframes chipIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Compare table */
+    .compare-table-wrap {
+      background: var(--bg-soft);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .compare-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .compare-data-table th {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-data-table th:first-child { width: 35%; }
+    .compare-data-table th:not(:first-child) { text-align: center; width: 32.5%; }
+
+    .compare-data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      animation: compareRowIn 0.25s var(--ease-out) both;
+    }
+    .compare-data-table td:not(:first-child) { text-align: center; }
+    .compare-data-table tr:last-child td { border-bottom: none; }
+
+    .compare-data-table .compare-winner {
+      background: color-mix(in srgb, var(--success) 6%, var(--bg-soft));
+    }
+    .compare-data-table .compare-winner-value {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* AI Summary */
+    .compare-ai-summary {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+      line-height: 1.65;
+      font-size: 14px;
+      color: var(--text);
+      animation: msgIn 0.3s var(--ease-out) both;
+    }
+    .compare-ai-summary strong { color: var(--primary); }
+
+    /* Sticky footer */
+    .compare-overlay-footer {
+      display: flex;
+      gap: 12px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+      animation: msgIn 0.25s var(--ease-out);
+    }
+
+    .compare-cta {
+      flex: 1;
+      display: block;
+      text-align: center;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--on-primary);
+      background: var(--primary);
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      border-radius: 999px;
+      transition: filter 0.18s, transform 0.18s;
+    }
+    .compare-cta:hover { filter: brightness(0.92); }
+    .compare-cta:active { transform: scale(0.97); }
+
+    /* Loading state */
+    .compare-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .compare-loading-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--primary) 10%, var(--bg));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .compare-loading-text {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      animation: pulseText 1.6s ease-in-out infinite;
+    }
+    @keyframes pulseText {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* Mobile overlay */
+    @media (max-width: 480px) {
+      .compare-products-row { flex-direction: column; gap: 12px; }
+      .compare-vs { display: none; }
+      .compare-product-col { flex-direction: row; text-align: left; padding: 12px; gap: 12px; }
+      .compare-product-img { width: 80px; height: 80px; flex-shrink: 0; }
+      .compare-product-actions { flex-direction: column; }
+      .compare-data-table { font-size: 12px; }
+      .compare-data-table th, .compare-data-table td { padding: 8px 10px; }
+      .compare-overlay-footer { flex-direction: column; gap: 8px; }
+    }
+
+    /* ─── CONTEXT BAR ─── */
+    .context-bar {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 10px 16px 8px;
+      flex-shrink: 0;
+      animation: msgIn 0.2s var(--ease-out);
+      display: none;
+    }
+    .context-bar.open { display: block; }
+
+    .context-bar-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .context-bar-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .context-bar-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: color-mix(in srgb, var(--primary) 8%, var(--bg));
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+      border: none;
+      font-family: var(--font);
+    }
+    .context-bar-chip:hover { background: color-mix(in srgb, var(--primary) 15%, var(--bg)); transform: translateY(-1px); }
+    .context-bar-chip:active { transform: scale(0.96); }
+    .context-bar-chip .context-bar-chip-remove {
+      font-size: 12px;
+      opacity: 0.5;
+      margin-left: 2px;
+    }
+    .context-bar-chip:hover .context-bar-chip-remove { opacity: 1; }
+
+    /* ─── DISCOVERY PROGRESS ─── */
+    .discovery-progress {
+      height: 3px;
+      background: var(--bg-soft);
+      border-radius: 2px;
+      overflow: hidden;
+      flex-shrink: 0;
+      margin: 0 16px;
+      display: none;
+    }
+    .discovery-progress.open { display: block; }
+
+    .discovery-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: width 0.4s var(--ease-out);
+      width: 0%;
+    }
 
     /* ─── COMPARE TABLE ─── */
     .compare-table {
@@ -1389,6 +2023,246 @@
       .msg-row { max-width: 88%; }
       .customer .msg-bubble { max-width: 85%; }
     }
+
+    @keyframes cardSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes badgePop {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .business-card {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 16px;
+      padding: 16px; margin: 8px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      animation: cardSlideIn 0.3s ease-out;
+    }
+    .business-card-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .business-card-icon { font-size: 20px; line-height: 1; }
+    .business-card-title {
+      font-size: 14px; font-weight: 600; color: #0a1c0f;
+    }
+    .business-card-body {
+      font-size: 13px; color: #3a4a42; line-height: 1.55;
+    }
+    .business-card-list {
+      list-style: none; padding: 0; margin: 6px 0 0;
+    }
+    .business-card-list li {
+      padding: 5px 0; font-size: 13px; color: #0a1c0f;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .business-card-list li::before {
+      content: '\\2713'; color: var(--primary); font-weight: 700;
+    }
+    .business-card-link {
+      display: inline-block; margin-top: 8px; font-size: 13px;
+      color: var(--primary); font-weight: 500; cursor: pointer;
+      text-decoration: none;
+    }
+    .business-card-link:hover { text-decoration: underline; }
+    .verified-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; color: #1a7d36; background: #e8f5ee;
+      padding: 3px 10px; border-radius: 999px; font-weight: 500;
+      margin: 6px 0 4px; animation: badgePop 0.35s ease-out;
+    }
+    .contact-card {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 16px;
+      padding: 20px 16px; margin: 8px 0; text-align: center;
+      animation: cardSlideIn 0.3s ease-out;
+    }
+    .contact-card-title {
+      font-size: 14px; font-weight: 600; color: #0a1c0f; margin-bottom: 4px;
+    }
+    .contact-card-subtitle {
+      font-size: 12px; color: #6b7a72; margin-bottom: 16px;
+    }
+    .contact-card-actions { display: flex; gap: 10px; justify-content: center; }
+    .contact-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 4px; padding: 12px 8px; border-radius: 12px;
+      border: 1px solid #e8ecf0; background: #f8faf9; cursor: pointer;
+      font-size: 12px; color: #0a1c0f; font-weight: 500;
+      transition: all 0.2s; text-decoration: none; font-family: inherit;
+    }
+    .contact-btn:hover { background: #edf1ef; border-color: #d0d8d4; }
+    .contact-btn-icon { font-size: 22px; }
+    .contact-btn-label { font-size: 11px; }
+    .hours-card {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 16px;
+      padding: 16px; margin: 8px 0; animation: cardSlideIn 0.3s ease-out;
+    }
+    .hours-row { display: flex; justify-content: space-between; align-items: center; }
+    .hours-status { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+    .hours-status.open { color: #1a7d36; }
+    .hours-status.closed { color: #c62828; }
+    .hours-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .hours-dot.open { background: #2e7d32; box-shadow: 0 0 6px rgba(46,125,50,0.4); }
+    .hours-dot.closed { background: #c62828; }
+    .hours-today { font-size: 13px; color: #3a4a42; margin-top: 6px; }
+    .faq-accordion { margin: 8px 0; animation: cardSlideIn 0.3s ease-out; }
+    .faq-item {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 12px;
+      margin-bottom: 6px; overflow: hidden;
+    }
+    .faq-question {
+      width: 100%; padding: 12px 14px; border: none; background: none;
+      font-size: 13px; font-weight: 500; color: #0a1c0f; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: inherit; text-align: left;
+    }
+    .faq-question::after { content: '+'; font-size: 16px; color: #8a9a92; transition: transform 0.2s; }
+    .faq-item.open .faq-question::after { content: '\\2212'; }
+    .faq-answer {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.25s ease, padding 0.25s ease;
+    }
+    .faq-item.open .faq-answer { max-height: 200px; padding: 0 14px 12px; }
+    .faq-answer-text { font-size: 13px; color: #3a4a42; line-height: 1.5; }
+    .escalation-card {
+      background: linear-gradient(135deg, #fef9e7 0%, #fdf2d7 100%);
+      border: 1px solid #f0e2b5; border-radius: 16px; padding: 20px 16px;
+      margin: 8px 0; text-align: center; animation: cardSlideIn 0.3s ease-out;
+    }
+    .escalation-card-title {
+      font-size: 15px; font-weight: 600; color: #7a5a0a; margin-bottom: 4px;
+    }
+    .escalation-card-subtitle {
+      font-size: 12px; color: #8a7a4a; margin-bottom: 16px;
+    }
+    .escalation-actions { display: flex; gap: 10px; justify-content: center; }
+    .escalation-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 4px; padding: 12px 8px; border-radius: 12px; border: none;
+      cursor: pointer; font-size: 12px; font-weight: 500; color: #fff;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none; font-family: inherit;
+    }
+    .escalation-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .escalation-btn-whatsapp { background: #25D366; }
+    .escalation-btn-call { background: #0a1c0f; }
+    .escalation-btn-email { background: #1a73e8; }
+    .escalation-btn-icon { font-size: 20px; }
+    .business-unknown-card {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 16px;
+      padding: 20px 16px; margin: 8px 0; text-align: center;
+      animation: cardSlideIn 0.3s ease-out;
+    }
+    .business-unknown-text {
+      font-size: 13px; color: #3a4a42; line-height: 1.5; margin-bottom: 16px;
+    }
+    .business-unknown-actions { display: flex; gap: 10px; justify-content: center; }
+    .policy-card {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 12px;
+      padding: 14px; margin: 6px 0; cursor: pointer; display: flex;
+      align-items: center; justify-content: space-between;
+      animation: cardSlideIn 0.3s ease-out;
+    }
+    .policy-card-text { font-size: 13px; font-weight: 500; color: #0a1c0f; display: flex; align-items: center; gap: 8px; }
+    .policy-card-arrow { color: #8a9a92; font-size: 14px; transition: transform 0.2s; }
+    .policy-card.open .policy-card-arrow { transform: rotate(90deg); }
+    .continue-cta { margin: 10px 0 4px; text-align: center; }
+    .continue-cta-btn {
+      background: var(--primary); color: var(--on-primary); border: none;
+      border-radius: 999px; padding: 10px 24px; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .continue-cta-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .escalation-message {
+      font-size: 13px; color: #3a4a42; line-height: 1.55; padding: 4px 0; margin: 4px 0;
+    }
+    .contact-methods { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+    .contact-method-card {
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+      border-radius: 14px; text-decoration: none; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: cardSlideIn 0.3s ease-out;
+    }
+    .contact-method-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .contact-method-card.whatsapp { background: #eafff0; border: 1px solid #b8e6c8; }
+    .contact-method-card.phone { background: #e8f0ff; border: 1px solid #b8cce6; }
+    .contact-method-card.email { background: #f8faf9; border: 1px solid #dde3e0; }
+    .contact-method-card.disabled { opacity: 0.5; cursor: default; pointer-events: none; }
+    .contact-method-card-icon { font-size: 24px; line-height: 1; }
+    .contact-method-card-label { font-size: 14px; font-weight: 500; color: #0a1c0f; }
+    .contact-method-card-badge {
+      margin-left: auto; font-size: 11px; color: #8a9a92;
+      background: #f0f2f1; padding: 2px 10px; border-radius: 999px;
+    }
+    .conversation-summary {
+      background: #f8faf9; border: 1px solid #e8ecf0; border-radius: 14px;
+      padding: 14px; margin: 8px 0; animation: cardSlideIn 0.3s ease-out;
+    }
+    .conversation-summary-title {
+      font-size: 12px; font-weight: 600; color: #6b7a72;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+    }
+    .summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 1px solid #edf1ef;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-label { font-size: 12px; color: #6b7a72; }
+    .summary-value { font-size: 13px; font-weight: 500; color: #0a1c0f; text-align: right; }
+    .availability-card {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 14px;
+      padding: 14px; margin: 8px 0; display: flex; gap: 16px;
+      animation: cardSlideIn 0.3s ease-out;
+    }
+    .availability-item { flex: 1; }
+    .availability-label { font-size: 11px; color: #8a9a92; display: block; margin-bottom: 2px; }
+    .availability-value { font-size: 13px; color: #0a1c0f; font-weight: 500; }
+    .escalation-closing {
+      text-align: center; padding: 12px 0; margin: 4px 0;
+      animation: cardSlideIn 0.3s ease-out;
+    }
+    .escalation-closing-title { font-size: 15px; font-weight: 600; color: #0a1c0f; margin-bottom: 4px; }
+    .escalation-closing-sub { font-size: 12px; color: #6b7a72; }
+    .escalation-actions-bottom { display: flex; gap: 8px; margin: 12px 0 4px; }
+    .escalation-action-btn {
+      flex: 1; padding: 10px 8px; border-radius: 12px; border: 1px solid #e8ecf0;
+      background: #fff; font-size: 12px; font-weight: 500; color: #0a1c0f;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .escalation-action-btn:hover { background: #f8faf9; transform: translateY(-1px); }
+    .streaming-text::after { content: '|'; animation: blink 0.7s steps(1) infinite; margin-left: 1px; }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    .btn-press:active { transform: scale(0.97) !important; }
+    .ripple { position: relative; overflow: hidden; }
+    .ripple::after {
+      content: ''; position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.35); width: 100px; height: 100px;
+      margin-top: -50px; margin-left: -50px; top: 50%; left: 50%;
+      transform: scale(0); opacity: 1; pointer-events: none;
+    }
+    .ripple:active::after { transform: scale(2.5); opacity: 0; transition: transform 0.5s, opacity 0.5s; }
+    .success-celebration { text-align: center; padding: 16px 0; animation: cardSlideIn 0.4s ease-out; }
+    .success-icon { font-size: 36px; margin-bottom: 6px; }
+    .success-title { font-size: 15px; font-weight: 600; color: #0a1c0f; margin-bottom: 2px; }
+    .success-sub { font-size: 13px; color: #3a4a42; }
+    .checkout-card {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 16px;
+      padding: 16px; margin: 8px 0; display: flex; align-items: center;
+      gap: 12px; animation: cardSlideIn 0.3s ease-out;
+    }
+    .checkout-img { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; background: #f0f2f1; flex-shrink: 0; }
+    .checkout-info { flex: 1; min-width: 0; }
+    .checkout-name { font-size: 14px; font-weight: 600; color: #0a1c0f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .checkout-price { font-size: 15px; font-weight: 700; color: var(--primary); margin-top: 2px; }
+    .checkout-actions { display: flex; gap: 8px; margin: 10px 0 4px; }
+    .premium-footer { text-align: center; padding: 14px 0 6px; margin-top: 4px; }
+    .premium-footer-text { font-size: 11px; color: var(--muted); }
+    .premium-footer-brand { font-weight: 600; }
+    *:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
   `;
 
     // Create Shadow Host & Attach Shadow Root
@@ -1404,11 +2278,11 @@
     shadow.appendChild(wrapper);
 
     wrapper.innerHTML = `
-    <button class="fab" id="midevela-fab">
+    <button class="fab" id="midevela-fab" aria-label="Toggle shopping assistant chat">
       <div class="fab-pulse-ring"></div>
       <span class="fab-inner">
         <span class="fab-icon">
-          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
         </span>
         <span class="fab-text">
           <span class="fab-text-top">Need help shopping?</span>
@@ -1416,48 +2290,57 @@
         </span>
       </span>
       <span class="fab-close-icon">
-        <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29a1 1 0 11-1.42 1.42L12 13.41l-5.88 5.89a1 1 0 01-1.42-1.42L10.59 12 4.7 5.71a1 1 0 011.42-1.42L12 10.59l5.88-5.88a1 1 0 111.42 1.42z"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.71L12 12l6.3 6.29a1 1 0 11-1.42 1.42L12 13.41l-5.88 5.89a1 1 0 01-1.42-1.42L10.59 12 4.7 5.71a1 1 0 011.42-1.42L12 10.59l5.88-5.88a1 1 0 111.42 1.42z"/></svg>
       </span>
     </button>
 
     <div class="backdrop" id="midevela-backdrop"></div>
 
-    <div class="chat-panel" id="midevela-chat">
+      <div class="chat-panel" id="midevela-chat" role="dialog" aria-label="Shopping assistant chat">
       <div class="header">
         <div class="header-top">
           <div class="header-info">
-            <div class="header-avatar">${escapeHtml(avatarLetter)}</div>
+            <div class="header-avatar" aria-hidden="true">${escapeHtml(avatarLetter)}</div>
             <div>
               <div class="header-name">${escapeHtml(aiName)}</div>
               <div class="header-subtitle">Helping you shop smarter</div>
             </div>
           </div>
           <div class="header-actions">
-            <button class="header-btn minimize-btn" id="midevela-minimize" aria-label="Minimize">
-              <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+            <button class="header-btn minimize-btn" id="midevela-minimize" aria-label="Minimize chat">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13H5v-2h14v2z"/></svg>
             </button>
-            <button class="header-btn close-btn" id="midevela-close" aria-label="Close">
-              <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29a1 1 0 11-1.42 1.42L12 13.41l-5.88 5.89a1 1 0 01-1.42-1.42L10.59 12 4.7 5.71a1 1 0 011.42-1.42L12 10.59l5.88-5.88a1 1 0 111.42 1.42z"/></svg>
+            <button class="header-btn close-btn" id="midevela-close" aria-label="Close chat">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.71L12 12l6.3 6.29a1 1 0 11-1.42 1.42L12 13.41l-5.88 5.89a1 1 0 01-1.42-1.42L10.59 12 4.7 5.71a1 1 0 011.42-1.42L12 10.59l5.88-5.88a1 1 0 111.42 1.42z"/></svg>
             </button>
           </div>
         </div>
         <div class="header-divider"></div>
       </div>
 
-      <div class="body" id="midevela-body"></div>
+      <div class="body" id="midevela-body" role="log" aria-label="Messages" aria-live="polite" aria-relevant="additions"></div>
+
+      <div class="discovery-progress" id="midevela-discovery-progress">
+        <div class="discovery-progress-fill" id="midevela-discovery-progress-fill"></div>
+      </div>
+
+      <div class="context-bar" id="midevela-context-bar">
+        <div class="context-bar-header">Shopping For</div>
+        <div class="context-bar-items" id="midevela-context-items"></div>
+      </div>
 
       <div class="input-area">
         <div class="input-wrap">
-          <button class="input-smiley-btn" aria-label="Emoji" type="button">😊</button>
-          <input type="text" class="input-field" id="midevela-input" maxlength="2000" placeholder="Ask anything…" aria-label="Type your message">
+          <button class="input-smiley-btn" aria-label="Insert emoji" type="button">😊</button>
+          <input type="text" class="input-field" id="midevela-input" maxlength="2000" placeholder="Ask anything\u2026" aria-label="Type your message" autocomplete="off">
           <button class="input-send-btn" id="midevela-send" aria-label="Send message">
             <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
           </button>
         </div>
       </div>
 
-      <div class="footer-brand">
-        Powered by <a href="https://midvella.com" target="_blank" rel="noopener">Midevela</a>
+      <div class="footer-brand premium-footer">
+        <span class="premium-footer-text">Powered by <strong class="premium-footer-brand">Midevela AI</strong> &mdash; Helping you shop smarter.</span>
       </div>
     </div>
   `;
@@ -1470,6 +2353,10 @@
     const input = shadow.getElementById('midevela-input');
     const send = shadow.getElementById('midevela-send');
     const body = shadow.getElementById('midevela-body');
+    const contextBar = shadow.getElementById('midevela-context-bar');
+    const contextItems = shadow.getElementById('midevela-context-items');
+    const progressBar = shadow.getElementById('midevela-discovery-progress');
+    const progressFill = shadow.getElementById('midevela-discovery-progress-fill');
 
     // ─── Panel open/close ───
     const toggleChat = (focusInput) => {
@@ -1513,8 +2400,7 @@
       body.scrollTop = body.scrollHeight;
     }
 
-    function appendAiBubble(text, extraHTML) {
-      // Message grouping: if the last message is also AI, append to it
+    function appendAiBubble(text, extraHTML, typewriter) {
       var lastChild = body.lastElementChild;
       var isGrouped = false;
       if (lastChild && lastChild.classList.contains('msg-row') && lastChild.classList.contains('ai')) {
@@ -1524,7 +2410,12 @@
           var lastTime = lastCol.querySelector('.msg-time');
           if (lastTime) lastTime.remove();
           if (lastBubble) {
-            lastBubble.textContent += '\n\n' + text;
+            if (typewriter) {
+              lastBubble.textContent += '\n\n';
+              typewriterText(lastBubble, text, 18);
+            } else {
+              lastBubble.textContent += '\n\n' + text;
+            }
           }
           var newTime = document.createElement('span');
           newTime.className = 'msg-time';
@@ -1548,7 +2439,20 @@
         col.appendChild(sender);
         var bubble = document.createElement('div');
         bubble.className = 'msg-bubble';
-        bubble.textContent = text;
+        if (typewriter) {
+          col.appendChild(bubble);
+          row.appendChild(avatar);
+          row.appendChild(col);
+          body.appendChild(row);
+          typewriterText(bubble, text, 18);
+          var time = document.createElement('span');
+          time.className = 'msg-time';
+          time.textContent = nowTime();
+          col.appendChild(time);
+          return row;
+        } else {
+          bubble.textContent = text;
+        }
         col.appendChild(bubble);
         if (extraHTML) {
           var extra = document.createElement('div');
@@ -1602,6 +2506,7 @@
     }
 
     function removeTyping() {
+      clearInterval(stateRotationTimer);
       var el = shadow.getElementById('midevela-typing');
       if (el) el.remove();
     }
@@ -1703,10 +2608,29 @@
       recommending: 'Putting together the best options\u2026',
     };
 
+    var stateRotations = {
+      thinking: ['Looking through our catalog\u2026', 'Checking product details\u2026', 'Finding the best match\u2026'],
+      searching: ['Searching products\u2026', 'Checking availability\u2026', 'Comparing options\u2026'],
+      comparing: ['Comparing products\u2026', 'Finding differences\u2026', 'Almost done\u2026'],
+      answering: ['Looking through our knowledge base\u2026', 'Verifying information\u2026', 'Putting it together\u2026'],
+      recommending: ['Curating the best options\u2026', 'Checking what fits\u2026', 'Finalizing recommendations\u2026'],
+    };
+    var stateRotationTimer = null;
+
     function showState(stateKey) {
-      var text = stateTexts[stateKey] || stateTexts.thinking;
-      appendTyping(text.replace('{name}', aiName));
+      var rotations = stateRotations[stateKey] || stateRotations.thinking;
+      var idx = 0;
+      appendTyping(rotations[0].replace('{name}', aiName));
       scrollToBottom();
+      clearInterval(stateRotationTimer);
+      stateRotationTimer = setInterval(function () {
+        idx = (idx + 1) % rotations.length;
+        var el = shadow.getElementById('midevela-typing');
+        if (el) {
+          var textEl = el.querySelector('.typing-text');
+          if (textEl) textEl.textContent = rotations[idx].replace('{name}', aiName);
+        }
+      }, 2000);
     }
 
     // ─── Natural Response Helpers ───
@@ -1771,7 +2695,405 @@
       return 'Picking back up on ' + catName + ' \u2014 let\u2019s continue finding the perfect product for you.';
     }
 
-    // Follow-up chips shown after recommendations
+    // ─── Intent Parser ───
+    // Extracts known information from free-text messages so the AI
+    // never asks for something the customer already provided.
+    var discoveryFields = [
+      { key: 'concern', words: ['acne', 'dryness', 'dry skin', 'oily', 'dark spots', 'wrinkles', 'aging', 'sensitive', 'hydration', 'brightening', 'dandruff', 'frizz', 'damage', 'breakage', 'thinning'] },
+      { key: 'productType', words: ['serum', 'moisturizer', 'cleanser', 'toner', 'sunscreen', 'shampoo', 'conditioner', 'oil', 'mask', 'cream', 'lotion', 'treatment'] },
+      { key: 'budget', words: ['under \$?(\d+)', 'budget \$?(\d+)', 'less than \$?(\d+)', 'cheap', 'affordable', 'inexpensive', 'premium', 'luxury'] },
+      { key: 'skinType', words: ['dry skin', 'oily skin', 'combination', 'sensitive skin', 'normal skin'] },
+      { key: 'brand', words: ['from (\w+)', 'by (\w+)', 'brand (\w+)'] },
+    ];
+
+    function parseIntent(text) {
+      var lower = text.toLowerCase();
+      var extracted = {};
+
+      // Category matching (match against available categories)
+      if (config.categories) {
+        config.categories.forEach(function (cat) {
+          var catLower = cat.name.toLowerCase();
+          if (lower.indexOf(catLower) !== -1) {
+            extracted.categoryId = cat.id;
+            extracted.categoryName = cat.name;
+          }
+        });
+      }
+
+      // Product type
+      var typeMap = {
+        serum: 'Serum', moisturizer: 'Moisturizer', cleanser: 'Cleanser',
+        toner: 'Toner', sunscreen: 'Sunscreen', shampoo: 'Shampoo',
+        conditioner: 'Conditioner', oil: 'Oil', mask: 'Mask',
+        cream: 'Cream', lotion: 'Lotion', treatment: 'Treatment',
+      };
+      Object.keys(typeMap).forEach(function (type) {
+        if (lower.indexOf(type) !== -1) {
+          extracted.productType = typeMap[type];
+        }
+      });
+
+      // Concern
+      var concernMap = {
+        acne: 'Acne', dryness: 'Dryness', 'dry skin': 'Dryness',
+        oily: 'Oily', 'dark spots': 'Dark Spots', wrinkles: 'Wrinkles',
+        aging: 'Aging', sensitive: 'Sensitive', hydration: 'Hydration',
+        brightening: 'Brightening', dandruff: 'Dandruff', frizz: 'Frizz',
+        damage: 'Damage', breakage: 'Breakage', thinning: 'Thinning',
+      };
+      Object.keys(concernMap).forEach(function (concern) {
+        if (lower.indexOf(concern) !== -1) {
+          extracted.concern = concernMap[concern];
+        }
+      });
+
+      // Budget
+      var budgetMatch = lower.match(/under\s*\$?\s*(\d+)/) || lower.match(/budget\s*\$?\s*(\d+)/) || lower.match(/less than\s*\$?\s*(\d+)/);
+      if (budgetMatch) {
+        extracted.budget = budgetMatch[1];
+      }
+      if (lower.indexOf('cheap') !== -1 || lower.indexOf('affordable') !== -1 || lower.indexOf('inexpensive') !== -1) {
+        if (!extracted.budget) extracted.budget = 'budget-friendly';
+      }
+      if (lower.indexOf('premium') !== -1 || lower.indexOf('luxury') !== -1) {
+        extracted.budget = 'premium';
+      }
+
+      // Skin type
+      var skinMap = {
+        'dry skin': 'Dry', 'oily skin': 'Oily', combination: 'Combination',
+        'sensitive skin': 'Sensitive', 'normal skin': 'Normal',
+      };
+      Object.keys(skinMap).forEach(function (st) {
+        if (lower.indexOf(st) !== -1) extracted.skinType = skinMap[st];
+      });
+
+      // Brand - simple: "from {name}" or "by {name}" pattern
+      var brandMatch = lower.match(/from\s+(\w+)/) || lower.match(/by\s+(\w+)/) || lower.match(/brand\s+(\w+)/);
+      if (brandMatch) {
+        extracted.brand = brandMatch[1].charAt(0).toUpperCase() + brandMatch[1].slice(1);
+      }
+
+      return extracted;
+    }
+
+    // ─── Adaptive Discovery Flow ───
+    // Determines what information is still needed and asks ONE question
+    function startDiscoveryFlow(userText) {
+      // Parse intent from the message
+      var intent = parseIntent(userText);
+
+      // Merge into funnel
+      if (intent.categoryId) {
+        funnel.categoryId = intent.categoryId;
+        funnel.categoryName = intent.categoryName;
+      }
+      if (intent.productType && !funnel.answers.productType) {
+        funnel.answers.productType = intent.productType;
+      }
+      if (intent.concern && !funnel.answers.concern) {
+        funnel.answers.concern = intent.concern;
+      }
+      if (intent.budget && !funnel.answers.budget) {
+        funnel.answers.budget = intent.budget;
+      }
+      if (intent.skinType && !funnel.answers.skinType) {
+        funnel.answers.skinType = intent.skinType;
+      }
+      if (intent.brand && !funnel.answers.brand) {
+        funnel.answers.brand = intent.brand;
+      }
+      persistFunnel();
+
+      // Determine what's missing
+      var missing = determineMissingFields();
+      updateContextBar();
+      updateProgressBar();
+
+      if (missing.length === 0) {
+        // Have enough info — recommend
+        fetchRecommendations();
+        return;
+      }
+
+      // Ask only the first missing question
+      var nextField = missing[0];
+      askDiscoveryQuestion(nextField);
+    }
+
+    function determineMissingFields() {
+      var required = ['productType', 'concern'];
+      var optional = ['budget', 'skinType', 'brand'];
+      var missing = [];
+
+      required.forEach(function (f) {
+        if (!funnel.answers[f]) missing.push(f);
+      });
+
+      // For optional, check if we have any of them; if we have enough
+      // required fields, we can recommend even without optional ones.
+      // We ask optional only if required are filled and the specific one is missing.
+      optional.forEach(function (f) {
+        if (!funnel.answers[f]) missing.push(f);
+      });
+
+      return missing;
+    }
+
+    function askDiscoveryQuestion(field) {
+      var questionText = '';
+      var options = [];
+
+      switch (field) {
+        case 'productType':
+          var cats = config.categories || [];
+          if (cats.length === 1) {
+            // Auto-select if only one category
+            selectCategory(cats[0]);
+            return;
+          }
+          questionText = 'What type of product are you looking for?';
+          options = cats.map(function (c) {
+            return { icon: c.icon || '\u{1F4E6}', label: c.name, value: c.name, categoryId: c.id };
+          });
+          options.push({ icon: '\u{1F4AD}', label: 'Not sure', value: 'any', categoryId: null });
+          break;
+
+        case 'concern':
+          questionText = 'What skin concern are you trying to address?';
+          if (funnel.answers.productType && funnel.categoryName) {
+            questionText = 'Great! What specific concern are you looking to address?';
+          }
+          options = [
+            { icon: '\u{1F9F4}', label: 'Acne', value: 'Acne' },
+            { icon: '\u{1F4A7}', label: 'Dryness', value: 'Dryness' },
+            { icon: '\u{1F31E}', label: 'Brightening', value: 'Brightening' },
+            { icon: '\u{1F9CD}', label: 'Aging', value: 'Aging' },
+            { icon: '\u{1F3E0}', label: 'Dark Spots', value: 'Dark Spots' },
+            { icon: '\u{1F4AD}', label: 'Not sure', value: 'any' },
+          ];
+          break;
+
+        case 'budget':
+          questionText = 'Do you have a budget in mind?';
+          if (funnel.answers.concern) {
+            questionText = 'What\u2019s your budget? That helps me find the best products for you.';
+          }
+          options = [
+            { icon: '\u{1F4B2}', label: 'Under $30', value: 'under-30' },
+            { icon: '\u{1F4B5}', label: '$30 \u2013 $60', value: '30-60' },
+            { icon: '\u{1F4B0}', label: '$60 \u2013 $100', value: '60-100' },
+            { icon: '\u{1F48E}', label: '$100+', value: '100-plus' },
+            { icon: '\u{1F4AD}', label: 'No preference', value: 'any' },
+          ];
+          break;
+
+        case 'skinType':
+          questionText = 'What\u2019s your skin type? This helps me find products that work best for you.';
+          options = [
+            { icon: '\u{1F9F4}', label: 'Dry', value: 'Dry' },
+            { icon: '\u{1F4A6}', label: 'Oily', value: 'Oily' },
+            { icon: '\u{1F9D0}', label: 'Combination', value: 'Combination' },
+            { icon: '\u{1F4A8}', label: 'Sensitive', value: 'Sensitive' },
+            { icon: '\u{1F4AD}', label: 'Not sure', value: 'any' },
+          ];
+          break;
+
+        case 'brand':
+          var brandOptions = [];
+          if (config.brands && Array.isArray(config.brands)) {
+            config.brands.forEach(function (b) {
+              brandOptions.push({ icon: '\u{1F3F7}', label: b, value: b });
+            });
+          }
+          brandOptions.push({ icon: '\u{1F4AD}', label: 'No preference', value: 'any' });
+          questionText = 'Do you have a preferred brand?';
+          options = brandOptions;
+          break;
+
+        default:
+          questionText = 'Could you tell me more about what you\u2019re looking for?';
+          options = [];
+      }
+
+      appendAiBubble(questionText);
+      if (options.length > 0) {
+        var chipsWrap = document.createElement('div');
+        chipsWrap.className = 'chips';
+        options.forEach(function (opt) {
+          var chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'chip';
+          chip.textContent = (opt.icon ? opt.icon + ' ' : '') + opt.label;
+          chip.addEventListener('click', function () {
+            answerDiscoveryQuestion(field, opt);
+          });
+          chipsWrap.appendChild(chip);
+        });
+        body.appendChild(chipsWrap);
+      }
+      scrollToBottom();
+    }
+
+    function answerDiscoveryQuestion(field, opt) {
+      appendCustomerBubble(opt.label);
+
+      if (field === 'productType' && opt.categoryId) {
+        // If product type maps to a category, select it
+        var matchedCat = null;
+        if (config.categories) {
+          config.categories.forEach(function (c) {
+            if (c.id === opt.categoryId) matchedCat = c;
+          });
+        }
+        if (matchedCat) {
+          funnel.categoryId = matchedCat.id;
+          funnel.categoryName = matchedCat.name;
+        }
+      }
+
+      if (opt.value && opt.value !== 'any') {
+        funnel.answers[field] = opt.value;
+      }
+      persistFunnel();
+      updateContextBar();
+      updateProgressBar();
+
+      // Check if we have enough info now
+      var missing = determineMissingFields();
+      if (missing.length === 0 || (missing.length === 1 && missing[0] === 'brand')) {
+        // Enough info to recommend (brand is optional)
+        removeContextBar();
+        fetchRecommendations();
+      } else {
+        // Ask next question
+        // Filter out the field we just answered
+        var remaining = missing.filter(function (f) { return f !== field; });
+        if (remaining.length > 0) {
+          askDiscoveryQuestion(remaining[0]);
+        } else {
+          fetchRecommendations();
+        }
+      }
+    }
+
+    // ─── Context Bar ───
+    function renderContextBar() {
+      if (!contextBar || !contextItems) return;
+      contextBar.classList.add('open');
+      updateContextBar();
+    }
+
+    function updateContextBar() {
+      if (!contextBar || !contextItems) return;
+      var hasItems = false;
+      contextItems.innerHTML = '';
+
+      function addChip(label, value, fieldKey) {
+        hasItems = true;
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'context-bar-chip';
+        chip.innerHTML = escapeHtml(label) + ': ' + escapeHtml(value) + ' <span class="context-bar-chip-remove">\u2716</span>';
+        chip.addEventListener('click', function () {
+          // Remove this field from answers
+          delete funnel.answers[fieldKey];
+          if (fieldKey === 'productType') {
+            funnel.categoryId = null;
+            funnel.categoryName = null;
+          }
+          persistFunnel();
+          updateContextBar();
+          // Restart discovery with remaining context
+          removeRecoBlock();
+          removeCompareBar();
+          removeTyping();
+          var missing = determineMissingFields();
+          if (missing.length > 0) {
+            askDiscoveryQuestion(missing[0]);
+          } else {
+            fetchRecommendations();
+          }
+        });
+        contextItems.appendChild(chip);
+      }
+
+      if (funnel.categoryName) addChip('Category', funnel.categoryName, 'productType');
+      if (funnel.answers.productType) addChip('Type', funnel.answers.productType, 'productType');
+      if (funnel.answers.concern) addChip('Concern', funnel.answers.concern, 'concern');
+      if (funnel.answers.budget) addChip('Budget', funnel.answers.budget, 'budget');
+      if (funnel.answers.skinType) addChip('Skin', funnel.answers.skinType, 'skinType');
+      if (funnel.answers.brand) addChip('Brand', funnel.answers.brand, 'brand');
+
+      if (!hasItems) {
+        contextBar.classList.remove('open');
+      }
+    }
+
+    function removeContextBar() {
+      if (contextBar) contextBar.classList.remove('open');
+    }
+
+    // ─── Progress Bar ───
+    function showProgressBar() {
+      if (progressBar) progressBar.classList.add('open');
+    }
+
+    function hideProgressBar() {
+      if (progressBar) progressBar.classList.remove('open');
+    }
+
+    function updateProgressBar() {
+      if (!progressFill) return;
+      var required = ['productType', 'concern'];
+      var optional = ['budget', 'skinType', 'brand'];
+      var total = required.length + Math.min(2, optional.length);
+      var filled = 0;
+      required.forEach(function (f) { if (funnel.answers[f]) filled++; });
+      optional.forEach(function (f) { if (funnel.answers[f]) filled++; });
+      var pct = Math.min(100, Math.round((filled / total) * 100));
+      progressFill.style.width = pct + '%';
+      showProgressBar();
+    }
+
+    // ─── Helpers ───
+    function removeRecoBlock() {
+      var el = shadow.getElementById('midevela-reco-block');
+      if (el) el.remove();
+    }
+
+    // Update sendMessage to use adaptive discovery for shopping messages
+    function handleDiscoveryMessage(text) {
+      funnel.conversationStarted = true;
+      funnel.view = 'conversation';
+      persistFunnel();
+      markActivity();
+
+      appendCustomerBubble(text);
+      scrollToBottom();
+      showState('thinking');
+      scrollToBottom();
+
+      // Parse intent and run adaptive discovery
+      startDiscoveryFlow(text);
+    }
+
+    // ─── Animated Recommendation Refresh ───
+    function refreshRecommendations(products) {
+      var block = shadow.getElementById('midevela-reco-block');
+      if (block) {
+        // Fade out old cards
+        block.style.transition = 'opacity 0.2s var(--ease-out)';
+        block.style.opacity = '0';
+        setTimeout(function () {
+          block.remove();
+          renderRecommendations(products);
+        }, 220);
+      } else {
+        renderRecommendations(products);
+      }
+    }
     function recommendationFollowUpChips() {
       return [
         { icon: '\u{1F50D}', label: 'Compare them', action: function () {
@@ -1892,60 +3214,151 @@
       return el;
     }
 
-    function renderRecoCard(r, source) {
-      const url = isHttpUrl(r && r.url) ? r.url : '';
-      const imageUrl = showProductImages && isHttpUrl(r && r.imageUrl) ? r.imageUrl : '';
-      const isSelected = funnel.compareSelection.indexOf(r.id) !== -1;
-      const card = document.createElement('div');
+    function renderRecoCard(r, source, index) {
+      var url = isHttpUrl(r && r.url) ? r.url : '';
+      var imageUrl = showProductImages && isHttpUrl(r && r.imageUrl) ? r.imageUrl : '';
+      var isSelected = funnel.compareSelection.indexOf(r.id) !== -1;
+      var isExpanded = funnel._expandedProduct === r.id;
+      var card = document.createElement('div');
       card.className = 'reco-card' + (isSelected ? ' selected' : '');
-      card.innerHTML = `
-        <div class="reco-img" data-role="view">${
-          imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(r.name)}" loading="lazy">` : '🛍️'
-        }</div>
-        <div class="reco-body">
-          <span class="reco-name" data-role="view">${escapeHtml(r.name)}</span>
-          <span class="reco-price">${escapeHtml(r.price)}</span>
-          <span class="reco-why">${escapeHtml(r.whyThis || '')}</span>
-          <div class="reco-actions">
-            ${url ? `<a class="reco-btn" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" data-role="checkout">View</a>` : ''}
-            ${source === 'funnel' ? `<button type="button" class="reco-compare-btn${isSelected ? ' active' : ''}" data-role="compare">${isSelected ? '✓' : '+ Compare'}</button>` : ''}
-          </div>
-        </div>
-      `;
+      card.style.animationDelay = (index != null ? index * 80 : 0) + 'ms';
 
+      // Badge
+      var badgeHTML = '';
+      var badgeText = r.badge || '';
+      if (!badgeText && index === 0) badgeText = 'Best Match';
+      if (badgeText) {
+        badgeHTML = '<div class="reco-badge">' + escapeHtml(badgeText) + '</div>';
+      }
+
+      // Image
+      var imgHTML;
       if (imageUrl) {
-        const img = card.querySelector('.reco-img img');
+        imgHTML = '<div class="reco-img" data-role="view">' +
+          '<div class="reco-img-shimmer"></div>' +
+          '<img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(r.name) + '" loading="lazy" style="opacity:0">' +
+          badgeHTML +
+          '</div>';
+      } else {
+        imgHTML = '<div class="reco-img" data-role="view">' +
+          '<div class="reco-img-fallback"><span>\u{1F6CD}</span>Image unavailable</div>' +
+          badgeHTML +
+          '</div>';
+      }
+
+      // Rating
+      var ratingHTML = '';
+      if (r.rating) {
+        var stars = '';
+        var fullStars = Math.floor(Number(r.rating));
+        for (var s = 0; s < 5; s++) {
+          stars += s < fullStars ? '\u{2605}' : '\u{2606}';
+        }
+        ratingHTML = '<div class="reco-rating">' + stars + '</div>';
+      }
+
+      // Features
+      var featuresHTML = '';
+      if (Array.isArray(r.features) && r.features.length > 0) {
+        featuresHTML = '<div class="reco-features">' +
+          r.features.map(function (f) { return '<span class="reco-feature-chip">' + escapeHtml(f) + '</span>'; }).join('') +
+          '</div>';
+      }
+
+      // Footer (stock status)
+      var footerHTML = '';
+      if (r.inStock !== undefined) {
+        var inStock = r.inStock;
+        footerHTML = '<div class="reco-footer' + (!inStock ? ' reco-footer-out' : '') + '">' +
+          '<span class="reco-footer-dot"></span>' +
+          escapeHtml(inStock ? 'Available \u2022 In Stock' : 'Out of Stock') +
+          '</div>';
+      }
+
+      // Expanded details
+      var expandHTML = '';
+      if (r.description || r.benefits || r.ingredients) {
+        expandHTML = '<button type="button" class="reco-expand-toggle" data-role="expand">' +
+          (isExpanded ? '\u25B2 Less details' : '\u25BC More details') +
+          '</button>' +
+          '<div class="reco-expand' + (isExpanded ? ' open' : '') + '">' +
+          (r.description ? '<div class="reco-expand-section">Description</div><div class="reco-expand-text">' + escapeHtml(r.description) + '</div>' : '') +
+          (r.benefits ? '<div class="reco-expand-section">Benefits</div><div class="reco-expand-text">' + escapeHtml(r.benefits) + '</div>' : '') +
+          (r.ingredients ? '<div class="reco-expand-section">Ingredients</div><div class="reco-expand-text">' + escapeHtml(r.ingredients) + '</div>' : '') +
+          '</div>';
+      }
+
+      card.innerHTML = imgHTML +
+        '<div class="reco-body">' +
+          '<span class="reco-name" data-role="view">' + escapeHtml(r.name) + '</span>' +
+          ratingHTML +
+          '<span class="reco-price">' + escapeHtml(r.price) + '</span>' +
+          (r.whyThis ? '<span class="reco-why">' + escapeHtml(r.whyThis) + '</span>' : '') +
+          featuresHTML +
+        '</div>' +
+        footerHTML +
+        expandHTML +
+        '<div class="reco-actions">' +
+          (url ? '<a class="reco-btn" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" data-role="checkout">View Product \u2192</a>' : '') +
+          (source === 'funnel' ? '<button type="button" class="reco-compare-btn' + (isSelected ? ' active' : '') + '" data-role="compare">' + (isSelected ? '\u2713 Added' : '+ Compare') + '</button>' : '') +
+        '</div>';
+
+      // Image loading: remove shimmer when loaded
+      if (imageUrl) {
+        var img = card.querySelector('.reco-img img');
+        var shimmer = card.querySelector('.reco-img-shimmer');
         if (img) {
-          img.addEventListener('error', () => {
-            const imgEl = card.querySelector('.reco-img');
-            if (imgEl) imgEl.textContent = '🛍️';
+          img.addEventListener('load', function () {
+            if (shimmer) shimmer.remove();
+            img.style.opacity = '1';
+          }, { once: true });
+          img.addEventListener('error', function () {
+            var imgEl = card.querySelector('.reco-img');
+            if (imgEl) {
+              imgEl.innerHTML = '<div class="reco-img-fallback"><span>\u{1F6CD}</span>Image unavailable</div>' + badgeHTML;
+            }
           }, { once: true });
         }
       }
 
-      const viewEls = card.querySelectorAll('[data-role="view"]');
-      viewEls.forEach((el) => el.addEventListener('click', () => trackEvent('product_viewed', { productId: r.id, source })));
-
-      const checkoutLink = card.querySelector('[data-role="checkout"]');
-      if (checkoutLink) {
-        checkoutLink.addEventListener('click', () => {
-          if (source === 'funnel') trackEvent('recommendation_clicked', { productId: r.id });
-          trackEvent('checkout_clicked', { productId: r.id, url });
+      // Expand/collapse
+      var expandBtn = card.querySelector('[data-role="expand"]');
+      if (expandBtn) {
+        expandBtn.addEventListener('click', function () {
+          if (funnel._expandedProduct === r.id) {
+            funnel._expandedProduct = null;
+          } else {
+            funnel._expandedProduct = r.id;
+          }
+          renderRecommendations(funnel.lastRecommendations || []);
         });
       }
 
-      const compareBtn = card.querySelector('[data-role="compare"]');
+      var viewEls = card.querySelectorAll('[data-role="view"]');
+      Array.prototype.forEach.call(viewEls, function (el) {
+        el.addEventListener('click', function () { trackEvent('product_viewed', { productId: r.id, source: source }); });
+      });
+
+      var checkoutLink = card.querySelector('[data-role="checkout"]');
+      if (checkoutLink) {
+        checkoutLink.addEventListener('click', function () {
+          if (source === 'funnel') trackEvent('recommendation_clicked', { productId: r.id });
+          trackEvent('checkout_clicked', { productId: r.id, url: url });
+        });
+      }
+
+      var compareBtn = card.querySelector('[data-role="compare"]');
       if (compareBtn) {
-        compareBtn.addEventListener('click', () => toggleCompareSelection(r.id));
+        compareBtn.addEventListener('click', function () { toggleCompareSelection(r.id); });
       }
 
       return card;
     }
 
     function renderRecoContainer(products, source) {
-      const container = document.createElement('div');
+      var container = document.createElement('div');
       container.className = 'reco-container';
-      products.forEach((p) => container.appendChild(renderRecoCard(p, source)));
+      products.forEach(function (p, i) { container.appendChild(renderRecoCard(p, source, i)); });
       return container;
     }
 
@@ -1959,62 +3372,352 @@
         funnel.compareSelection.push(productId);
       }
       renderRecommendations(funnel.lastRecommendations || []);
-      // Remove follow-up chips to avoid stale suggestions
-      // (renderRecommendations will re-add them)
       if (funnel.compareSelection.length === 2) runCompare();
     }
 
     function runCompare() {
-      showState('comparing');
-      scrollToBottom();
+      var productIds = funnel.compareSelection;
+      if (productIds.length < 2) return;
+
+      // Show loading overlay immediately
+      showCompareLoadingOverlay();
+
       fetch(compareApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ widgetKey, productIds: funnel.compareSelection }),
+        body: JSON.stringify({ widgetKey, productIds: productIds }),
       })
         .then(function (res) { return res.json(); })
         .then(function (data) {
           removeTyping();
           if (!data || !Array.isArray(data.rows)) {
+            closeCompareOverlay();
             appendAiBubble("I couldn\u2019t compare those two right now \u2014 please try again.");
             return;
           }
-          var table = document.createElement('table');
-          table.className = 'compare-table';
-          var header = '<tr><th></th>' + data.products.map(function (p) { return '<th>' + escapeHtml(p.name) + '</th>'; }).join('') + '</tr>';
-          var rows = data.rows
-            .map(function (r) { return '<tr><td>' + escapeHtml(r.label) + '</td>' + r.values.map(function (v) { return '<td>' + escapeHtml(v) + '</td>'; }).join('') + '</tr>'; })
-            .join('');
-          table.innerHTML = header + rows;
-          appendAiBubble(data.recommendation || naturalComparison());
-          body.appendChild(table);
-          // Follow-up chips after comparison
-          renderSuggestionChips([
-            { icon: '\u{2705}', label: 'Pick one', action: function () {
-              if (funnel.compareSelection.length > 0) {
-                var picked = funnel.compareSelection[0];
-                trackEvent('comparison_pick', { productId: picked });
-                funnel.compareSelection = [];
-                if (funnel.lastRecommendations) {
-                  renderRecommendations(funnel.lastRecommendations);
-                }
-              }
-            } },
-            { icon: '\u{1F4AC}', label: 'Ask something else', action: function () {
-              funnel.view = 'conversation';
-              persistFunnel();
-              clearBody();
-              renderEmptyConversation();
-              input.focus();
-            } },
-          ]);
-          trackEvent('comparison_viewed', { productIds: funnel.compareSelection });
-          scrollToBottom();
+          renderCompareOverlay(data);
+          trackEvent('comparison_viewed', { productIds: productIds });
         })
         .catch(function () {
           removeTyping();
+          closeCompareOverlay();
           appendAiBubble("I couldn\u2019t compare those two right now \u2014 please try again.");
         });
+    }
+
+    // ─── Comparison Overlay ───
+    function showCompareLoadingOverlay() {
+      var existing = shadow.getElementById('midevela-compare-overlay');
+      if (existing) existing.remove();
+
+      var loadingTexts = ['Comparing products\u2026', 'Checking ingredients\u2026', 'Looking for differences\u2026', 'Almost done\u2026'];
+      var overlay = document.createElement('div');
+      overlay.id = 'midevela-compare-overlay';
+      overlay.className = 'compare-overlay';
+
+      var header = document.createElement('div');
+      header.className = 'compare-overlay-header';
+      header.innerHTML =
+        '<button type="button" class="compare-overlay-back" id="midevela-compare-close">&larr;</button>' +
+        '<span class="compare-overlay-title">Compare Products</span>';
+      overlay.appendChild(header);
+
+      var loadWrap = document.createElement('div');
+      loadWrap.className = 'compare-loading';
+      loadWrap.innerHTML =
+        '<div class="compare-loading-icon">\u{1F50D}</div>' +
+        '<div class="compare-loading-text" id="midevela-compare-loading-text">' + loadingTexts[0] + '</div>';
+      overlay.appendChild(loadWrap);
+
+      // Cycle through loading texts
+      var idx = 0;
+      var loadingInterval = setInterval(function () {
+        idx++;
+        if (idx < loadingTexts.length) {
+          var lt = shadow.getElementById('midevela-compare-loading-text');
+          if (lt) lt.textContent = loadingTexts[idx];
+        } else {
+          clearInterval(loadingInterval);
+        }
+      }, 1200);
+
+      overlay._loadingInterval = loadingInterval;
+
+      var backBtn = overlay.querySelector('#midevela-compare-close');
+      backBtn.addEventListener('click', function () {
+        closeCompareOverlay();
+      });
+
+      chat.appendChild(overlay);
+    }
+
+    function renderCompareOverlay(data) {
+      var existing = shadow.getElementById('midevela-compare-overlay');
+      if (existing) {
+        if (existing._loadingInterval) clearInterval(existing._loadingInterval);
+        existing.remove();
+      }
+
+      var products = data.products || [];
+      var rows = data.rows || [];
+      var recommendedIdx = data.recommendedIndex != null ? data.recommendedIndex : -1;
+      var aiSummary = data.recommendation || '';
+
+      var overlay = document.createElement('div');
+      overlay.id = 'midevela-compare-overlay';
+      overlay.className = 'compare-overlay';
+
+      // Header
+      var header = document.createElement('div');
+      header.className = 'compare-overlay-header';
+      header.innerHTML =
+        '<button type="button" class="compare-overlay-back" id="midevela-compare-close">&larr;</button>' +
+        '<span class="compare-overlay-title">Compare Products</span>';
+      overlay.appendChild(header);
+
+      // Scrollable content
+      var scroll = document.createElement('div');
+      scroll.className = 'compare-overlay-scroll';
+
+      // Product header row
+      if (products.length >= 2) {
+        var prodRow = document.createElement('div');
+        prodRow.className = 'compare-products-row';
+
+        products.forEach(function (p, pi) {
+          var col = document.createElement('div');
+          col.className = 'compare-product-col';
+
+          // Winner badge
+          if (pi === recommendedIdx) {
+            var badge = document.createElement('div');
+            badge.className = 'compare-winner-badge';
+            badge.textContent = '\u{1F3C6} Best Match';
+            col.appendChild(badge);
+          }
+
+          // Image
+          var imgWrap = document.createElement('div');
+          imgWrap.className = 'compare-product-img';
+          var imgUrl = showProductImages && isHttpUrl(p.imageUrl) ? p.imageUrl : '';
+          if (imgUrl) {
+            imgWrap.innerHTML = '<img src="' + escapeHtml(imgUrl) + '" alt="' + escapeHtml(p.name) + '" loading="lazy">';
+          } else {
+            imgWrap.innerHTML = '\u{1F6CD}';
+          }
+          col.appendChild(imgWrap);
+
+          // Name
+          var name = document.createElement('div');
+          name.className = 'compare-product-name';
+          name.textContent = p.name;
+          col.appendChild(name);
+
+          // Price
+          var price = document.createElement('div');
+          price.className = 'compare-product-price';
+          price.textContent = p.price;
+          col.appendChild(price);
+
+          // Availability
+          var avail = document.createElement('div');
+          avail.className = 'compare-product-availability';
+          var inStock = p.inStock !== false;
+          avail.innerHTML = '<span class="compare-product-availability-dot"></span> ' + escapeHtml(inStock ? 'Available \u2022 In Stock' : 'Out of Stock');
+          col.appendChild(avail);
+
+          // Actions
+          var actions = document.createElement('div');
+          actions.className = 'compare-product-actions';
+          var swapBtn = document.createElement('button');
+          swapBtn.type = 'button';
+          swapBtn.className = 'compare-product-action-btn';
+          swapBtn.textContent = 'Swap';
+          swapBtn.addEventListener('click', function () {
+            // Swap: remove this product and show recommendations to pick another
+            funnel.compareSelection = [products[pi === 0 ? 1 : 0].id];
+            closeCompareOverlay();
+            renderRecommendations(funnel.lastRecommendations || []);
+          });
+          actions.appendChild(swapBtn);
+          var removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'compare-product-action-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', function () {
+            funnel.compareSelection = [products[pi === 0 ? 1 : 0].id];
+            closeCompareOverlay();
+            renderRecommendations(funnel.lastRecommendations || []);
+          });
+          actions.appendChild(removeBtn);
+          col.appendChild(actions);
+
+          prodRow.appendChild(col);
+
+          // VS divider
+          if (pi === 0) {
+            var vs = document.createElement('div');
+            vs.className = 'compare-vs';
+            vs.textContent = 'VS';
+            prodRow.appendChild(vs);
+          }
+        });
+
+        scroll.appendChild(prodRow);
+      }
+
+      // Difference summary
+      if (rows.length > 0) {
+        var diffRows = [];
+        var simRows = [];
+        rows.forEach(function (r) {
+          var uniqueValues = {};
+          r.values.forEach(function (v) { uniqueValues[v] = (uniqueValues[v] || 0) + 1; });
+          if (Object.keys(uniqueValues).length > 1) {
+            diffRows.push(r);
+          } else {
+            simRows.push(r);
+          }
+        });
+
+        // Show differences first
+        if (diffRows.length > 0) {
+          var diffSection = document.createElement('div');
+          diffSection.className = 'compare-section';
+          var diffTitle = document.createElement('div');
+          diffTitle.className = 'compare-section-title';
+          diffTitle.textContent = 'Main Differences';
+          diffSection.appendChild(diffTitle);
+
+          diffRows.slice(0, 4).forEach(function (r, ri) {
+            var diffVal = '';
+            var bestIdx = -1;
+            r.values.forEach(function (v, vi) {
+              if (vi === 0 || r.values[bestIdx] !== v) {
+                if (bestIdx === -1 || (recommendedIdx > -1 && vi === recommendedIdx)) {
+                  bestIdx = vi;
+                }
+              }
+            });
+            diffVal = r.label + ': ' + r.values.join(' vs ');
+            var chip = document.createElement('span');
+            chip.className = 'compare-diff-chip';
+            chip.style.animationDelay = (ri * 60) + 'ms';
+            chip.textContent = diffVal;
+            diffSection.appendChild(chip);
+          });
+
+          scroll.appendChild(diffSection);
+        }
+
+        // Similarities
+        if (simRows.length > 0) {
+          var simSection = document.createElement('div');
+          simSection.className = 'compare-section';
+          var simTitle = document.createElement('div');
+          simTitle.className = 'compare-section-title';
+          simTitle.textContent = 'Both Products';
+          simSection.appendChild(simTitle);
+
+          var simChips = document.createElement('div');
+          simChips.className = 'compare-diff-chips';
+          simRows.slice(0, 4).forEach(function (r) {
+            var chip = document.createElement('span');
+            chip.className = 'compare-sim-chip';
+            chip.textContent = '\u2713 ' + r.label + ': ' + (r.values[0] || 'Yes');
+            simChips.appendChild(chip);
+          });
+          simSection.appendChild(simChips);
+          scroll.appendChild(simSection);
+        }
+      }
+
+      // Comparison table
+      if (rows.length > 0) {
+        var tableWrap = document.createElement('div');
+        tableWrap.className = 'compare-table-wrap';
+
+        var table = document.createElement('table');
+        table.className = 'compare-data-table';
+
+        var thead = '<tr><th>Attribute</th>';
+        products.forEach(function (p) { thead += '<th>' + escapeHtml(p.name) + '</th>'; });
+        thead += '</tr>';
+
+        var tbody = '';
+        rows.forEach(function (r, ri) {
+          var isDiffRow = false;
+          var uniqueVals = {};
+          r.values.forEach(function (v) { uniqueVals[v] = (uniqueVals[v] || 0) + 1; });
+          isDiffRow = Object.keys(uniqueVals).length > 1;
+
+          var bestValIdx = -1;
+          if (isDiffRow && recommendedIdx >= 0) {
+            // Check if this specific product has a better value (simplified: mark the recommended one)
+            bestValIdx = recommendedIdx;
+          }
+
+          tbody += '<tr style="animation-delay:' + (ri * 40) + 'ms">';
+          tbody += '<td>' + escapeHtml(r.label) + '</td>';
+          r.values.forEach(function (v, vi) {
+            var cls = '';
+            if (isDiffRow && vi === bestValIdx) cls = ' class="compare-winner compare-winner-value"';
+            else if (isDiffRow && bestValIdx >= 0) cls = ' class="compare-winner"';
+            tbody += '<td' + cls + '>' + escapeHtml(v) + '</td>';
+          });
+          tbody += '</tr>';
+        });
+
+        table.innerHTML = thead + tbody;
+        tableWrap.appendChild(table);
+        scroll.appendChild(tableWrap);
+      }
+
+      // AI Summary
+      if (aiSummary) {
+        var summary = document.createElement('div');
+        summary.className = 'compare-ai-summary';
+        summary.innerHTML = '<strong>Recommendation</strong><br><br>' + escapeHtml(aiSummary);
+        scroll.appendChild(summary);
+      }
+
+      overlay.appendChild(scroll);
+
+      // Sticky footer with CTAs
+      var footer = document.createElement('div');
+      footer.className = 'compare-overlay-footer';
+      products.forEach(function (p) {
+        var url = isHttpUrl(p.url) ? p.url : '';
+        var cta = document.createElement(url ? 'a' : 'button');
+        cta.className = 'compare-cta';
+        cta.textContent = 'View ' + escapeHtml(p.name);
+        if (url) {
+          cta.href = url;
+          cta.target = '_blank';
+          cta.rel = 'noopener noreferrer';
+        }
+        cta.addEventListener('click', function () {
+          trackEvent('comparison_checkout', { productId: p.id });
+        });
+        footer.appendChild(cta);
+      });
+      overlay.appendChild(footer);
+
+      // Back button
+      var backBtn = overlay.querySelector('#midevela-compare-close');
+      backBtn.addEventListener('click', function () {
+        closeCompareOverlay();
+      });
+
+      chat.appendChild(overlay);
+    }
+
+    function closeCompareOverlay() {
+      var el = shadow.getElementById('midevela-compare-overlay');
+      if (el) {
+        if (el._loadingInterval) clearInterval(el._loadingInterval);
+        el.remove();
+      }
     }
 
     // ─── Views ───
@@ -2393,15 +4096,16 @@
             funnel.view = 'conversation';
             persistFunnel();
             renderSuggestionChips([
-              { icon: '\u{1F504}', label: 'Try different budget', action: function () {
-                sendMessage('show me options with a different budget');
-              } },
-              { icon: '\u{1F4AC}', label: 'Ask something else', action: function () {
-                funnel.view = 'conversation';
+              { icon: '\u{1F504}', label: 'Increase budget', action: function () {
+                delete funnel.answers.budget;
                 persistFunnel();
-                clearBody();
-                renderEmptyConversation();
-                input.focus();
+                startDiscoveryFlow('increase budget');
+              } },
+              { icon: '\u{1F50D}', label: 'Browse similar', action: function () {
+                renderWelcome();
+              } },
+              { icon: '\u{1F4AC}', label: 'Contact our team', action: function () {
+                sendMessage('I need help contacting the team');
               } },
             ]);
             return;
@@ -2423,8 +4127,9 @@
 
       var prior = shadow.getElementById('midevela-reco-block');
       if (prior) prior.remove();
+      var priorBar = shadow.getElementById('midevela-compare-bar');
+      if (priorBar) priorBar.remove();
 
-      // Natural intro text explaining why these products were chosen
       appendAiBubble(naturalRecommendationIntro());
 
       var block = document.createElement('div');
@@ -2432,11 +4137,46 @@
       block.appendChild(renderRecoContainer(products, 'funnel'));
       body.appendChild(block);
 
-      // Follow-up suggestions
+      // Compare bar if 1+ products selected
+      if (funnel.compareSelection.length > 0) {
+        renderCompareBar();
+      }
+
       renderSuggestionChips(recommendationFollowUpChips());
 
       trackEvent('recommendation_shown', { productIds: products.map(function (p) { return p.id; }) });
       scrollToBottom();
+    }
+
+    // ─── Compare Floating Bar ───
+    function renderCompareBar() {
+      var prior = shadow.getElementById('midevela-compare-bar');
+      if (prior) prior.remove();
+
+      var count = funnel.compareSelection.length;
+      var bar = document.createElement('div');
+      bar.id = 'midevela-compare-bar';
+      bar.className = 'compare-bar';
+      bar.innerHTML =
+        '<div class="compare-bar-info">' +
+          '<span class="compare-bar-count">' + count + '</span>' +
+          '<span>' + count + ' Product' + (count !== 1 ? 's' : '') + ' Selected</span>' +
+        '</div>' +
+        '<button type="button" class="compare-bar-btn"' + (count < 2 ? ' disabled' : '') + '>' +
+          'Compare' +
+        '</button>';
+
+      var btn = bar.querySelector('.compare-bar-btn');
+      if (btn && count === 2) {
+        btn.addEventListener('click', function () { runCompare(); });
+      }
+
+      body.appendChild(bar);
+    }
+
+    function removeCompareBar() {
+      var el = shadow.getElementById('midevela-compare-bar');
+      if (el) el.remove();
     }
 
     // ─── Free-form conversation (typed messages bypass the funnel anytime) ───
@@ -2451,16 +4191,122 @@
       markActivity();
       if (isFirstMessage) trackEvent('conversation_started', {});
 
-      appendCustomerBubble(text);
-      scrollToBottom();
+      // Natural closing — handle "thank you" gracefully
+      var lowerSend = text.toLowerCase().trim();
+      if (lowerSend === 'thank you' || lowerSend === 'thanks' || lowerSend === 'thank you!' ||
+          lowerSend === 'thanks!' || lowerSend === 'thank you very much' || lowerSend === 'ty') {
+        appendCustomerBubble(text);
+        scrollToBottom();
+        removeTyping();
+        appendAiBubble("You\u2019re very welcome! I hope you find exactly what you\u2019re looking for.\n\nHave a wonderful day! \uD83D\uDE0A", null);
+        scrollToBottom();
+        return;
+      }
 
-      // Detect intent for appropriate state text
+      // Smart recovery — when customer says "no" after a suggestion
+      if ((lowerSend === 'no' || lowerSend === 'nope' || lowerSend === 'nah' || lowerSend === 'not really') &&
+          funnel.lastRecommendations && funnel.lastRecommendations.length > 0) {
+        appendCustomerBubble(text);
+        scrollToBottom();
+        appendAiBubble("No problem! Would you like something cheaper, or would you like a different category?", null);
+        renderSuggestionChips([
+          { icon: '\u{1F4B0}', label: 'Something cheaper', action: function () {
+            delete funnel.answers.budget; persistFunnel();
+            startDiscoveryFlow('cheaper');
+          }},
+          { icon: '\u{1F504}', label: 'Different category', action: function () { renderWelcome(); }},
+          { icon: '\u{1F4AC}', label: 'Ask a question', action: function () { input.focus(); }},
+        ]);
+        return;
+      }
+
+      // Escalation detection — handle client-side for instant handoff
+      var escText = lowerSend;
+      var isEscalation = escText.indexOf('speak to') !== -1 || escText.indexOf('talk to') !== -1 ||
+        escText.indexOf('customer service') !== -1 || escText.indexOf('customer support') !== -1 ||
+        escText.indexOf('transfer me') !== -1 || escText.indexOf('connect me') !== -1 ||
+        escText.indexOf('i want a human') !== -1 || escText.indexOf('i need a human') !== -1 ||
+        escText.indexOf('real person') !== -1 || escText.indexOf('real agent') !== -1 ||
+        escText.indexOf('live agent') !== -1 || escText.indexOf('representative') !== -1 ||
+        escText.indexOf('refund') !== -1 || escText.indexOf('cancel my') !== -1;
+      if (isEscalation) {
+        appendCustomerBubble(text);
+        scrollToBottom();
+        showState('answering');
+        scrollToBottom();
+        setTimeout(function () {
+          removeTyping();
+          renderFullEscalation();
+        }, 1000);
+        return;
+      }
+
+      // Check if this is a shopping intent that can use adaptive discovery
+      var shoppingIndicators = ['need', 'looking for', 'want', 'recommend', 'show me', 'find',
+        'serum', 'moisturizer', 'cleanser', 'acne', 'dryness', 'budget', 'cheap',
+        'product', 'skin', 'hair', 'face', 'body'];
+      var lowerText = text.toLowerCase();
+      var isShoppingIntent = false;
+      shoppingIndicators.forEach(function (word) {
+        if (lowerText.indexOf(word) !== -1) isShoppingIntent = true;
+      });
+
+      // If this looks like shopping and we don't already have context, use discovery flow
+      if (isFirstMessage && isShoppingIntent && !funnel.categoryId) {
+        appendCustomerBubble(text);
+        scrollToBottom();
+        showState('thinking');
+        scrollToBottom();
+        // Parse intent from the message
+        var intent = parseIntent(text);
+        // Merge into funnel
+        if (intent.categoryId) {
+          funnel.categoryId = intent.categoryId;
+          funnel.categoryName = intent.categoryName;
+        }
+        if (intent.productType && !funnel.answers.productType) funnel.answers.productType = intent.productType;
+        if (intent.concern && !funnel.answers.concern) funnel.answers.concern = intent.concern;
+        if (intent.budget && !funnel.answers.budget) funnel.answers.budget = intent.budget;
+        if (intent.skinType && !funnel.answers.skinType) funnel.answers.skinType = intent.skinType;
+        if (intent.brand && !funnel.answers.brand) funnel.answers.brand = intent.brand;
+        persistFunnel();
+        removeTyping();
+
+        // Show acknowledgment of what we understood
+        var ackParts = [];
+        if (funnel.answers.productType) ackParts.push(funnel.answers.productType);
+        if (funnel.answers.concern) ackParts.push('for ' + funnel.answers.concern);
+        if (funnel.answers.budget) ackParts.push('under ' + funnel.answers.budget);
+        var ackText = ackParts.length > 0
+          ? 'I\u2019d be happy to help! Let\u2019s find the perfect ' + ackParts.join(' ') + ' for you.'
+          : 'I\u2019d be happy to help you find what you\u2019re looking for!';
+        appendAiBubble(ackText);
+
+        // Continue with adaptive discovery
+        var missing = determineMissingFields();
+        updateContextBar();
+        updateProgressBar();
+        if (missing.length === 0 ||
+            (missing.length === 1 && (missing[0] === 'brand' || missing[0] === 'budget' || missing[0] === 'skinType'))) {
+          // Enough info to recommend directly
+          removeContextBar();
+          fetchRecommendations();
+        } else {
+          askDiscoveryQuestion(missing[0]);
+        }
+        return;
+      }
+
+      // Fall back to standard chat API for non-shopping or follow-up messages
       var stateKey = 'thinking';
       var lower = text.toLowerCase();
       if (lower.indexOf('compar') !== -1 || lower.indexOf('vs ') !== -1) stateKey = 'comparing';
       else if (lower.indexOf('cheap') !== -1 || lower.indexOf('affordable') !== -1 || lower.indexOf('budget') !== -1) stateKey = 'searching';
       else if (lower.indexOf('shipping') !== -1 || lower.indexOf('return') !== -1 || lower.indexOf('delivery') !== -1 || lower.indexOf('contact') !== -1) stateKey = 'answering';
       else if (lower.indexOf('recommend') !== -1 || lower.indexOf('suggest') !== -1 || lower.indexOf('best') !== -1) stateKey = 'searching';
+
+      appendCustomerBubble(text);
+      scrollToBottom();
       showState(stateKey);
       scrollToBottom();
 
@@ -2494,6 +4340,493 @@
         });
     }
 
+    // ─── Business Cards ───
+    function renderVerifiedBadge() {
+      var b = document.createElement('div');
+      b.className = 'verified-badge';
+      b.textContent = '\u2713 Verified Business Information';
+      return b;
+    }
+
+    function renderContinueShoppingCTA() {
+      var wrap = document.createElement('div');
+      wrap.className = 'continue-cta';
+      var btn = document.createElement('button');
+      btn.className = 'continue-cta-btn';
+      btn.textContent = 'Continue Shopping';
+      btn.addEventListener('click', function () {
+        if (funnel.categoryId) {
+          selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
+        } else {
+          renderWelcome();
+        }
+      });
+      wrap.appendChild(btn);
+      return wrap;
+    }
+
+    function renderInfoCard(icon, title, body, linkText, linkUrl) {
+      var card = document.createElement('div');
+      card.className = 'business-card';
+      card.innerHTML =
+        '<div class="business-card-header">' +
+          '<span class="business-card-icon">' + icon + '</span>' +
+          '<span class="business-card-title">' + escapeHtml(title) + '</span>' +
+        '</div>' +
+        '<div class="business-card-body">' + escapeHtml(body) + '</div>' +
+        (linkText ? '<a class="business-card-link" href="' + escapeHtml(linkUrl || '#') + '" target="_blank">' + escapeHtml(linkText) + ' \u2192</a>' : '');
+      return card;
+    }
+
+    function renderShippingCard(text) {
+      var clean = text.replace(/^Yes(!|,)?\s*/i, '').trim();
+      var card = document.createElement('div');
+      card.className = 'business-card';
+      card.innerHTML =
+        '<div class="business-card-header">' +
+          '<span class="business-card-icon">\uD83D\uDE9A</span>' +
+          '<span class="business-card-title">Shipping</span>' +
+        '</div>' +
+        '<div class="business-card-body">' + escapeHtml(clean) + '</div>';
+      return card;
+    }
+
+    function renderReturnsCard(text) {
+      var card = document.createElement('div');
+      card.className = 'business-card';
+      card.innerHTML =
+        '<div class="business-card-header">' +
+          '<span class="business-card-icon">\uD83D\uDCE6</span>' +
+          '<span class="business-card-title">Returns Policy</span>' +
+        '</div>' +
+        '<div class="business-card-body">' + escapeHtml(text) + '</div>';
+      return card;
+    }
+
+    function renderPaymentCard(text) {
+      var methods = [];
+      if (text.indexOf('Visa') !== -1) methods.push('Visa');
+      if (text.indexOf('Mastercard') !== -1) methods.push('Mastercard');
+      if (text.indexOf('Apple Pay') !== -1) methods.push('Apple Pay');
+      if (text.indexOf('PayPal') !== -1) methods.push('PayPal');
+      var list = methods.map(function (m) { return '<li>' + escapeHtml(m) + '</li>'; }).join('');
+      var card = document.createElement('div');
+      card.className = 'business-card';
+      card.innerHTML =
+        '<div class="business-card-header">' +
+          '<span class="business-card-icon">\uD83D\uDCB3</span>' +
+          '<span class="business-card-title">Payment Methods</span>' +
+        '</div>' +
+        '<ul class="business-card-list">' + list + '</ul>';
+      return card;
+    }
+
+    function renderWarrantyCard(text) {
+      var card = document.createElement('div');
+      card.className = 'business-card';
+      card.innerHTML =
+        '<div class="business-card-header">' +
+          '<span class="business-card-icon">\uD83D\uDEE1\uFE0F</span>' +
+          '<span class="business-card-title">Warranty</span>' +
+        '</div>' +
+        '<div class="business-card-body">' + escapeHtml(text) + '</div>';
+      return card;
+    }
+
+    function renderHoursCard(text) {
+      var isOpen = text.toLowerCase().indexOf('open') !== -1 &&
+                   text.toLowerCase().indexOf('close') === -1 &&
+                   text.toLowerCase().indexOf('closed') === -1;
+      var statusClass = isOpen ? 'open' : 'closed';
+      var statusText = isOpen ? 'Open Now' : 'Closed';
+      var clean = text.replace(/^(yes|currently|we'?re)\s*/i, '').trim();
+      var card = document.createElement('div');
+      card.className = 'hours-card';
+      card.innerHTML =
+        '<div class="hours-row">' +
+          '<div class="hours-status ' + statusClass + '">' +
+            '<span class="hours-dot ' + statusClass + '"></span>' +
+            '<span>' + statusText + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="hours-today">' + escapeHtml(clean) + '</div>';
+      return card;
+    }
+
+    function renderContactCard() {
+      var phone = config.business && config.business.phone;
+      var whatsapp = config.business && config.business.whatsapp;
+      var email = config.business && config.business.email;
+      var card = document.createElement('div');
+      card.className = 'contact-card';
+      card.innerHTML =
+        '<div class="contact-card-title">Need Human Assistance?</div>' +
+        '<div class="contact-card-subtitle">Our team would be happy to help.</div>' +
+        '<div class="contact-card-actions">' +
+          (whatsapp ? '<a class="contact-btn" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
+            '<span class="contact-btn-icon">\uD83D\uDCAC</span>' +
+            '<span class="contact-btn-label">WhatsApp</span></a>' : '') +
+          (phone ? '<a class="contact-btn" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +
+            '<span class="contact-btn-icon">\uD83D\uDCDE</span>' +
+            '<span class="contact-btn-label">Call</span></a>' : '') +
+          (email ? '<a class="contact-btn" href="mailto:' + escapeHtml(email) + '">' +
+            '<span class="contact-btn-icon">\u2709\uFE0F</span>' +
+            '<span class="contact-btn-label">Email</span></a>' : '') +
+        '</div>';
+      return card;
+    }
+
+    function renderEscalationCard() {
+      var phone = config.business && config.business.phone;
+      var whatsapp = config.business && config.business.whatsapp;
+      var email = config.business && config.business.email;
+      var card = document.createElement('div');
+      card.className = 'escalation-card';
+      card.innerHTML =
+        '<div class="escalation-card-title">Need Personal Assistance?</div>' +
+        '<div class="escalation-card-subtitle">Our team would be happy to help.</div>' +
+        '<div class="escalation-actions">' +
+          (whatsapp ? '<a class="escalation-btn escalation-btn-whatsapp" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
+            '<span class="escalation-btn-icon">\uD83D\uDCAC</span><span>WhatsApp</span></a>' : '') +
+          (phone ? '<a class="escalation-btn escalation-btn-call" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +
+            '<span class="escalation-btn-icon">\uD83D\uDCDE</span><span>Call</span></a>' : '') +
+          (email ? '<a class="escalation-btn escalation-btn-email" href="mailto:' + escapeHtml(email) + '">' +
+            '<span class="escalation-btn-icon">\u2709\uFE0F</span><span>Email</span></a>' : '') +
+        '</div>';
+      return card;
+    }
+
+    function renderUnknownAnswerCard() {
+      var phone = config.business && config.business.phone;
+      var whatsapp = config.business && config.business.whatsapp;
+      var email = config.business && config.business.email;
+      var card = document.createElement('div');
+      card.className = 'business-unknown-card';
+      card.innerHTML =
+        '<div class="business-unknown-text">I couldn\u2019t find verified information about that. Would you like me to connect you with our team?</div>' +
+        '<div class="business-unknown-actions">' +
+          (whatsapp ? '<a class="contact-btn" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
+            '<span class="contact-btn-icon">\uD83D\uDCAC</span>' +
+            '<span class="contact-btn-label">WhatsApp</span></a>' : '') +
+          (phone ? '<a class="contact-btn" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +
+            '<span class="contact-btn-icon">\uD83D\uDCDE</span>' +
+            '<span class="contact-btn-label">Call</span></a>' : '') +
+          (email ? '<a class="contact-btn" href="mailto:' + escapeHtml(email) + '">' +
+            '<span class="contact-btn-icon">\u2709\uFE0F</span>' +
+            '<span class="contact-btn-label">Email</span></a>' : '') +
+        '</div>';
+      return card;
+    }
+
+    function renderFAQAccordion(items) {
+      var acc = document.createElement('div');
+      acc.className = 'faq-accordion';
+      items.forEach(function (item) {
+        var faq = document.createElement('div');
+        faq.className = 'faq-item';
+        var q = document.createElement('button');
+        q.className = 'faq-question';
+        q.textContent = item.q;
+        q.addEventListener('click', function () { faq.classList.toggle('open'); });
+        var a = document.createElement('div');
+        a.className = 'faq-answer';
+        var at = document.createElement('div');
+        at.className = 'faq-answer-text';
+        at.textContent = item.a;
+        a.appendChild(at);
+        faq.appendChild(q);
+        faq.appendChild(a);
+        acc.appendChild(faq);
+      });
+      return acc;
+    }
+
+    function detectBusinessIntent(text) {
+      var lower = text.toLowerCase();
+      if (lower.indexOf('deliver') !== -1 || lower.indexOf('shipping') !== -1 || lower.indexOf('ship to') !== -1) return 'shipping';
+      if (lower.indexOf('return') !== -1 && (lower.indexOf('policy') !== -1 || lower.indexOf('day') !== -1 || lower.indexOf('accepted') !== -1)) return 'returns';
+      if ((lower.indexOf('payment') !== -1 || lower.indexOf('pay') !== -1) && (lower.indexOf('visa') !== -1 || lower.indexOf('mastercard') !== -1 || lower.indexOf('paypal') !== -1 || lower.indexOf('apple pay') !== -1)) return 'payment';
+      if (lower.indexOf('warranty') !== -1) return 'warranty';
+      if ((lower.indexOf('hour') !== -1 || lower.indexOf('open today') !== -1 || lower.indexOf('close') !== -1) && (lower.indexOf('am') !== -1 || lower.indexOf('pm') !== -1 || lower.indexOf('today') !== -1)) return 'hours';
+      if (lower.indexOf('speak') !== -1 || lower.indexOf('human') !== -1 || lower.indexOf('person') !== -1 || (lower.indexOf('talk') !== -1 && lower.indexOf('someone') !== -1)) return 'contact';
+      if (lower.indexOf('located') !== -1 || lower.indexOf('address') !== -1 || lower.indexOf('where are you') !== -1) return 'store';
+      if (lower.indexOf('couldn\'t find') !== -1 || lower.indexOf('couldn\'t verify') !== -1 || lower.indexOf('no verified') !== -1) return 'unknown';
+      if (lower.indexOf('policy') !== -1 || lower.indexOf('privacy') !== -1) return 'policy';
+      if (lower.indexOf('faq') !== -1 || lower.indexOf('frequent') !== -1) return 'faq';
+      return null;
+    }
+
+    function renderBusinessResponse(intent, text) {
+      var container = document.createElement('div');
+      switch (intent) {
+        case 'shipping':
+          container.appendChild(renderShippingCard(text));
+          break;
+        case 'returns':
+          container.appendChild(renderReturnsCard(text));
+          break;
+        case 'payment':
+          container.appendChild(renderPaymentCard(text));
+          break;
+        case 'hours':
+          container.appendChild(renderHoursCard(text));
+          break;
+        case 'warranty':
+          container.appendChild(renderWarrantyCard(text));
+          break;
+        case 'store':
+          container.appendChild(renderInfoCard('\uD83C\uDFEA', 'Our Location', text));
+          break;
+        case 'contact':
+          container.appendChild(renderContactCard());
+          break;
+        case 'unknown':
+          container.appendChild(renderUnknownAnswerCard());
+          break;
+        case 'policy':
+          container.appendChild(renderPolicyCard(text));
+          break;
+        case 'faq':
+          container.appendChild(renderFAQAccordion([
+            { q: 'What is your shipping policy?', a: 'We deliver worldwide. Delivery times vary by location.' },
+            { q: 'What is your return policy?', a: 'Returns accepted within 30 days of delivery.' },
+            { q: 'What payment methods do you accept?', a: 'We accept Visa, Mastercard, Apple Pay, and PayPal.' },
+          ]));
+          break;
+        default:
+          container.appendChild(renderInfoCard('\u2139\uFE0F', 'Business Information', text));
+      }
+      if (intent !== 'unknown' && intent !== 'contact' && intent !== 'faq') {
+        container.appendChild(renderVerifiedBadge());
+      }
+      container.appendChild(renderContinueShoppingCTA());
+      body.appendChild(container);
+    }
+
+    function renderPolicyCard(text) {
+      var card = document.createElement('div');
+      card.className = 'policy-card';
+      var label = text.indexOf('privacy') !== -1 ? 'Privacy Policy' : 'Policies';
+      card.innerHTML =
+        '<div class="policy-card-text">\uD83D\uDCC4 ' + escapeHtml(label) + '</div>' +
+        '<span class="policy-card-arrow">\u203A</span>';
+      card.addEventListener('click', function () {
+        card.classList.toggle('open');
+        var existing = card.querySelector('.policy-card-body');
+        if (existing) { existing.remove(); return; }
+        var body = document.createElement('div');
+        body.className = 'business-card-body';
+        body.style.padding = '10px 0 0';
+        body.textContent = text;
+        card.appendChild(body);
+      });
+      return card;
+    }
+
+    // ─── Human Handoff / Escalation ───
+    function renderContactMethodCard(method, label, value, disabled) {
+      var card = document.createElement('a');
+      card.className = 'contact-method-card' + (disabled ? ' disabled' : '') + ' ' + method;
+      if (!disabled && value) {
+        if (method === 'whatsapp') { card.href = value; }
+        else if (method === 'phone') { card.href = 'tel:' + String(value).replace(/[^+\d]/g, ''); }
+        else if (method === 'email') { card.href = 'mailto:' + value; }
+        card.target = '_blank';
+      }
+      var icons = { whatsapp: '\uD83D\uDCAC', phone: '\uD83D\uDCDE', email: '\u2709\uFE0F', livechat: '\uD83D\uDCAC' };
+      card.innerHTML =
+        '<span class="contact-method-card-icon">' + (icons[method] || '') + '</span>' +
+        '<span class="contact-method-card-label">' + escapeHtml(label) + '</span>' +
+        (disabled ? '<span class="contact-method-card-badge">Coming Soon</span>' : '');
+      return card;
+    }
+
+    function renderConversationSummary() {
+      var rows = [];
+      if (funnel.categoryName) rows.push({ label: 'Category', value: funnel.categoryName });
+      if (funnel.answers.budget) rows.push({ label: 'Budget', value: funnel.answers.budget });
+      if (funnel.answers.brand) rows.push({ label: 'Brand', value: funnel.answers.brand });
+      if (funnel.answers.skinType) rows.push({ label: 'Skin Type', value: funnel.answers.skinType });
+      if (funnel.answers.concern) rows.push({ label: 'Concern', value: funnel.answers.concern });
+      if (rows.length === 0) return null;
+      var card = document.createElement('div');
+      card.className = 'conversation-summary';
+      var html = '<div class="conversation-summary-title">Conversation Summary</div>';
+      rows.forEach(function (r) {
+        html += '<div class="summary-row"><span class="summary-label">' + escapeHtml(r.label) + '</span><span class="summary-value">' + escapeHtml(r.value) + '</span></div>';
+      });
+      card.innerHTML = html;
+      return card;
+    }
+
+    function renderBusinessAvailability() {
+      var card = document.createElement('div');
+      card.className = 'availability-card';
+      card.innerHTML =
+        '<div class="availability-item">' +
+          '<span class="availability-label">Hours</span>' +
+          '<span class="availability-value">Mon\u2013Fri, 9:00 AM \u2013 6:00 PM</span>' +
+        '</div>' +
+        '<div class="availability-item">' +
+          '<span class="availability-label">Response Time</span>' +
+          '<span class="availability-value">Under 10 minutes</span>' +
+        '</div>';
+      return card;
+    }
+
+    function renderEscalationBottomActions() {
+      var wrap = document.createElement('div');
+      wrap.className = 'escalation-actions-bottom';
+      var actions = [
+        { label: 'Continue Shopping', icon: '\u{1F6CD}', fn: function () {
+          if (funnel.categoryId) {
+            selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
+          } else {
+            renderWelcome();
+          }
+        }},
+        { label: 'Start New Search', icon: '\u{1F50D}', fn: function () {
+          funnel.categoryId = null;
+          funnel.categoryName = null;
+          funnel.answers = {};
+          funnel.view = 'welcome';
+          persistFunnel();
+          clearBody();
+          renderWelcome();
+        }},
+        { label: 'Close Chat', icon: '\u{1F510}', fn: function () {
+          chat.classList.remove('open');
+          fab.classList.remove('open');
+        }},
+      ];
+      actions.forEach(function (a) {
+        var btn = document.createElement('button');
+        btn.className = 'escalation-action-btn';
+        btn.textContent = a.icon + ' ' + a.label;
+        btn.addEventListener('click', a.fn);
+        wrap.appendChild(btn);
+      });
+      return wrap;
+    }
+
+    function renderFullEscalation() {
+      var msg = document.createElement('div');
+      msg.className = 'escalation-message';
+      msg.textContent = "I\u2019d like to connect you with our team so they can give you the most accurate answer.";
+      body.appendChild(msg);
+      var summary = renderConversationSummary();
+      if (summary) body.appendChild(summary);
+      body.appendChild(renderBusinessAvailability());
+      var methodsWrap = document.createElement('div');
+      methodsWrap.className = 'contact-methods';
+      var phone = config.business && config.business.phone;
+      var whatsapp = config.business && config.business.whatsapp;
+      var email = config.business && config.business.email;
+      if (whatsapp) methodsWrap.appendChild(renderContactMethodCard('whatsapp', 'Chat on WhatsApp', whatsapp));
+      if (phone) methodsWrap.appendChild(renderContactMethodCard('phone', 'Call Business', phone));
+      if (email) methodsWrap.appendChild(renderContactMethodCard('email', 'Send Email', email));
+      methodsWrap.appendChild(renderContactMethodCard('livechat', 'Live Chat', null, true));
+      body.appendChild(methodsWrap);
+      var closing = document.createElement('div');
+      closing.className = 'escalation-closing';
+      closing.innerHTML =
+        '<div class="escalation-closing-title">You\u2019re all set.</div>' +
+        '<div class="escalation-closing-sub">I\u2019ve prepared everything for our team. Tap any option below.</div>';
+      body.appendChild(closing);
+      body.appendChild(renderEscalationBottomActions());
+      scrollToBottom();
+    }
+
+    // ─── Typewriter, Celebration, Checkout, Recovery ───
+    function typewriterText(el, text, speed, callback) {
+      var i = 0;
+      el.textContent = '';
+      el.classList.add('streaming-text');
+      function tick() {
+        if (i < text.length) {
+          el.textContent += text.charAt(i);
+          i++;
+          setTimeout(tick, speed || 20);
+        } else {
+          el.classList.remove('streaming-text');
+          if (typeof callback === 'function') callback();
+        }
+      }
+      tick();
+    }
+
+    function renderSuccessCelebration(product) {
+      var el = document.createElement('div');
+      el.className = 'success-celebration';
+      el.innerHTML =
+        '<div class="success-icon">\uD83C\uDF89</div>' +
+        '<div class="success-title">Excellent choice!</div>' +
+        '<div class="success-sub">I think this product fits what you\u2019re looking for.</div>';
+      return el;
+    }
+
+    function renderCheckoutScreen(product) {
+      if (!product) return null;
+      var block = document.createElement('div');
+      var imageUrl = isHttpUrl(product.imageUrl) ? product.imageUrl : '';
+      var card = document.createElement('div');
+      card.className = 'checkout-card';
+      card.innerHTML =
+        (imageUrl ? '<img class="checkout-img" src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(product.name || '') + '" loading="lazy">' : '<div class="checkout-img">\uD83D\uDCE6</div>') +
+        '<div class="checkout-info">' +
+          '<div class="checkout-name">' + escapeHtml(product.name || '') + '</div>' +
+          (product.price ? '<div class="checkout-price">' + escapeHtml(product.price) + '</div>' : '') +
+        '</div>';
+      block.appendChild(card);
+      var actions = document.createElement('div');
+      actions.className = 'checkout-actions';
+      var viewBtn = document.createElement('a');
+      if (isHttpUrl(product.url)) {
+        viewBtn.href = product.url;
+        viewBtn.target = '_blank';
+      }
+      viewBtn.className = 'continue-cta-btn btn-press ripple';
+      viewBtn.textContent = 'View Product \u2192';
+      viewBtn.style.flex = '1';
+      actions.appendChild(viewBtn);
+      var shopBtn = document.createElement('button');
+      shopBtn.className = 'escalation-action-btn btn-press';
+      shopBtn.textContent = '\u{1F6CD} Continue Shopping';
+      shopBtn.addEventListener('click', function () {
+        if (funnel.categoryId) {
+          selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
+        } else {
+          renderWelcome();
+        }
+      });
+      actions.appendChild(shopBtn);
+      block.appendChild(actions);
+      return block;
+    }
+
+    function renderEmptyResultRecovery() {
+      var el = document.createElement('div');
+      el.className = 'business-unknown-card';
+      el.innerHTML =
+        '<div class="success-icon" style="font-size:28px;">\uD83E\uDD14</div>' +
+        '<div class="business-unknown-text">I couldn\u2019t find something that matches exactly.\nLet\u2019s widen the search.</div>';
+      body.appendChild(el);
+      renderSuggestionChips([
+        { icon: '\u{1F4B0}', label: 'Increase budget', action: function () {
+          delete funnel.answers.budget; persistFunnel();
+          if (funnel.categoryId) selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
+          else renderWelcome();
+        }},
+        { icon: '\u{1F50D}', label: 'Show similar', action: function () {
+          delete funnel.answers.productType; delete funnel.answers.concern; persistFunnel();
+          if (funnel.categoryId) selectCategory({ id: funnel.categoryId, name: funnel.categoryName });
+          else renderWelcome();
+        }},
+        { icon: '\u{1F504}', label: 'Start again', action: function () { renderWelcome(); }},
+        { icon: '\u{1F4AC}', label: 'Ask a question', action: function () { input.focus(); }},
+      ]);
+    }
+
     function handleAIResponse(data) {
       if (data && data.isNewConversation) {
         resetVisitLocalState();
@@ -2502,17 +4835,15 @@
       var replyText = (data && data.replyText) || "Sorry, I didn\u2019t quite catch that. Could you rephrase?";
       var recommendations = Array.isArray(data && data.recommendations) ? data.recommendations : [];
 
-      // Update memory strip if we have context
       if (data && data.contextSnapshot) {
         if (data.contextSnapshot.categoryName) funnel.categoryName = data.contextSnapshot.categoryName;
         if (data.contextSnapshot.answers) funnel.answers = data.contextSnapshot.answers;
         if (data.contextSnapshot.categoryId) funnel.categoryId = data.contextSnapshot.categoryId;
         persistFunnel();
+        updateContextBar();
       }
 
-      // Render AI message with new format
       if (recommendations.length > 0) {
-        // Show recommendations with natural intro
         appendAiBubble(naturalRecommendationIntro());
         var container = renderRecoContainer(recommendations, 'chat');
         var block = document.createElement('div');
@@ -2522,20 +4853,19 @@
         renderSuggestionChips(recommendationFollowUpChips());
         funnel.lastRecommendations = recommendations;
       } else {
-        appendAiBubble(replyText);
-        // Intelligent follow-up chips based on conversation content
-        var lowerReply = replyText.toLowerCase();
-        var chips = [];
-        // Check if reply contains business/support info
-        if (lowerReply.indexOf('shipping') !== -1 || lowerReply.indexOf('return') !== -1 ||
-            lowerReply.indexOf('hour') !== -1 || lowerReply.indexOf('payment') !== -1 ||
-            lowerReply.indexOf('contact') !== -1) {
-          chips = businessFollowUpChips();
-        } else if (lowerReply.indexOf('product') !== -1 || lowerReply.indexOf('recommend') !== -1) {
-          chips = recommendationFollowUpChips();
-        }
-        if (chips.length > 0) {
-          renderSuggestionChips(chips);
+        var intent = detectBusinessIntent(replyText);
+        if (intent) {
+          renderBusinessResponse(intent, replyText);
+        } else {
+          appendAiBubble(replyText);
+          var lowerReply = replyText.toLowerCase();
+          var chips = [];
+          if (lowerReply.indexOf('product') !== -1 || lowerReply.indexOf('recommend') !== -1) {
+            chips = recommendationFollowUpChips();
+          }
+          if (chips.length > 0) {
+            renderSuggestionChips(chips);
+          }
         }
       }
 
