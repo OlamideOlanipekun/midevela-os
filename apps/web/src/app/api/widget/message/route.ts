@@ -8,6 +8,7 @@ import { getSubscriptionForOrg, accessLevelFor } from "@/server/billing/subscrip
 import { getUsageStatus, recordAiUsage } from "@/server/billing/usage";
 import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
 import type { ChatMessage } from "@/server/conversation/llm";
+import { tryAdaptiveDiscovery } from "@/server/widget/adaptiveDiscovery";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
@@ -260,6 +261,57 @@ export async function POST(req: NextRequest) {
           ? (mergedContext.answers as Record<string, string>)
           : undefined,
     };
+
+    // ─── Adaptive discovery: extract shopping requirements from free-form
+    // messages and call the deterministic product engine directly. When it
+    // returns results or a follow-up question, we skip the LLM call for that
+    // turn — saving cost and keeping product data grounded in real DB rows.
+    const adaptiveResult = await tryAdaptiveDiscovery(
+      org.id,
+      messageText,
+      shoppingContext.categoryName || shoppingContext.budget || shoppingContext.brand || shoppingContext.answers
+        ? shoppingContext
+        : null,
+    );
+
+    if (adaptiveResult) {
+      // Update conversation context with any newly extracted requirements
+      if (adaptiveResult.shoppingContext !== shoppingContext) {
+        const updatedContext = {
+          ...mergedContext,
+          categoryName: adaptiveResult.shoppingContext.categoryName ?? mergedContext.categoryName,
+          budget: adaptiveResult.shoppingContext.budget ?? mergedContext.budget,
+          brand: adaptiveResult.shoppingContext.brand ?? mergedContext.brand,
+          ...(adaptiveResult.shoppingContext.answers
+            ? { answers: { ...(mergedContext.answers as Record<string, unknown> ?? {}), ...adaptiveResult.shoppingContext.answers } }
+            : {}),
+        };
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { context: updatedContext as unknown as Prisma.InputJsonValue },
+        });
+      }
+
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: "AI",
+          content: adaptiveResult.replyText,
+          intent: adaptiveResult.recommendations.length > 0 ? "discovery" : "unknown",
+          recommendations: adaptiveResult.recommendations as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      return NextResponse.json(
+        {
+          replyText: adaptiveResult.replyText,
+          intent: adaptiveResult.recommendations.length > 0 ? "discovery" : "unknown",
+          recommendations: adaptiveResult.recommendations,
+          isNewConversation,
+        },
+        { headers }
+      );
+    }
 
     const result = await processConversationTurn({
       orgId: org.id,

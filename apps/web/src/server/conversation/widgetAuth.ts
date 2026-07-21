@@ -20,14 +20,23 @@ export async function resolveWidgetKey(publicKey: string) {
   return key;
 }
 
-/** Empty allowlist means the key was created without a known website
- *  (dev/testing) — stay permissive rather than lock the merchant out. */
+/**
+ * Checks whether a request's Origin is allowed for a given widget key.
+ *
+ * An empty allowlist blocks all origins — the merchant must explicitly
+ * configure at least one domain in Settings → Widget before the widget
+ * will serve requests. Localhost / 127.0.0.1 are automatically included
+ * when the allowlist is populated during onboarding or via the settings
+ * endpoint; see createOrganizationForUser() and normalizeAllowedDomains().
+ */
 export function isOriginAllowed(allowedDomains: string[], origin: string | null): boolean {
-  if (allowedDomains.length === 0) return true;
+  if (!allowedDomains.length) return false;
   if (!origin) return false;
   try {
     const hostname = new URL(origin).hostname;
-    return allowedDomains.some((d) => hostname === d || hostname.endsWith(`.${d}`));
+    return allowedDomains.some(
+      (d) => hostname === d || hostname.endsWith(`.${d}`)
+    );
   } catch {
     return false;
   }

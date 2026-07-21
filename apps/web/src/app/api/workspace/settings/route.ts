@@ -7,8 +7,10 @@ import { toSettingsResponse, updateOrgSettings } from "@/server/tenancy/org";
 /**
  * Normalize a caller-supplied allowed-domains list into bare hostnames.
  * Accepts either an array of strings or a newline/comma-separated string,
- * strips scheme/path/port, drops blanks, dedupes. An empty result = the
- * key allows every origin (isOriginAllowed treats [] as "allow all").
+ * strips scheme/path/port, drops blanks, dedupes. An empty result means
+ * the widget will only serve requests matching an explicitly configured
+ * domain — the old permissive default (empty = all origins) was removed
+ * for security. See isOriginAllowed().
  */
 function normalizeAllowedDomains(input: unknown): string[] {
   const raw =

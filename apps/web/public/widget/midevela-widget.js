@@ -26,6 +26,7 @@
   const chatApiUrl = apiBase + '/api/widget/chat';
   const compareApiUrl = apiBase + '/api/widget/compare';
   const eventApiUrl = apiBase + '/api/widget/event';
+  const historyApiUrl = apiBase + '/api/widget/history';
 
   function escapeHtml(str) {
     return String(str)
@@ -60,6 +61,14 @@
   }
 
   function makeVisitorId() {
+    try {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return 'visitor-' + crypto.randomUUID();
+      }
+    } catch (e) {
+      // crypto unavailable — fall through to the legacy method below
+    }
+    // Legacy fallback for environments without crypto.randomUUID
     return 'visitor-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
   }
 
@@ -1454,5 +1463,54 @@
         }
       }, delaySec * 1000);
     }
+
+    // ─── History restoration — page reload / navigation ───
+    // If the customer has an active conversation on the server, fetch the
+    // recent transcript and replace the boot-time welcome with the actual
+    // conversation. Best-effort: any failure falls back to the current UI.
+    fetch(historyApiUrl + '?key=' + encodeURIComponent(widgetKey) + '&customerId=' + encodeURIComponent(customerId))
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.messages) || data.messages.length === 0) return;
+
+        // Replace the boot-time body with the historical transcript
+        clearBody();
+
+        data.messages.forEach(function (msg) {
+          if (msg.role === 'user') {
+            appendCustomerBubble(msg.content);
+          } else {
+            var row = document.createElement('div');
+            row.className = 'msg-row ai';
+            var avatar = document.createElement('div');
+            avatar.className = 'msg-avatar';
+            avatar.textContent = avatarLetter;
+            var col = document.createElement('div');
+            col.className = 'msg-col';
+            var bubble = document.createElement('div');
+            bubble.className = 'msg-bubble';
+            bubble.textContent = msg.content;
+            col.appendChild(bubble);
+            if (msg.recommendations && msg.recommendations.length > 0) {
+              col.appendChild(renderRecoContainer(msg.recommendations, 'history'));
+            }
+            var time = document.createElement('span');
+            time.className = 'msg-time';
+            time.textContent = nowTime();
+            col.appendChild(time);
+            row.appendChild(avatar);
+            row.appendChild(col);
+            body.appendChild(row);
+          }
+        });
+
+        funnel.conversationStarted = true;
+        funnel.view = 'conversation';
+        persistFunnel();
+        scrollToBottom();
+      })
+      .catch(function () {
+        /* history restore is best-effort — boot UI stays as-is */
+      });
   }
 })();

@@ -5,7 +5,7 @@ import { embedText } from "@/server/conversation/embeddings";
 import { safeHttpUrl, firstImageUrl } from "@/server/retrieval/search";
 
 const MAX_RESULTS = 5;
-const MAX_CANDIDATES = 40; // cap re-ranking cost per call
+const MAX_CANDIDATES = 40;
 
 export interface RecommendedProduct {
   id: string;
@@ -23,7 +23,6 @@ export interface RecommendInput {
   answers: Record<string, string>;
 }
 
-/** Budget values are "min-max"; max empty means open-ended above min. */
 function parseBudget(value: string | undefined): { min: number; max: number | null } | null {
   if (!value) return null;
   const [minStr, maxStr] = value.split("-");
@@ -34,11 +33,54 @@ function parseBudget(value: string | undefined): { min: number; max: number | nu
 }
 
 /**
+ * Derives the most common (dominant) currency among in-stock products in
+ * the given category set. Falls back to the org-level currency when no
+ * products explicitly set a currency.
+ */
+async function dominantCurrencyForCategory(
+  orgId: string,
+  categoryIds: string[],
+  fallbackCurrency: string
+): Promise<string> {
+  const products = await prisma.product.findMany({
+    where: {
+      orgId,
+      categoryId: { in: categoryIds },
+      inventoryStatus: { not: "OUT_OF_STOCK" },
+    },
+    select: { price: true, currency: true },
+  });
+
+  const active = products.filter(
+    (p) => Number.isFinite(Number(p.price)) && Number(p.price) > 0
+  );
+  if (active.length === 0) return fallbackCurrency;
+
+  const counts = new Map<string, number>();
+  let dominant = fallbackCurrency;
+  let maxCount = 0;
+  for (const p of active) {
+    const c = p.currency ?? fallbackCurrency;
+    const count = (counts.get(c) ?? 0) + 1;
+    counts.set(c, count);
+    if (count > maxCount) {
+      maxCount = count;
+      dominant = c;
+    }
+  }
+  return dominant;
+}
+
+/**
  * Deterministic filter + relevance rank: (1) filter candidates by
  * category (+ children), budget, and brand; (2) rank the filtered set by
- * embedding relevance to the shopper's stated purpose using the SAME
- * pgvector embeddings already generated for RAG (server/knowledge/sync.ts)
- * — no extra LLM call, no re-embedding candidates on every request.
+ * embedding relevance to the shopper's stated purpose using pgvector
+ * embeddings — no extra LLM call.
+ *
+ * Currency consistency: when a budget is applied the filter uses the
+ * dominant currency among the category's products, NOT the org-level
+ * currency, so the budget labels shown to the shopper (computed by
+ * computeBudgetOptions) match the currency used for filtering.
  */
 export async function recommendProducts(input: RecommendInput): Promise<RecommendedProduct[]> {
   const [category, org] = await Promise.all([
@@ -57,6 +99,12 @@ export async function recommendProducts(input: RecommendInput): Promise<Recommen
   const budget = parseBudget(input.answers.budget);
   const brand = input.answers.brand?.trim();
 
+  // Determine which currency to use for budget filtering — match the
+  // dominant product currency used by computeBudgetOptions for the labels.
+  const budgetCurrency = budget
+    ? await dominantCurrencyForCategory(input.orgId, categoryIds, orgCurrency)
+    : null;
+
   const candidates = await prisma.product.findMany({
     where: {
       orgId: input.orgId,
@@ -65,7 +113,7 @@ export async function recommendProducts(input: RecommendInput): Promise<Recommen
       ...(budget
         ? {
             price: { gte: budget.min, ...(budget.max !== null ? { lte: budget.max } : {}) },
-            currency: orgCurrency,
+            currency: budgetCurrency!,
           }
         : {}),
       ...(brand ? { brand } : {}),
@@ -76,8 +124,6 @@ export async function recommendProducts(input: RecommendInput): Promise<Recommen
 
   if (candidates.length === 0) return [];
 
-  // Rank by relevance to whatever the shopper told us about their purpose
-  // (the first non-budget/brand answer collected, e.g. "gaming", "acne").
   const purposeAnswer =
     input.answers.purpose ||
     input.answers.concern ||
@@ -103,9 +149,6 @@ export async function recommendProducts(input: RecommendInput): Promise<Recommen
     const simById = new Map(similarityRows.map((r) => [r.source_id, r.similarity]));
     ranked = candidates.slice().sort((a, b) => (simById.get(b.id) ?? 0) - (simById.get(a.id) ?? 0));
   } catch (err) {
-    // Embedding relevance is an enhancement, not a requirement — a Voyage
-    // hiccup degrades to the filtered-but-unranked list rather than failing
-    // the whole recommendation.
     console.error("Recommend: relevance ranking failed, falling back to unranked order.", err);
   }
 

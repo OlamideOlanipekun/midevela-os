@@ -70,57 +70,33 @@ async function getRecommendationFromRows(products: Product[], rows: CompareRow[]
 }
 
 /**
- * Sparse/no attributes (typical for crawled products) — the model reads
- * the descriptions and produces both the comparison rows and the
- * recommendation. Explicitly told to use ONLY stated facts, same rule as
- * the main conversation engine's grounding.
+ * Always returns database-grounded rows: price, availability/stock, brand,
+ * and any structured attributes from Product.attributes. Never uses the LLM
+ * to generate product specifications — if structured attributes are absent
+ * the comparison falls back to only the verified fields.
  */
-async function getLlmComparison(products: Product[]): Promise<{ rows: CompareRow[]; recommendation: string }> {
-  const messages: ChatMessage[] = [
-    {
-      role: "system",
-      content: [
-        "You are comparing two products from the same store.",
-        "Read their descriptions and produce a short comparison table plus a recommendation.",
-        "Only use facts stated in the descriptions below — never invent specs, numbers, or features that aren't mentioned.",
-        'Respond with ONLY JSON: {"rows": [{"label": string, "values": [string, string]}], "recommendation": string}',
-        "At most 4 rows. recommendation should be 2-3 concise sentences.",
-      ].join("\n"),
-    },
-    {
-      role: "user",
-      content: products
-        .map((p, i) => `Product ${i + 1}: ${p.name}\nDescription: ${p.description || "(no description provided)"}`)
-        .join("\n\n"),
-    },
-  ];
+function databaseRows(ordered: Product[]): CompareRow[] {
+  const rows: CompareRow[] = [];
 
-  try {
-    const result = await completeJson(messages);
-    const parsed = JSON.parse(result.raw);
-    const rawRows = Array.isArray(parsed?.rows) ? parsed.rows : [];
-    const rows: CompareRow[] = rawRows
-      .filter((r: unknown): r is Record<string, unknown> => Boolean(r) && typeof r === "object")
-      .map((r: Record<string, unknown>) => ({
-        label: typeof r.label === "string" ? r.label : "Comparison",
-        values: Array.isArray(r.values)
-          ? r.values.slice(0, 2).map((v: unknown) => (typeof v === "string" ? v : String(v ?? "—")))
-          : ["—", "—"],
-      }))
-      .slice(0, 4);
-    const recommendation =
-      typeof parsed?.recommendation === "string" && parsed.recommendation.trim()
-        ? parsed.recommendation.trim()
-        : "Both look like solid choices based on the available details.";
-    return { rows, recommendation };
-  } catch (err) {
-    console.error("Compare: LLM comparison failed, falling back to price/availability only.", err);
-    return { rows: [], recommendation: "We don't have enough detail to compare these beyond price and availability yet." };
+  rows.push({ label: "Price", values: ordered.map((p) => formatMoney(p.price, p.currency)) });
+
+  rows.push({
+    label: "Availability",
+    values: ordered.map((p) => p.inventoryStatus.replace("_", " ").toLowerCase()),
+  });
+
+  const brands = ordered.map((p) => p.brand ?? "—");
+  if (brands.some((b) => b !== "—")) {
+    rows.push({ label: "Brand", values: brands });
   }
+
+  rows.push(...attributesFromRealData(ordered));
+
+  return rows;
 }
 
 export async function compareProducts(orgId: string, productIds: string[]): Promise<CompareResult> {
-  const uniqueIds = [...new Set(productIds)].slice(0, 2); // v1 compares exactly two, per spec
+  const uniqueIds = [...new Set(productIds)].slice(0, 2);
   if (uniqueIds.length < 2) throw new ApiError(400, "Two distinct productIds are required.");
 
   const products = await prisma.product.findMany({ where: { id: { in: uniqueIds }, orgId } });
@@ -129,27 +105,21 @@ export async function compareProducts(orgId: string, productIds: string[]): Prom
   const byId = new Map(products.map((p) => [p.id, p]));
   const ordered = uniqueIds.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
 
-  const priceRow: CompareRow = { label: "Price", values: ordered.map((p) => formatMoney(p.price, p.currency)) };
-  const stockRow: CompareRow = {
-    label: "Availability",
-    values: ordered.map((p) => p.inventoryStatus.replace("_", " ").toLowerCase()),
-  };
+  const rows = databaseRows(ordered);
 
-  const attributeRows = attributesFromRealData(ordered);
-
-  let extraRows: CompareRow[] = [];
   let recommendation: string;
-  if (attributeRows.length > 0) {
-    recommendation = await getRecommendationFromRows(ordered, [priceRow, stockRow, ...attributeRows]);
+  if (rows.length > 2) {
+    // Has at least price + availability + one more row — worth asking the LLM
+    // for a recommendation based on the verified data.
+    recommendation = await getRecommendationFromRows(ordered, rows);
   } else {
-    const llm = await getLlmComparison(ordered);
-    extraRows = llm.rows;
-    recommendation = llm.recommendation;
+    recommendation =
+      "We don't have enough detail to compare these beyond price and availability yet.";
   }
 
   return {
     products: ordered.map((p) => ({ id: p.id, name: p.name, price: formatMoney(p.price, p.currency) })),
-    rows: [priceRow, stockRow, ...attributeRows, ...extraRows],
+    rows,
     recommendation,
   };
 }
