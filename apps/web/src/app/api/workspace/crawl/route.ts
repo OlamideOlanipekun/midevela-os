@@ -6,6 +6,7 @@ import { withErrorHandling, jsonError } from "@/server/http";
 import { assertPublicUrl } from "@/server/net/ssrfGuard";
 import { importCatalogFromUrl } from "@/server/catalog/catalogImporter";
 import { getPlanCaps, remainingBudget } from "@/server/billing/caps";
+import { normalizeUrl } from "@/server/website/normalizer";
 
 // Products now come from the layered catalogImporter (platform-JSON →
 // JSON-LD → fetch+LLM → Firecrawl). This route additionally does a light,
@@ -109,6 +110,21 @@ export async function POST(req: NextRequest) {
     let targetUrl = String(url).trim();
     if (!/^https?:\/\//i.test(targetUrl)) targetUrl = `https://${targetUrl}`;
 
+    // Ownership check: the website must be registered and ACTIVE for this org
+    const normalizedUrl = normalizeUrl(targetUrl);
+    const registryEntry = await prisma.websiteRegistry.findUnique({
+      where: { normalizedUrl },
+    });
+    if (!registryEntry) {
+      return jsonError(400, "Connect this website first via the dashboard before crawling.");
+    }
+    if (registryEntry.orgId !== org.id) {
+      return jsonError(403, "This website belongs to another workspace.");
+    }
+    if (registryEntry.status !== "ACTIVE") {
+      return jsonError(400, "Website is not active.");
+    }
+
     // Products: layered importer (platform-JSON → JSON-LD → fetch+LLM →
     // Firecrawl), which runs its own SSRF guard + persistence (dedupe,
     // embeddings, category auto-seed).
@@ -182,6 +198,15 @@ export async function POST(req: NextRequest) {
       budget--;
       entriesAdded++;
     }
+
+    // Update website crawl status
+    await prisma.websiteRegistry.update({
+      where: { id: registryEntry.id },
+      data: {
+        crawlStatus: productResult.imported > 0 ? "READY" : "FAILED",
+        lastCrawledAt: new Date(),
+      },
+    });
 
     return NextResponse.json({
       success: true,

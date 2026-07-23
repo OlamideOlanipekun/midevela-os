@@ -172,6 +172,73 @@ export interface VisitorDisconnectedEvent extends BaseEvent {
   merchantId: string;
 }
 
+// ── Website Registry events ──────────────────────────────────
+
+export interface WebsiteConnectedEvent extends BaseEvent {
+  type: "website.connected";
+  orgId: string;
+  websiteId: string;
+  normalizedUrl: string;
+}
+
+export interface WebsiteRejectedEvent extends BaseEvent {
+  type: "website.rejected";
+  orgId: string;
+  normalizedUrl: string;
+  reason: string;
+}
+
+export interface WebsiteVerifiedEvent extends BaseEvent {
+  type: "website.verified";
+  orgId: string;
+  websiteId: string;
+  normalizedUrl: string;
+}
+
+export interface WebsiteDisconnectedEvent extends BaseEvent {
+  type: "website.disconnected";
+  orgId: string;
+  websiteId: string;
+  normalizedUrl: string;
+}
+
+export interface WebsiteSuspendedEvent extends BaseEvent {
+  type: "website.suspended";
+  orgId: string;
+  websiteId: string;
+  normalizedUrl: string;
+}
+
+export interface WebsiteReactivatedEvent extends BaseEvent {
+  type: "website.reactivated";
+  orgId: string;
+  websiteId: string;
+  normalizedUrl: string;
+}
+
+export interface WebsiteCrawlStartedEvent extends BaseEvent {
+  type: "website.crawl.started";
+  orgId: string;
+  websiteId: string;
+  normalizedUrl: string;
+}
+
+export interface WebsiteCrawlCompletedEvent extends BaseEvent {
+  type: "website.crawl.completed";
+  orgId: string;
+  websiteId: string;
+  normalizedUrl: string;
+  productsFound: number;
+}
+
+export interface WebsiteCrawlFailedEvent extends BaseEvent {
+  type: "website.crawl.failed";
+  orgId: string;
+  websiteId: string;
+  normalizedUrl: string;
+  error: string;
+}
+
 export type MidevelaEvent =
   | MerchantCreatedEvent
   | MerchantDeletedEvent
@@ -195,6 +262,15 @@ export type MidevelaEvent =
   | QueueHealthEvent
   | InfrastructureMetricEvent
   | VisitorConnectedEvent
-  | VisitorDisconnectedEvent;
+  | VisitorDisconnectedEvent
+  | WebsiteConnectedEvent
+  | WebsiteRejectedEvent
+  | WebsiteVerifiedEvent
+  | WebsiteDisconnectedEvent
+  | WebsiteSuspendedEvent
+  | WebsiteReactivatedEvent
+  | WebsiteCrawlStartedEvent
+  | WebsiteCrawlCompletedEvent
+  | WebsiteCrawlFailedEvent;
 
 export type EventHandler<T extends MidevelaEvent = MidevelaEvent> = (event: T) => void | Promise<void>;

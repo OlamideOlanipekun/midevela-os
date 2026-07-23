@@ -93,3 +93,41 @@ export function publishInfrastructureMetric(cpu: number, ram: number, disk: numb
 export function publishQueueHealth(queue: string, pending: number, active: number, failed: number): void {
   eventBus.publish("queue.health", { queue, pending, active, failed });
 }
+
+// ── Website Registry ─────────────────────────────────────────
+
+export function publishWebsiteConnected(orgId: string, websiteId: string, normalizedUrl: string): void {
+  eventBus.publish("website.connected", { orgId, websiteId, normalizedUrl });
+}
+
+export function publishWebsiteRejected(orgId: string, normalizedUrl: string, reason: string): void {
+  eventBus.publish("website.rejected", { orgId, normalizedUrl, reason });
+}
+
+export function publishWebsiteVerified(orgId: string, websiteId: string, normalizedUrl: string): void {
+  eventBus.publish("website.verified", { orgId, websiteId, normalizedUrl });
+}
+
+export function publishWebsiteDisconnected(orgId: string, websiteId: string, normalizedUrl: string): void {
+  eventBus.publish("website.disconnected", { orgId, websiteId, normalizedUrl });
+}
+
+export function publishWebsiteSuspended(orgId: string, websiteId: string, normalizedUrl: string): void {
+  eventBus.publish("website.suspended", { orgId, websiteId, normalizedUrl });
+}
+
+export function publishWebsiteReactivated(orgId: string, websiteId: string, normalizedUrl: string): void {
+  eventBus.publish("website.reactivated", { orgId, websiteId, normalizedUrl });
+}
+
+export function publishWebsiteCrawlStarted(orgId: string, websiteId: string, normalizedUrl: string): void {
+  eventBus.publish("website.crawl.started", { orgId, websiteId, normalizedUrl });
+}
+
+export function publishWebsiteCrawlCompleted(orgId: string, websiteId: string, normalizedUrl: string, productsFound: number): void {
+  eventBus.publish("website.crawl.completed", { orgId, websiteId, normalizedUrl, productsFound });
+}
+
+export function publishWebsiteCrawlFailed(orgId: string, websiteId: string, normalizedUrl: string, error: string): void {
+  eventBus.publish("website.crawl.failed", { orgId, websiteId, normalizedUrl, error });
+}

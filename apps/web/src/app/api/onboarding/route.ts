@@ -6,7 +6,8 @@ import {
   createOrganizationForUser,
   updateOrgSettings,
 } from "@/server/tenancy/org";
-import { publishMerchantCreated, publishWidgetInstalled } from "@/server/events/instrument";
+import { publishMerchantCreated, publishWidgetInstalled, publishWebsiteConnected } from "@/server/events/instrument";
+import { connectWebsite } from "@/server/website/service";
 
 function embedSnippet(appOrigin: string, publicKey: string) {
   return [
@@ -91,6 +92,15 @@ export async function POST(req: NextRequest) {
     publishMerchantCreated(org.id, org.name, org.slug);
     if (widgetPublicKey) {
       publishWidgetInstalled(org.id);
+    }
+
+    // Claim the website in the registry
+    if (website) {
+      try {
+        await connectWebsite(org.id, { url: website });
+      } catch {
+        // Non-blocking — the merchant can always reconnect later
+      }
     }
 
     return NextResponse.json({

@@ -91,6 +91,27 @@ enum IntegrationStatus {
   DISABLED
 }
 
+enum WebsiteStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum WebsiteVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+}
+
+enum WebsiteCrawlStatus {
+  NOT_STARTED
+  CRAWLING
+  INDEXING
+  READY
+  FAILED
+}
+
 // ─────────────────────────────────────────────────────────────
 // Tenancy & identity
 // ─────────────────────────────────────────────────────────────
@@ -121,8 +142,27 @@ model Organization {
   usageRecords        UsageRecord[]
   channelIntegrations ChannelIntegration[]
   supportTickets      SupportTicket[]
+  websites            WebsiteRegistry[]
 
   @@map("organizations")
+}
+
+model WebsiteRegistry {
+  id                 String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId              String                       @map("org_id") @db.Uuid
+  normalizedUrl      String                       @unique @map("normalized_url")
+  originalUrl        String                       @map("original_url")
+  status             WebsiteStatus                @default(ACTIVE)
+  verificationStatus WebsiteVerificationStatus     @default(UNVERIFIED) @map("verification_status")
+  crawlStatus        WebsiteCrawlStatus            @default(NOT_STARTED) @map("crawl_status")
+  lastCrawledAt      DateTime?                    @map("last_crawled_at") @db.Timestamptz
+  createdAt          DateTime                     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime                     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("website_registry")
 }
 
 model User {
