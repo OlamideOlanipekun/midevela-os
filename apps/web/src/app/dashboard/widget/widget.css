@@ -1,0 +1,103 @@
+.wg-page-head { margin-bottom: 28px; }
+.wg-page-head h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: clamp(30px, 3.4vw, 40px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 10px 0 6px;
+  color: var(--ink);
+}
+.wg-subtitle { font-size: 14px; color: var(--ink-soft); margin: 0; }
+.wg-form { max-width: 680px; }
+.wg-section {
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.wg-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+}
+.wg-field { display: flex; flex-direction: column; gap: 7px; }
+.wg-field label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.wg-hint { font-size: 11.5px; color: var(--ink-soft); line-height: 1.5; margin: 0; }
+.wg-warning {
+  font-size: 12px;
+  color: #c8860d;
+  background: rgba(200, 134, 13, 0.08);
+  border: 1px solid rgba(200, 134, 13, 0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0 0 4px;
+}
+.wg-color-row { display: flex; align-items: center; gap: 12px; }
+.wg-color-input {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--border); background: none;
+  width: 44px; height: 40px;
+  border-radius: var(--radius-sm); cursor: pointer; padding: 2px;
+}
+.wg-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.wg-color-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+.wg-color-hex { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); }
+.wg-slider-row { display: flex; align-items: center; gap: 14px; }
+.wg-slider-row input[type="range"] { flex: 1; max-width: 220px; accent-color: var(--teal); }
+.wg-slider-value { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--ink); min-width: 32px; }
+.wg-checkboxes { display: flex; flex-direction: column; gap: 8px; }
+.wg-check-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; background: #fff; transition: border-color .15s;
+}
+.wg-check-row:hover { border-color: var(--teal); }
+.wg-check-row input { accent-color: var(--teal); width: 17px; height: 17px; margin-top: 1px; cursor: pointer; }
+.wg-check-row strong { display: block; font-size: 13px; color: var(--ink); margin-bottom: 2px; }
+.wg-check-row span { font-size: 11.5px; color: var(--ink-soft); }
+.wg-field textarea {
+  font-family: var(--font-body); font-size: 14px;
+  padding: 11px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: #fff; color: var(--ink);
+  outline: none; resize: vertical;
+}
+.wg-field textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(30, 111, 100, 0.1); }
+.wg-code-block {
+  background: var(--pine-black); border-radius: var(--radius-md);
+  padding: 18px; display: flex; flex-direction: column; gap: 12px;
+}
+.wg-code-block pre {
+  font-family: var(--font-mono); font-size: 11px;
+  color: rgba(247, 245, 240, 0.85); margin: 0;
+  white-space: pre-wrap; word-break: break-all; line-height: 1.6;
+}
+.wg-copy-btn {
+  align-self: flex-end;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(247, 245, 240, 0.08);
+  border: 1px solid rgba(247, 245, 240, 0.18);
+  border-radius: var(--radius-pill); padding: 6px 14px;
+  color: var(--paper); cursor: pointer; transition: all .15s;
+}
+.wg-copy-btn:hover { background: rgba(247, 245, 240, 0.15); }
+.wg-toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--pine-black); color: var(--paper);
+  padding: 12px 22px; border-radius: var(--radius-pill);
+  font-family: var(--font-mono); font-size: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000;
+}

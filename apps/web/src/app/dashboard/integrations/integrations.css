@@ -1,0 +1,107 @@
+.in-page-head { margin-bottom: 28px; }
+.in-page-head h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: clamp(30px, 3.4vw, 40px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 10px 0 6px;
+  color: var(--ink);
+}
+.in-subtitle { font-size: 14px; color: var(--ink-soft); margin: 0; }
+.in-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.in-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color .2s;
+}
+.in-card.connected {
+  border-color: rgba(30, 111, 100, 0.3);
+}
+.in-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.in-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: rgba(30, 111, 100, 0.08);
+  color: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.in-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.in-desc {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.in-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.in-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.in-status-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+.in-card-actions {
+  margin-top: auto;
+}
+.btn-ghost {
+  width: 100%;
+  padding: 10px 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-ghost:hover {
+  border-color: #b23a2e;
+  color: #b23a2e;
+}
+.in-note {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  padding: 16px 20px;
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.in-note strong {
+  color: var(--ink);
+}

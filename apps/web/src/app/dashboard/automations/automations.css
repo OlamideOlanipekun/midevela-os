@@ -1,0 +1,101 @@
+.au-page-head { margin-bottom: 28px; }
+.au-page-head h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: clamp(30px, 3.4vw, 40px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 10px 0 6px;
+  color: var(--ink);
+}
+.au-subtitle { font-size: 14px; color: var(--ink-soft); margin: 0; }
+.au-banner {
+  background: rgba(200, 134, 13, 0.08);
+  border: 1px solid rgba(200, 134, 13, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.au-banner strong {
+  display: block;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #c8860d;
+  margin-bottom: 6px;
+}
+.au-banner p {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin: 0;
+}
+.au-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.au-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--paper-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 22px;
+  gap: 16px;
+}
+.au-rule-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+.au-trigger,
+.au-action {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.au-trigger span:last-child,
+.au-action span:last-child {
+  font-size: 13px;
+  color: var(--ink);
+}
+.au-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+.au-arrow {
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.au-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+.au-status-active {
+  background: rgba(30, 111, 100, 0.1);
+  color: var(--teal);
+}
+.au-status-draft {
+  background: rgba(91, 85, 70, 0.1);
+  color: var(--ink-soft);
+}
+.au-empty {
+  padding: 30px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
