@@ -17,33 +17,17 @@ interface AdminMetrics {
 }
 
 const defaultMetrics: AdminMetrics = {
-  activeMerchants: 127,
-  onlineAgents: 124,
-  liveConversations: 2831,
-  messagesToday: 48290,
-  recommendations: 13812,
-  handovers: 89,
-  revenue: "$18,291",
-  errors: 2,
-  issues: [
-    { title: "Knowledge indexing queue stalled", detail: "3 merchants have embeddings stuck in queued state. Likely a Redis connection issue.", meta: "20m ago" },
-    { title: "OpenAI rate limit hit", detail: "East region hit tier 4 limits on gpt-4o-mini. Retry in 30s.", meta: "1h ago" },
-  ],
-  systemStatus: [
-    { name: "OpenAI", status: "up" },
-    { name: "Groq", status: "up" },
-    { name: "Redis", status: "up" },
-    { name: "Database", status: "up" },
-    { name: "Email", status: "degraded" },
-    { name: "Payments", status: "up" },
-  ],
-  recentActivity: [
-    { icon: "org", text: "<strong>Kind Store</strong> was created", time: "3m ago" },
-    { icon: "knowledge", text: "<strong>Botanica</strong> indexed 24 new documents", time: "12m ago" },
-    { icon: "payment", text: "<strong>$299</strong> payment received from <strong>XYZ Fashion</strong>", time: "25m ago" },
-    { icon: "handoff", text: "<strong>Lumina Beauty</strong> AI escalated a conversation to human", time: "41m ago" },
-    { icon: "widget", text: "<strong>GreenLeaf Organics</strong> installed the widget", time: "1h ago" },
-  ],
+  activeMerchants: 0,
+  onlineAgents: 0,
+  liveConversations: 0,
+  messagesToday: 0,
+  recommendations: 0,
+  handovers: 0,
+  revenue: "$0",
+  errors: 0,
+  issues: [],
+  systemStatus: [],
+  recentActivity: [],
 };
 
 const MetricIcon = ({ type }: { type: string }) => {
@@ -79,9 +63,14 @@ export default function AdminMissionControl() {
   useEffect(() => {
     const h = new Date().getHours();
     setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
-    fetch("/api/admin/mission-control")
+    fetch("/admin/api/dashboard")
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d) setMetrics(d); })
+      .then((d) => {
+        if (d) {
+          d.revenue = `$${d.revenue.toLocaleString()}`;
+          setMetrics(d);
+        }
+      })
       .catch(() => {});
   }, []);
 
