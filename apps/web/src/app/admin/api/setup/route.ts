@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withErrorHandling } from "@/server/http";
+import { withAdminHandler } from "@/server/http";
 import { seedAdminSystem } from "@/server/admin/seed";
 
-export const POST = withErrorHandling(async (req: NextRequest, _context) => {
+export const POST = withAdminHandler(async (req: NextRequest, _context) => {
   const { email, password, name } = await req.json();
 
   if (!email || !password || !name) {

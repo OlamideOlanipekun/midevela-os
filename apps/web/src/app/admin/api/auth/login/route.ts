@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withErrorHandling } from "@/server/http";
+import { withAdminHandler } from "@/server/http";
 import { loginAsAdmin } from "@/server/admin/auth";
 
-export const POST = withErrorHandling(async (req: NextRequest, _context) => {
+export const POST = withAdminHandler(async (req: NextRequest, _context) => {
   const { email, password } = await req.json();
   const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || undefined;
 

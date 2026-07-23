@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withErrorHandling } from "@/server/http";
+import { withAdminHandler } from "@/server/http";
 import { requireAdmin } from "@/server/admin/auth";
 import { requirePermission } from "@/server/admin/rbac";
 import { getAuditLogs } from "@/server/admin/audit";
 
-export const GET = withErrorHandling(async (req: NextRequest, _context) => {
+export const GET = withAdminHandler(async (req: NextRequest, _context) => {
   const admin = await requireAdmin();
   await requirePermission(admin, { module: "audit_logs", action: "read" });
 

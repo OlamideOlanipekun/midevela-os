@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withErrorHandling } from "@/server/http";
+import { withAdminHandler } from "@/server/http";
 import { getAdminSessionUser } from "@/server/admin/auth";
 import prisma from "@/lib/prisma";
 
-export const GET = withErrorHandling(async (_req: NextRequest, _context) => {
+export const GET = withAdminHandler(async (_req: NextRequest, _context) => {
   const user = await getAdminSessionUser();
   if (!user) {
     return NextResponse.json({ user: null }, { status: 401 });

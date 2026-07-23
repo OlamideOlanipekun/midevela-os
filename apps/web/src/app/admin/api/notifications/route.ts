@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withErrorHandling } from "@/server/http";
+import { withAdminHandler } from "@/server/http";
 import { requireAdmin } from "@/server/admin/auth";
 import { listNotifications, markNotificationRead, markAllNotificationsRead } from "@/server/admin/notifications";
 
-export const GET = withErrorHandling(async (_req, _context) => {
+export const GET = withAdminHandler(async (_req, _context) => {
   const admin = await requireAdmin();
   const result = await listNotifications(admin.id);
   return NextResponse.json(result);
 });
 
-export const PATCH = withErrorHandling(async (req: NextRequest, _context) => {
+export const PATCH = withAdminHandler(async (req: NextRequest, _context) => {
   const admin = await requireAdmin();
   const { id, all } = await req.json();
 

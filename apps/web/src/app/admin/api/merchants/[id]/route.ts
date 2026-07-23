@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withErrorHandling } from "@/server/http";
+import { withAdminHandler } from "@/server/http";
 import { requireAdmin } from "@/server/admin/auth";
 import { requirePermission } from "@/server/admin/rbac";
 import {
@@ -16,7 +16,7 @@ async function getId(context: { params: Promise<Record<string, string>> }) {
   return p.id;
 }
 
-export const GET = withErrorHandling(async (_req, context) => {
+export const GET = withAdminHandler(async (_req, context) => {
   const id = await getId(context);
   const admin = await requireAdmin();
   await requirePermission(admin, { module: "merchants", action: "read" });
@@ -25,7 +25,7 @@ export const GET = withErrorHandling(async (_req, context) => {
   return NextResponse.json(merchant);
 });
 
-export const PATCH = withErrorHandling(async (req, context) => {
+export const PATCH = withAdminHandler(async (req, context) => {
   const id = await getId(context);
   const admin = await requireAdmin();
   const body = await req.json();
@@ -56,7 +56,7 @@ export const PATCH = withErrorHandling(async (req, context) => {
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 });
 
-export const DELETE = withErrorHandling(async (_req, context) => {
+export const DELETE = withAdminHandler(async (_req, context) => {
   const id = await getId(context);
   const admin = await requireAdmin();
   await requirePermission(admin, { module: "merchants", action: "delete" });
