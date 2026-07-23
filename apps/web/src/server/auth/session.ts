@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { SESSION_COOKIE } from "@/server/auth/constants";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const SLIDING_REFRESH_THRESHOLD_MS = SESSION_TTL_MS / 2; // extend after 15 days
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -41,7 +42,7 @@ export async function destroySession(): Promise<void> {
       .deleteMany({ where: { tokenHash: hashToken(token) } })
       .catch(() => undefined);
   }
-  cookieStore.delete(SESSION_COOKIE);
+  cookieStore.set(SESSION_COOKIE, "", { path: "/", maxAge: 0 });
 }
 
 /** Resolves the current session cookie to a User row, or null. */
@@ -50,8 +51,9 @@ export async function getSessionUser(): Promise<User | null> {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
+  const tokenHash = hashToken(token);
   const session = await prisma.session.findUnique({
-    where: { tokenHash: hashToken(token) },
+    where: { tokenHash },
     include: { user: true },
   });
 
@@ -61,5 +63,30 @@ export async function getSessionUser(): Promise<User | null> {
     return null;
   }
 
+  // Sliding expiration: extend TTL if more than half has elapsed
+  const elapsed = Date.now() - session.createdAt.getTime();
+  if (elapsed > SLIDING_REFRESH_THRESHOLD_MS) {
+    const newExpiresAt = new Date(Date.now() + SESSION_TTL_MS);
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { expiresAt: newExpiresAt },
+    }).catch(() => undefined);
+    cookieStore.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      expires: newExpiresAt,
+    });
+  }
+
   return session.user;
+}
+
+/**
+ * Deletes all sessions for a user — call this when the user changes
+ * their password to invalidate every existing session.
+ */
+export async function invalidateUserSessions(userId: string): Promise<void> {
+  await prisma.session.deleteMany({ where: { userId } }).catch(() => undefined);
 }

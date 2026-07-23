@@ -7,7 +7,8 @@ import { hashPassword, verifyPassword } from "@/server/auth/password";
 import { logAudit } from "@/server/admin/audit";
 
 const SESSION_COOKIE = "midevela_admin_session";
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
+const SLIDING_REFRESH_THRESHOLD_MS = SESSION_TTL_MS / 2; // extend after 4 hours
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -39,7 +40,7 @@ export async function destroyAdminSession(): Promise<void> {
       .deleteMany({ where: { tokenHash: hashToken(token) } })
       .catch(() => undefined);
   }
-  cookieStore.delete(SESSION_COOKIE);
+  cookieStore.set(SESSION_COOKIE, "", { path: "/admin", maxAge: 0 });
 }
 
 export async function getAdminSessionUser(): Promise<AdminUser | null> {
@@ -47,8 +48,9 @@ export async function getAdminSessionUser(): Promise<AdminUser | null> {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
+  const tokenHash = hashToken(token);
   const session = await prisma.adminSession.findUnique({
-    where: { tokenHash: hashToken(token) },
+    where: { tokenHash },
     include: { user: { include: { role: { include: { permissions: { include: { permission: true } } } } } } },
   });
 
@@ -56,6 +58,23 @@ export async function getAdminSessionUser(): Promise<AdminUser | null> {
   if (session.expiresAt < new Date()) {
     await prisma.adminSession.delete({ where: { id: session.id } }).catch(() => undefined);
     return null;
+  }
+
+  // Sliding expiration: extend TTL if more than half has elapsed
+  const elapsed = Date.now() - session.createdAt.getTime();
+  if (elapsed > SLIDING_REFRESH_THRESHOLD_MS) {
+    const newExpiresAt = new Date(Date.now() + SESSION_TTL_MS);
+    await prisma.adminSession.update({
+      where: { id: session.id },
+      data: { expiresAt: newExpiresAt },
+    }).catch(() => undefined);
+    cookieStore.set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/admin",
+      expires: newExpiresAt,
+    });
   }
 
   return session.user;
@@ -72,7 +91,6 @@ export async function requireAdmin(): Promise<AdminUser> {
 export async function loginAsAdmin(email: string, password: string, ipAddress?: string): Promise<AdminUser> {
   const user = await prisma.adminUser.findUnique({ where: { email } });
   if (!user) {
-    // Constant-time dummy verification to prevent email enumeration
     await verifyPassword(password, "3267900d63056eb9e7322c93d51caed9:602c204da61a3e13c23febddf580123e7a261992131efa9f78ea0adc84dfd9fec6a4e2d351820ccd52fa0b56a404eb42420d66f5ddab4213481e593e61b6f5cf");
     throw new ApiError(401, "Invalid email or password");
   }
@@ -99,4 +117,11 @@ export async function logoutAdmin(): Promise<void> {
     await logAudit(user.id, "admin.logout", "admin_user", user.id);
   }
   await destroyAdminSession();
+}
+
+/**
+ * Deletes all admin sessions for a user — call on password change.
+ */
+export async function invalidateAdminSessions(userId: string): Promise<void> {
+  await prisma.adminSession.deleteMany({ where: { userId } }).catch(() => undefined);
 }
