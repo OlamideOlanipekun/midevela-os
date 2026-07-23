@@ -374,80 +374,55 @@
     .fab {
       position: fixed;
       bottom: 24px;
-      right: 24px;
+      left: 24px;
       z-index: 999999;
       cursor: pointer;
       border: none;
       outline: none;
       background: var(--primary);
-      border-radius: 22px;
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
       padding: 0;
-      box-shadow: 0 8px 28px rgba(37, 99, 235, 0.28);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.22);
       transition: transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out);
       display: flex;
       align-items: center;
+      justify-content: center;
       font-family: var(--font);
-      overflow: hidden;
     }
 
     .fab:hover {
       transform: translateY(-2px);
-      box-shadow: 0 12px 36px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 10px 28px rgba(37, 99, 235, 0.3);
     }
-    .fab:active { transform: scale(0.96); }
-
-    .fab-inner {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 20px;
-      transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
-    }
-
-    .fab.open .fab-inner {
-      opacity: 0;
-      transform: scale(0.8);
-      pointer-events: none;
-    }
+    .fab:active { transform: scale(0.94); }
 
     .fab-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
     }
-    .fab-icon svg { width: 16px; height: 16px; fill: var(--on-primary); }
+    .fab-icon svg { width: 22px; height: 22px; fill: var(--on-primary); display: block; }
 
-    .fab-text { text-align: left; color: var(--on-primary); }
-    .fab-text-top { font-size: 13px; font-weight: 500; opacity: 0.9; display: block; line-height: 1.3; }
-    .fab-text-bot { font-size: 15px; font-weight: 700; display: block; line-height: 1.3; }
+    .fab.open .fab-icon { display: none; }
 
     .fab-close-icon {
-      position: absolute;
-      inset: 0;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
-      opacity: 0;
-      transform: scale(0.5);
-      transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
-      pointer-events: none;
+      width: 24px;
+      height: 24px;
     }
     .fab-close-icon svg { width: 22px; height: 22px; fill: var(--on-primary); }
-    .fab.open .fab-close-icon {
-      opacity: 1;
-      transform: scale(1);
-      pointer-events: auto;
-    }
+    .fab.open .fab-close-icon { display: flex; }
 
     .fab-pulse-ring {
       position: absolute;
-      inset: -4px;
-      border-radius: 24px;
+      inset: -3px;
+      border-radius: 50%;
       border: 2px solid var(--primary);
       animation: pulseRing 2.4s infinite;
       pointer-events: none;
@@ -456,6 +431,48 @@
     @keyframes pulseRing {
       0% { transform: scale(1); opacity: 0.35; }
       100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    /* ─── BACK TO TOP ─── */
+    .back-to-top {
+      position: fixed;
+      bottom: 80px;
+      left: 24px;
+      z-index: 999999;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      background: var(--bg);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      color: var(--muted);
+    }
+    .back-to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .back-to-top:hover {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+      color: var(--text);
+    }
+    .back-to-top:active { transform: scale(0.92); }
+    .back-to-top svg { width: 18px; height: 18px; display: block; }
+
+    @media (max-width: 640px) {
+      .fab { bottom: 16px; left: 16px; width: 48px; height: 48px; }
+      .back-to-top { bottom: 72px; left: 16px; width: 36px; height: 36px; }
+      .back-to-top svg { width: 16px; height: 16px; }
     }
 
     .backdrop { display: none; }
@@ -2343,6 +2360,7 @@
     *:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+      .back-to-top { transition: none; }
     }
   `;
 
@@ -2359,16 +2377,14 @@
     shadow.appendChild(wrapper);
 
     wrapper.innerHTML = `
+    <button class="back-to-top" id="midevela-btt" aria-label="Back to top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+    </button>
+
     <button class="fab" id="midevela-fab" aria-label="Toggle shopping assistant chat">
       <div class="fab-pulse-ring"></div>
-      <span class="fab-inner">
-        <span class="fab-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-        </span>
-        <span class="fab-text">
-          <span class="fab-text-top">Need help shopping?</span>
-          <span class="fab-text-bot">Ask ${escapeHtml(aiName)}</span>
-        </span>
+      <span class="fab-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
       </span>
       <span class="fab-close-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.71L12 12l6.3 6.29a1 1 0 11-1.42 1.42L12 13.41l-5.88 5.89a1 1 0 01-1.42-1.42L10.59 12 4.7 5.71a1 1 0 011.42-1.42L12 10.59l5.88-5.88a1 1 0 111.42 1.42z"/></svg>
@@ -2438,20 +2454,52 @@
     const contextItems = shadow.getElementById('midevela-context-items');
     const progressBar = shadow.getElementById('midevela-discovery-progress');
     const progressFill = shadow.getElementById('midevela-discovery-progress-fill');
+    const backToTop = shadow.getElementById('midevela-btt');
 
     // ─── Panel open/close ───
     const toggleChat = (focusInput) => {
       const isOpen = chat.classList.toggle('open');
       fab.classList.toggle('open', isOpen);
+      // Hide Back to Top while chat is open to avoid overlap
       if (isOpen) {
+        backToTop.classList.remove('visible');
         trackEvent('widget_opened', { view: funnel.view });
         if (focusInput && funnel.view === 'conversation') input.focus();
       } else {
+        updateBackToTop();
         markAutoOpened();
         trackEvent('widget_dismissed', { view: funnel.view });
         persistFunnel();
       }
     };
+
+    // ─── Back to Top ───
+    function updateBackToTop() {
+      if (chat.classList.contains('open')) {
+        backToTop.classList.remove('visible');
+        return;
+      }
+      if (window.scrollY > 10) {
+        backToTop.classList.add('visible');
+      } else {
+        backToTop.classList.remove('visible');
+      }
+    }
+
+    var ticking = false;
+    window.addEventListener('scroll', function () {
+      if (!ticking) {
+        window.requestAnimationFrame(function () {
+          updateBackToTop();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+
+    backToTop.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     fab.addEventListener('click', () => toggleChat(true));
     close.addEventListener('click', () => toggleChat(true));
@@ -5013,6 +5061,9 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
     } else {
       renderWelcome();
     }
+
+    // Initial Back to Top state (hidden at page load)
+    updateBackToTop();
 
     // Proactive engagement: open once per browser session after the
     // merchant-configured delay. 0 (or unset) disables it entirely.
