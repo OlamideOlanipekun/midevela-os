@@ -9,6 +9,7 @@ import {
   cancelByCustomer,
 } from "@/server/billing/subscription";
 import { alert } from "@/server/observability/notify";
+import { publishPaymentSucceeded, publishPaymentFailed, publishPurchaseCompleted } from "@/server/events/instrument";
 
 /**
  * Public endpoint — Paystack calls this directly, there's no logged-in
@@ -67,6 +68,8 @@ export async function POST(req: NextRequest) {
             paystackSubscriptionCode: data.subscription_code ?? null,
             paidAt,
           });
+          publishPaymentSucceeded(orgId, data.amount / 100, "NGN", planCode);
+          publishPurchaseCompleted(orgId, data.customer?.email ?? "unknown", data.amount / 100, "NGN", []);
         } else if (customerCode) {
           // Recurring auto-renewal — no metadata, match by customer code.
           const matched = await extendSubscriptionByCustomer(customerCode, paidAt);
@@ -89,7 +92,10 @@ export async function POST(req: NextRequest) {
 
       case "invoice.payment_failed": {
         // A renewal charge failed — enter the dunning (past_due) window.
-        if (customerCode) await markPastDueByCustomer(customerCode);
+        if (customerCode) {
+          await markPastDueByCustomer(customerCode);
+          publishPaymentFailed(customerCode, data.amount / 100, data.failure_reason ?? "Unknown");
+        }
         break;
       }
 

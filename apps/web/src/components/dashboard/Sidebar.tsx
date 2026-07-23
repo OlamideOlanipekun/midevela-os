@@ -40,6 +40,12 @@ const SidebarIcon = ({ type }: { type: string }) => {
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
       );
+    case "ai-sales":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
     case "products":
       return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -48,20 +54,17 @@ const SidebarIcon = ({ type }: { type: string }) => {
           <line x1="12" y1="22.08" x2="12" y2="12" />
         </svg>
       );
-    case "categories":
-      return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="3" width="7" height="7" rx="1" />
-          <rect x="3" y="14" width="7" height="7" rx="1" />
-          <rect x="14" y="14" width="7" height="7" rx="1" />
-        </svg>
-      );
     case "knowledge":
       return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        </svg>
+      );
+    case "playground":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
       );
     case "analytics":
@@ -72,10 +75,45 @@ const SidebarIcon = ({ type }: { type: string }) => {
           <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
       );
-    case "ai-performance":
+    case "automations":
       return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+          <line x1="13" y1="19" x2="19" y2="13" />
+          <line x1="16" y1="16" x2="20" y2="20" />
+          <line x1="19" y1="21" x2="21" y2="19" />
+        </svg>
+      );
+    case "handoff":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          <line x1="7" y1="12" x2="17" y2="12" />
+        </svg>
+      );
+    case "integrations":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+      );
+    case "widget":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      );
+    case "team":
+      return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
         </svg>
       );
     case "billing":
@@ -98,20 +136,25 @@ const SidebarIcon = ({ type }: { type: string }) => {
 };
 
 const mainNavItems = [
-  { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
+  { label: "Overview", href: "/dashboard", icon: "dashboard" },
   { label: "Conversations", href: "/dashboard/conversations", icon: "conversations" },
   { label: "Customers", href: "/dashboard/customers", icon: "customers" },
+  { label: "AI Sales", href: "/dashboard/ai-sales", icon: "ai-sales" },
   { label: "Products", href: "/dashboard/products", icon: "products" },
-  { label: "Categories", href: "/dashboard/categories", icon: "categories" },
   { label: "Knowledge", href: "/dashboard/knowledge", icon: "knowledge" },
+  { label: "Playground", href: "/dashboard/playground", icon: "playground" },
 ];
 
 const intelligenceNavItems = [
   { label: "Analytics", href: "/dashboard/analytics", icon: "analytics" },
-  { label: "AI Performance", href: "/dashboard/ai-performance", icon: "ai-performance" },
+  { label: "Automations", href: "/dashboard/automations", icon: "automations" },
+  { label: "Human Handoff", href: "/dashboard/handoff", icon: "handoff" },
+  { label: "Integrations", href: "/dashboard/integrations", icon: "integrations" },
 ];
 
 const workspaceNavItems = [
+  { label: "Widget", href: "/dashboard/widget", icon: "widget" },
+  { label: "Team", href: "/dashboard/team", icon: "team" },
   { label: "Billing", href: "/dashboard/billing", icon: "billing" },
   { label: "Settings", href: "/dashboard/settings", icon: "settings" },
 ];

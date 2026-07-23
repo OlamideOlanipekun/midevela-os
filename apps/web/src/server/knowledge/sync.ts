@@ -2,6 +2,7 @@ import type { Product, Category, KnowledgeEntry } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { embedText } from "@/server/conversation/embeddings";
 import { formatMoney } from "@/server/catalog/money";
+import { publishKnowledgeIndexed, publishKnowledgeFailed } from "@/server/events/instrument";
 
 /**
  * MVP simplification: embedding writes happen inline on the request that
@@ -47,11 +48,13 @@ export async function syncProductEmbedding(
     .join(". ");
 
   await upsertEmbedding({ orgId, sourceType: "PRODUCT", sourceId: product.id, chunkText });
+  publishKnowledgeIndexed(orgId, product.id, "PRODUCT", 1);
 }
 
 export async function syncKnowledgeEmbedding(orgId: string, entry: KnowledgeEntry) {
   const chunkText = `${entry.title}. ${entry.content}`;
   await upsertEmbedding({ orgId, sourceType: "KNOWLEDGE_ENTRY", sourceId: entry.id, chunkText });
+  publishKnowledgeIndexed(orgId, entry.id, entry.type, 1);
 }
 
 export async function deleteEmbedding(

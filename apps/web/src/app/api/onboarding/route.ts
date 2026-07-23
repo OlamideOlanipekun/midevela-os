@@ -6,6 +6,7 @@ import {
   createOrganizationForUser,
   updateOrgSettings,
 } from "@/server/tenancy/org";
+import { publishMerchantCreated, publishWidgetInstalled } from "@/server/events/instrument";
 
 function embedSnippet(appOrigin: string, publicKey: string) {
   return [
@@ -86,6 +87,11 @@ export async function POST(req: NextRequest) {
       currency: currency || undefined,
       settings,
     });
+
+    publishMerchantCreated(org.id, org.name, org.slug);
+    if (widgetPublicKey) {
+      publishWidgetInstalled(org.id);
+    }
 
     return NextResponse.json({
       success: true,

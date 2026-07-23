@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { resolveWidgetKey, isOriginAllowed, corsHeaders } from "@/server/conversation/widgetAuth";
 import { processConversationTurn } from "@/server/conversation/engine";
 import { defaultOrgSettings, type OrgSettings } from "@/server/tenancy/org";
+import { publishConversationStarted, publishMessageSent, publishAIResponse, publishRecommendation, publishHumanHandoff } from "@/server/events/instrument";
+import { eventBus } from "@/server/events/bus";
 import { getSubscriptionForOrg, accessLevelFor } from "@/server/billing/subscription";
 import { getUsageStatus, recordAiUsage } from "@/server/billing/usage";
 import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
@@ -231,6 +233,7 @@ export async function POST(req: NextRequest) {
         data: { orgId: org.id, customerId: customer.id, channel: "WEBSITE" },
       });
       isNewConversation = true;
+      publishConversationStarted(conversation.id, org.id, org.name, customer.id, "WEBSITE");
     }
 
     // Shopping-funnel state (category/budget/brand/answers) collected via
@@ -263,6 +266,7 @@ export async function POST(req: NextRequest) {
     await prisma.message.create({
       data: { conversationId: conversation.id, role: "CUSTOMER", content: messageText },
     });
+    publishMessageSent(conversation.id, org.id, "customer", 0, 0);
 
     const shoppingContextRaw = {
       categoryName: typeof mergedContext.categoryName === "string" ? mergedContext.categoryName : undefined,
@@ -745,6 +749,13 @@ export async function POST(req: NextRequest) {
     const newState: ConversationState = { ...state, mode: llmMode };
     await saveResponse(llmResult.replyText, llmResult.intent, llmResult.recommendations, newState);
     await recordAiUsage(org.id);
+
+    publishAIResponse(org.id, conversation.id, 0, llmResult.aiConfidence, llmResult.inputTokens + llmResult.outputTokens, llmResult.intent);
+    publishMessageSent(conversation.id, org.id, "ai", llmResult.inputTokens, llmResult.outputTokens);
+
+    for (const rec of llmResult.recommendations) {
+      publishRecommendation(conversation.id, org.id, rec.id, rec.name);
+    }
 
     return NextResponse.json(
       {

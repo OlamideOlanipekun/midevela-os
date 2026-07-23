@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "bullmq": "^5.80.12",
+    "eventemitter3": "^5.0.4",
+    "ioredis": "^5.11.1",
     "next": "^15.5.9",
     "react": "~19.2.3",
     "react-dom": "~19.2.3"

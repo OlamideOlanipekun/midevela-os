@@ -4,6 +4,9 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import "./globals.css";
 
+// Initialize event pipeline, metrics service, and queue workers
+import "@/server/events/register";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-body",

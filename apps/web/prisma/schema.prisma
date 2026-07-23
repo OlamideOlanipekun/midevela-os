@@ -120,6 +120,7 @@ model Organization {
   subscription        Subscription?
   usageRecords        UsageRecord[]
   channelIntegrations ChannelIntegration[]
+  supportTickets      SupportTicket[]
 
   @@map("organizations")
 }
@@ -431,4 +432,193 @@ model ChannelIntegration {
 
   @@unique([orgId, channel])
   @@map("channel_integrations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Admin console
+// ─────────────────────────────────────────────────────────────
+
+enum AdminRoleName {
+  SUPER_ADMIN
+  OPERATIONS
+  SUPPORT
+  DEVELOPER
+  FINANCE
+  MODERATOR
+  READ_ONLY
+}
+
+model AdminRole {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        AdminRoleName  @unique
+  description String?
+  isSystem    Boolean        @default(false) @map("is_system")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  users      AdminUser[]
+  permissions AdminRolePermission[]
+
+  @@map("admin_roles")
+}
+
+model AdminPermission {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  module      String // e.g. "merchants", "ai_agents", "billing"
+  action      String // e.g. "read", "write", "delete", "impersonate"
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  roles AdminRolePermission[]
+
+  @@unique([module, action])
+  @@map("admin_permissions")
+}
+
+model AdminRolePermission {
+  roleId       String           @map("role_id") @db.Uuid
+  permissionId String           @map("permission_id") @db.Uuid
+  grantedAt    DateTime         @default(now()) @map("granted_at") @db.Timestamptz
+
+  role       AdminRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission AdminPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("admin_role_permissions")
+}
+
+model AdminUser {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String        @unique
+  passwordHash  String        @map("password_hash")
+  name          String
+  roleId        String?       @map("role_id") @db.Uuid
+  avatarUrl     String?       @map("avatar_url")
+  emailVerified Boolean       @default(false) @map("email_verified")
+  isActive      Boolean       @default(true) @map("is_active")
+  lastLoginAt   DateTime?     @map("last_login_at") @db.Timestamptz
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  role            AdminRole?         @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  sessions        AdminSession[]
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+  assignedTickets SupportTicket[]    @relation("AssignedTickets")
+  createdTickets  SupportTicket[]    @relation("CreatedTickets")
+  supportMessages SupportMessage[]
+
+  @@map("admin_users")
+}
+
+model AdminSession {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("admin_sessions")
+}
+
+model AuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminId     String?  @map("admin_id") @db.Uuid
+  action      String // e.g. "merchant.suspend", "merchant.delete", "admin.login"
+  resource    String // e.g. "merchant", "organization", "admin_user"
+  resourceId  String?  @map("resource_id") @db.Uuid
+  metadata    Json     @default("{}")
+  ipAddress   String?  @map("ip_address")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  admin AdminUser? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model FeatureFlag {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String   @unique
+  label       String
+  description String?
+  enabled     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("feature_flags")
+}
+
+model SystemEvent {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type      String // "info", "warning", "error", "critical"
+  source    String // "system", "ai", "billing", "auth"
+  title     String
+  message   String?
+  metadata  Json     @default("{}")
+  acknowledged Boolean @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("system_events")
+}
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminId   String   @map("admin_id") @db.Uuid
+  type      String // "info", "warning", "alert", "success"
+  title     String
+  message   String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model SupportTicket {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  subject     String
+  status      String   @default("open") // "open", "in_progress", "resolved", "closed"
+  priority    String   @default("normal") // "low", "normal", "high", "critical"
+  assignedTo  String?  @map("assigned_to") @db.Uuid
+  createdBy   String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignee AdminUser?   @relation("AssignedTickets", fields: [assignedTo], references: [id], onDelete: SetNull)
+  creator  AdminUser?   @relation("CreatedTickets", fields: [createdBy], references: [id], onDelete: SetNull)
+  messages SupportMessage[]
+
+  @@index([orgId])
+  @@index([assignedTo])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId   String   @map("ticket_id") @db.Uuid
+  adminId    String?  @map("admin_id") @db.Uuid
+  authorName String   @map("author_name")
+  content    String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  ticket  SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  admin   AdminUser?    @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
 }
