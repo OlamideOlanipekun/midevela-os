@@ -72,6 +72,9 @@ export async function withErrorHandling<T>(
     const msg = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
     console.error("[API 500 Error]", msg, stack);
+    if (process.env.NODE_ENV !== "production" || process.env.VERCEL_ENV !== "production") {
+      return jsonError(500, `Internal server error: ${msg}`);
+    }
     return jsonError(500, "Internal server error");
   }
 }
