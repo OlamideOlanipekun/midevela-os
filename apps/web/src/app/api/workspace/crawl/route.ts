@@ -121,18 +121,27 @@ export async function POST(req: NextRequest) {
     let targetUrl = rawUrl.trim();
     if (!/^https?:\/\//i.test(targetUrl)) targetUrl = `https://${targetUrl}`;
 
-    // Ownership check: the website must be registered and ACTIVE for this org
+    // Ownership check: auto-connect the website for this org if not registered yet
     const normalizedUrl = normalizeUrl(targetUrl);
-    const registryEntry = await prisma.websiteRegistry.findUnique({
+    let registryEntry = await prisma.websiteRegistry.findUnique({
       where: { normalizedUrl },
     });
+
     if (!registryEntry) {
-      return jsonError(404, "Connect this website first via the dashboard before crawling.");
-    }
-    if (registryEntry.orgId !== org.id) {
+      // Auto-register website for the org so onboarding & manual crawl work smoothly
+      registryEntry = await prisma.websiteRegistry.create({
+        data: {
+          orgId: org.id,
+          normalizedUrl,
+          originalUrl: targetUrl,
+          status: "ACTIVE",
+          verificationStatus: "UNVERIFIED",
+          crawlStatus: "CRAWLING",
+        },
+      });
+    } else if (registryEntry.orgId !== org.id) {
       return jsonError(403, "This website belongs to another workspace.");
-    }
-    if (registryEntry.status !== "ACTIVE") {
+    } else if (registryEntry.status !== "ACTIVE") {
       return jsonError(422, "Website is not active.");
     }
 
