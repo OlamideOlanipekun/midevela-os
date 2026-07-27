@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { alert } from "@/server/observability/notify";
 
 export class ApiError extends Error {
   constructor(
@@ -57,10 +56,9 @@ export async function withErrorHandling<T>(
     if (err instanceof ApiError) {
       return jsonError(err.status, err.message);
     }
-    await alert("Unhandled API error (500)", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return jsonError(500, "Internal server error");
+    const msg = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    return jsonError(500, `Internal server error: ${msg}`);
   }
 }
 
