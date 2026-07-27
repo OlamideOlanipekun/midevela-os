@@ -139,8 +139,7 @@ export async function startCrawl(websiteId: string, orgId: string): Promise<void
  * Provide orgId to scope the operation to a specific merchant.
  */
 export async function suspendWebsite(websiteId: string, orgId?: string): Promise<WebsiteDto> {
-  const where: Record<string, unknown> = { id: websiteId };
-  if (orgId) where.orgId = orgId;
+  const where = { id: websiteId };
 
   const website = await prisma.websiteRegistry.update({
     where,
