@@ -74,6 +74,12 @@ enum CrawlJobStatus {
   CANCELLED
 }
 
+enum UserRole {
+  OWNER
+  ADMIN
+  AGENT
+}
+
 enum WebsiteCrawlStatus {
   NOT_STARTED
   CRAWLING
@@ -455,7 +461,7 @@ model User {
   email         String    @unique
   passwordHash  String    @default("") @map("password_hash")
   name          String?
-  role          String    @default("AGENT")
+  role          UserRole  @default(AGENT)
   avatarUrl     String?   @map("avatar_url")
   emailVerified Boolean   @default(false) @map("email_verified")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
