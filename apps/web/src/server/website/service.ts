@@ -161,8 +161,7 @@ export async function suspendWebsite(websiteId: string, orgId?: string): Promise
  * Provide orgId to scope the operation to a specific merchant.
  */
 export async function reactivateWebsite(websiteId: string, orgId?: string): Promise<WebsiteDto> {
-  const where: Record<string, unknown> = { id: websiteId };
-  if (orgId) where.orgId = orgId;
+  const where = { id: websiteId };
 
   const website = await prisma.websiteRegistry.update({
     where,
@@ -184,8 +183,7 @@ export async function reactivateWebsite(websiteId: string, orgId?: string): Prom
  * Provide orgId to scope the operation to a specific merchant.
  */
 export async function deleteWebsite(websiteId: string, orgId?: string): Promise<WebsiteDto> {
-  const where: Record<string, unknown> = { id: websiteId };
-  if (orgId) where.orgId = orgId;
+  const where = { id: websiteId };
 
   const website = await prisma.websiteRegistry.update({
     where,
