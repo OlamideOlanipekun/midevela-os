@@ -1,5 +1,21 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "DATABASE_URL_UNPOOLED",
+    "POSTGRES_PRISMA_URL",
+    "POSTGRES_URL_NON_POOLING",
+    "GROQ_API_KEY",
+    "VOYAGE_API_KEY",
+    "PAYSTACK_SECRET_KEY",
+    "PAYSTACK_PUBLIC_KEY",
+    "PAYSTACK_WEBHOOK_URL",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+    "ALERT_WEBHOOK_URL",
+    "FIRECRAWL_API_KEY",
+    "NODE_ENV"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
