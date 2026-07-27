@@ -3,15 +3,16 @@ import prisma from "@/lib/prisma";
 import { withErrorHandling, jsonError } from "@/server/http";
 import { verifyPassword, DUMMY_PASSWORD_HASH } from "@/server/auth/password";
 import { createSession } from "@/server/auth/session";
-import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
+import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
 
 const LOGIN_WINDOW_SEC = 15 * 60;
 const LOGIN_PER_IP = 10;
 const LOGIN_PER_EMAIL = 10;
 
 function tooManyRequests(retryAfterSec: number) {
+  const humanTime = formatRetryAfter(retryAfterSec);
   return NextResponse.json(
-    { error: "Too many attempts. Please wait a few minutes and try again." },
+    { error: `Too many attempts. Try again in ${humanTime}.`, retryAfterSec },
     { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
   );
 }
@@ -26,10 +27,11 @@ export async function POST(req: NextRequest) {
       return jsonError(400, "Email and password are required.");
     }
 
-    // Throttle brute force by both source IP and target account.
+    // Throttle brute force by a composite key (IP + email) so one
+    // user's abuse never blocks unrelated users behind the same NAT.
     const ip = clientIp(req.headers);
     const [ipLimit, emailLimit] = await Promise.all([
-      rateLimit(`login:ip:${ip}`, LOGIN_PER_IP, LOGIN_WINDOW_SEC),
+      rateLimit(identityKey("login", ip, email), LOGIN_PER_IP, LOGIN_WINDOW_SEC),
       rateLimit(`login:email:${email}`, LOGIN_PER_EMAIL, LOGIN_WINDOW_SEC),
     ]);
     if (!ipLimit.ok || !emailLimit.ok) {

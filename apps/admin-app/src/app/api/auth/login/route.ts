@@ -3,24 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword, DUMMY_PASSWORD_HASH } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { logAudit } from "@/lib/auth/audit";
-import { rateLimit, clientIp } from "@/lib/middleware/rate-limit";
+import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/lib/middleware/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = clientIp(req.headers);
-    const ipLimit = await rateLimit(`admin:login:ip:${ip}`, 10, 900);
-    if (!ipLimit.ok) {
-      return NextResponse.json(
-        { error: "Too many attempts. Please wait a few minutes and try again." },
-        { status: 429, headers: { "Retry-After": String(ipLimit.resetSec) } }
-      );
-    }
-
     const { email, password } = await req.json();
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
+    const ip = clientIp(req.headers);
+    const ipLimit = await rateLimit(identityKey("admin:login", ip, email), 10, 900);
+    if (!ipLimit.ok) {
+      const humanTime = formatRetryAfter(ipLimit.resetSec);
+      return NextResponse.json(
+        { error: `Too many attempts. Try again in ${humanTime}.`, retryAfterSec: ipLimit.resetSec },
+        { status: 429, headers: { "Retry-After": String(ipLimit.resetSec) } }
+      );
+    }
     const admin = await prisma.admin.findUnique({ where: { email } });
     if (!admin) {
       await verifyPassword(password, DUMMY_PASSWORD_HASH);

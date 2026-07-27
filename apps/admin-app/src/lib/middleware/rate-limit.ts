@@ -1,3 +1,5 @@
+import { createHash } from "crypto";
+
 export interface RateLimitResult {
   ok: boolean;
   remaining: number;
@@ -88,7 +90,23 @@ export async function rateLimit(
   }
 }
 
+export function safeKey(key: string): string {
+  return createHash("sha256").update(key).digest("hex").slice(0, 16);
+}
+
+export function identityKey(prefix: string, ip: string, identity: string): string {
+  return `${prefix}:${ip}:${safeKey(identity)}`;
+}
+
+export function formatRetryAfter(seconds: number): string {
+  if (seconds < 60) return `${seconds} seconds`;
+  const mins = Math.ceil(seconds / 60);
+  return mins === 1 ? "1 minute" : `${mins} minutes`;
+}
+
 export function clientIp(headers: Headers): string {
+  const cf = headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
   const xff = headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0].trim();
   return headers.get("x-real-ip")?.trim() || "unknown";

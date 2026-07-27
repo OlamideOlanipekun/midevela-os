@@ -4,7 +4,7 @@ import { withErrorHandling, jsonError, assertOrigin } from "@/server/http";
 import { requireUser } from "@/server/auth/context";
 import { hashPassword, verifyPassword, validatePasswordStrength } from "@/server/auth/password";
 import { invalidateUserSessions, createSession } from "@/server/auth/session";
-import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
+import { rateLimit, clientIp, formatRetryAfter } from "@/server/ratelimit/limiter";
 
 const PW_CHANGE_PER_USER = 5;
 const PW_CHANGE_WINDOW_SEC = 900;
@@ -30,7 +30,13 @@ export async function POST(req: NextRequest) {
     // Rate limit password change attempts per user
     const ip = clientIp(req.headers);
     const limit = await rateLimit(`change-pw:${user.id}`, PW_CHANGE_PER_USER, PW_CHANGE_WINDOW_SEC);
-    if (!limit.ok) return jsonError(429, "Too many attempts. Please wait a while.");
+    if (!limit.ok) {
+      const humanTime = formatRetryAfter(limit.resetSec);
+      return NextResponse.json(
+        { error: `Too many attempts. Try again in ${humanTime}.`, retryAfterSec: limit.resetSec },
+        { status: 429, headers: { "Retry-After": String(limit.resetSec) } }
+      );
+    }
 
     const valid = await verifyPassword(currentPassword, user.passwordHash);
     if (!valid) {

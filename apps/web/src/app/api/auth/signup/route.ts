@@ -3,10 +3,10 @@ import prisma from "@/lib/prisma";
 import { withErrorHandling, jsonError } from "@/server/http";
 import { hashPassword, validatePasswordStrength } from "@/server/auth/password";
 import { createSession } from "@/server/auth/session";
-import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
+import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
 
-const SIGNUP_WINDOW_SEC = 60 * 60;
-const SIGNUP_PER_IP = 5;
+const SIGNUP_WINDOW_SEC = 15 * 60;
+const SIGNUP_PER_IP = 3;
 const SIGNUP_PER_EMAIL = 3;
 
 export async function POST(req: NextRequest) {
@@ -27,13 +27,15 @@ export async function POST(req: NextRequest) {
     if (!name) return jsonError(400, "Name is required.");
 
     const [ipLimit, emailLimit] = await Promise.all([
-      rateLimit(`signup:ip:${ip}`, SIGNUP_PER_IP, SIGNUP_WINDOW_SEC),
+      rateLimit(identityKey("signup", ip, email), SIGNUP_PER_IP, SIGNUP_WINDOW_SEC),
       rateLimit(`signup:email:${email}`, SIGNUP_PER_EMAIL, SIGNUP_WINDOW_SEC),
     ]);
     if (!ipLimit.ok || !emailLimit.ok) {
+      const retryAfter = Math.min(ipLimit.resetSec, emailLimit.resetSec);
+      const humanTime = formatRetryAfter(retryAfter);
       return NextResponse.json(
-        { error: "Too many sign-up attempts. Please try again later." },
-        { status: 429, headers: { "Retry-After": String(Math.min(ipLimit.resetSec, emailLimit.resetSec)) } }
+        { error: `Too many sign-up attempts. Try again in ${humanTime}.`, retryAfterSec: retryAfter },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
       );
     }
 

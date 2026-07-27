@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAdminHandler } from "@/server/http";
 import { loginAsAdmin } from "@/server/admin/auth";
-import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
+import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
 
 const ADMIN_LOGIN_WINDOW_SEC = 900;
 const ADMIN_LOGIN_PER_IP = 10;
@@ -14,10 +14,11 @@ export const POST = withAdminHandler(async (req: NextRequest, _context) => {
   }
 
   const ip = clientIp(req.headers);
-  const ipLimit = await rateLimit(`admin:login:ip:${ip}`, ADMIN_LOGIN_PER_IP, ADMIN_LOGIN_WINDOW_SEC);
+  const ipLimit = await rateLimit(identityKey("admin:login", ip, email), ADMIN_LOGIN_PER_IP, ADMIN_LOGIN_WINDOW_SEC);
   if (!ipLimit.ok) {
+    const humanTime = formatRetryAfter(ipLimit.resetSec);
     return NextResponse.json(
-      { error: "Too many attempts. Please wait a few minutes and try again." },
+      { error: `Too many attempts. Try again in ${humanTime}.`, retryAfterSec: ipLimit.resetSec },
       { status: 429, headers: { "Retry-After": String(ipLimit.resetSec) } }
     );
   }

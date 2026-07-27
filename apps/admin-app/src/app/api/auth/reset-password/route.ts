@@ -3,20 +3,28 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { revokeAllSessions } from "@/lib/auth/session";
 import { logAudit } from "@/lib/auth/audit";
-import { rateLimit, clientIp } from "@/lib/middleware/rate-limit";
+import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/lib/middleware/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const { token, password } = await req.json();
+    if (!token || !password) {
+      return NextResponse.json({ error: "Token and password are required" }, { status: 400 });
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    }
+
     const ip = clientIp(req.headers);
-    const rl = await rateLimit(`admin:reset-password:ip:${ip}`, 5, 3600);
+    const rl = await rateLimit(identityKey("admin:reset-password", ip, token), 5, 3600);
     if (!rl.ok) {
+      const humanTime = formatRetryAfter(rl.resetSec);
       return NextResponse.json(
-        { error: "Too many requests. Please wait." },
+        { error: `Too many requests. Try again in ${humanTime}.`, retryAfterSec: rl.resetSec },
         { status: 429, headers: { "Retry-After": String(rl.resetSec) } }
       );
     }
-
-    const { token, password } = await req.json();
     if (!token || !password) {
       return NextResponse.json({ error: "Token and password are required" }, { status: 400 });
     }

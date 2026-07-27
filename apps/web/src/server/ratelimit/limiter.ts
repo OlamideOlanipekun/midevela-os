@@ -29,11 +29,34 @@ export function rateLimitEnabled(): boolean {
 }
 
 /**
- * Hash rate-limit keys for safe logging so IPs and emails never appear
+ * Hash rate-limit keys for safe logging so emails/IPs never appear
  * in log output, even partially.
  */
-function safeKey(key: string): string {
+export function safeKey(key: string): string {
   return createHash("sha256").update(key).digest("hex").slice(0, 16);
+}
+
+/**
+ * Build a composite rate-limit key that scopes attempts by both IP and
+ * identity (email hash). This prevents one user's abuse from blocking
+ * other users behind the same NAT or proxy IP.
+ *
+ * @param prefix - e.g. "login" or "signup"
+ * @param ip     - the real client IP
+ * @param identity - the email or userId to hash into the key
+ * @returns a string like "login:{ip}:{hash(email)}"
+ */
+export function identityKey(prefix: string, ip: string, identity: string): string {
+  return `${prefix}:${ip}:${safeKey(identity)}`;
+}
+
+/**
+ * Format `seconds` as a human-readable string like "12 minutes".
+ */
+export function formatRetryAfter(seconds: number): string {
+  if (seconds < 60) return `${seconds} seconds`;
+  const mins = Math.ceil(seconds / 60);
+  return mins === 1 ? "1 minute" : `${mins} minutes`;
 }
 
 /**
@@ -110,15 +133,34 @@ export async function rateLimit(
 }
 
 /**
- * Best-effort client IP from proxy headers. On Vercel `x-forwarded-for`
- * is a comma-separated list, client first. Falls back to a constant so a
- * missing header buckets everyone together (still bounded) rather than
- * throwing.
+ * Best-effort client IP from proxy headers. Checks headers in order of
+ * trust (Cloudflare → Vercel → fallback) so the real end-user IP is
+ * always identified regardless of deployment environment.
+ *
+ * Header priority:
+ *   1. cf-connecting-ip (Cloudflare sets this to the real client IP)
+ *   2. x-forwarded-for  (Vercel/standard proxy — comma list, client first)
+ *   3. x-real-ip        (fallback for simple reverse-proxy setups)
+ *   4. "unknown"        (last resort — avoids throwing)
  */
 export function clientIp(headers: Headers): string {
+  const cf = headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
   const xff = headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0].trim();
   return headers.get("x-real-ip")?.trim() || "unknown";
+}
+
+/**
+ * Debug-log all IP-related headers and the resolved client IP.
+ * Call once per request during auth troubleshooting.
+ */
+export function logIpHeaders(headers: Headers, label: string): void {
+  const cf = headers.get("cf-connecting-ip") || "(not set)";
+  const xff = headers.get("x-forwarded-for") || "(not set)";
+  const xri = headers.get("x-real-ip") || "(not set)";
+  const ua = (headers.get("user-agent") || "").slice(0, 80);
+  console.log(`[rate-limit] ${label} cf=${cf} xff=${xff} xri=${xri} ua=${ua}`);
 }
 
 /**
