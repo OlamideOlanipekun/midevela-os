@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const product = await createProduct(org.id, body);
     return NextResponse.json({ success: true, product });
-  });
+  }, req);
 }
 
 export async function PUT(req: NextRequest) {
@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest) {
     if (!body.id) return jsonError(400, "Product id is required.");
     const product = await updateProduct(org.id, body.id, body);
     return NextResponse.json({ success: true, product });
-  });
+  }, req);
 }
 
 export async function DELETE(req: NextRequest) {
@@ -42,5 +42,5 @@ export async function DELETE(req: NextRequest) {
     if (!id) return jsonError(400, "Product ID is required.");
     await deleteProduct(org.id, id);
     return NextResponse.json({ success: true });
-  });
+  }, req);
 }

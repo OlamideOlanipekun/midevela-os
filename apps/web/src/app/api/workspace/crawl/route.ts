@@ -95,7 +95,8 @@ function internalLinks(html: string, origin: string): string[] {
   let linkMatch;
   while ((linkMatch = linkRegex.exec(html)) !== null) {
     let link = linkMatch[1];
-    if (link.startsWith("/")) link = `${origin}${link}`;
+    if (link.startsWith("//")) link = `https:${link}`;
+    else if (link.startsWith("/")) link = `${origin}${link}`;
     if (link.startsWith(origin) && link.startsWith("http") && !links.includes(link)) links.push(link);
   }
   return links;
@@ -206,10 +207,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Update website crawl status
+    const isSuccess = productResult.imported > 0 || entriesAdded > 0 || foundEntries.length > 0;
     await prisma.websiteRegistry.update({
       where: { id: registryEntry.id },
       data: {
-        crawlStatus: productResult.imported > 0 ? "READY" : "FAILED",
+        crawlStatus: isSuccess ? "READY" : "FAILED",
         lastCrawledAt: new Date(),
       },
     });
@@ -224,5 +226,5 @@ export async function POST(req: NextRequest) {
       faqsFoundCount: foundEntries.filter((e) => e.type === "FAQ").length,
       policiesFoundCount: foundEntries.filter((e) => e.type === "POLICY").length,
     });
-  });
+  }, req);
 }

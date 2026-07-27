@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         reason: !ipLimit.ok ? "IP/identity rate limit exceeded" : "Email rate limit exceeded",
         userAgent: req.headers.get("user-agent") || undefined,
       });
-      const retryAfter = Math.min(ipLimit.resetSec, emailLimit.resetSec);
+      const retryAfter = Math.max(ipLimit.resetSec, emailLimit.resetSec);
       const humanTime = formatRetryAfter(retryAfter);
       return NextResponse.json(
         { error: `Too many sign-up attempts. Try again in ${humanTime}.`, retryAfterSec: retryAfter },
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       // Constant-delay to prevent email enumeration via timing: always
       // spend similar time before revealing whether the email exists.
       await hashPassword("dummy-constant-time-guard");
-      return jsonError(409, "An account with this email already exists.");
+      return jsonError(409, "Unable to create account. Please check your details or try logging in.");
     }
 
     const passwordHash = await hashPassword(password);
@@ -67,5 +67,5 @@ export async function POST(req: NextRequest) {
       success: true,
       user: { id: user.id, email: user.email, name: user.name, orgId: user.orgId },
     });
-  });
+  }, req);
 }

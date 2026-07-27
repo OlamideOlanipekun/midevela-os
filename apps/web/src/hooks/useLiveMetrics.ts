@@ -48,6 +48,11 @@ export function useLiveMetrics(handlers?: SSEHandler) {
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  const handlersRef = useRef(handlers);
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
+
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -70,21 +75,21 @@ export function useLiveMetrics(handlers?: SSEHandler) {
         }
         if (parsed.type === "metrics") {
           setMetrics((prev) => (prev ? { ...prev, ...parsed.data } : prev));
-          handlers?.onMetrics?.(parsed.data);
+          handlersRef.current?.onMetrics?.(parsed.data);
           return;
         }
         if (parsed.type === "activity") {
           const activity = parsed.data as ActivityEvent;
           setActivities((prev) => [activity, ...prev].slice(0, 100));
-          handlers?.onActivity?.(activity);
+          handlersRef.current?.onActivity?.(activity);
           return;
         }
         if (parsed.type === "queue") {
-          handlers?.onQueue?.(parsed.data as QueueHealth);
+          handlersRef.current?.onQueue?.(parsed.data as QueueHealth);
           return;
         }
         if (parsed.type === "event") {
-          handlers?.onEvent?.(parsed.data);
+          handlersRef.current?.onEvent?.(parsed.data);
           return;
         }
       } catch {

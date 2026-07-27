@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { alert } from "@/server/observability/notify";
 
 export class ApiError extends Error {
   constructor(
@@ -25,10 +26,20 @@ function isMutating(method: string): boolean {
 
 export function assertOrigin(req: NextRequest): void {
   if (!isMutating(req.method)) return;
-  const origin = req.headers.get("origin");
-  if (!origin) return; // same-origin requests from browsers omit Origin for simple GET; POST always sends it
+  let origin = req.headers.get("origin");
+  if (!origin) {
+    const referer = req.headers.get("referer");
+    if (referer) {
+      try {
+        origin = new URL(referer).origin;
+      } catch {
+        // invalid referer header
+      }
+    }
+  }
+  if (!origin) return; // same-origin requests from simple forms or browsers may omit Origin/Referer in edge cases
+
   const host = req.headers.get("host");
-  // Accept any origin that matches the app host (handles http vs https, port differences)
   try {
     const u = new URL(origin);
     if (u.host === host) return;
@@ -45,12 +56,14 @@ export function assertOrigin(req: NextRequest): void {
  * anything else logs and returns a generic 500.
  *
  * Returns a Promise<NextResponse> — call via `return withErrorHandling(...)`
- * inside an exported async GET/POST handler.
+ * inside an exported async GET/POST handler. Option to pass `req` to automatically enforce `assertOrigin(req)`.
  */
 export async function withErrorHandling<T>(
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
+  req?: NextRequest
 ): Promise<T | NextResponse> {
   try {
+    if (req) assertOrigin(req);
     return await fn();
   } catch (err) {
     if (err instanceof ApiError) {
@@ -58,7 +71,8 @@ export async function withErrorHandling<T>(
     }
     const msg = err instanceof Error ? err.message : String(err);
     const stack = err instanceof Error ? err.stack : undefined;
-    return jsonError(500, `Internal server error: ${msg}`);
+    console.error("[API 500 Error]", msg, stack);
+    return jsonError(500, "Internal server error");
   }
 }
 
@@ -89,3 +103,4 @@ export function withAdminHandler<T>(
     }
   };
 }
+

@@ -41,5 +41,8 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
 
 export async function embedText(text: string): Promise<number[]> {
   const [vector] = await embedTexts([text]);
+  if (!vector) {
+    throw new Error("Embedding service returned no vectors for input text.");
+  }
   return vector;
 }

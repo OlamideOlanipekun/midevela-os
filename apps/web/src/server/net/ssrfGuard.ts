@@ -56,7 +56,7 @@ function isPrivateAddress(ip: string): boolean {
  * resolves to a public address. Throws ApiError(400) otherwise. Returns
  * the parsed URL on success.
  */
-export async function assertPublicUrl(raw: string): Promise<URL> {
+export async function assertPublicUrl(raw: string): Promise<URL & { resolvedIp: string }> {
   let u: URL;
   try {
     u = new URL(raw);
@@ -75,7 +75,7 @@ export async function assertPublicUrl(raw: string): Promise<URL> {
     if (isPrivateAddress(host)) {
       throw new ApiError(400, "URL points to a non-public address.");
     }
-    return u;
+    return Object.assign(u, { resolvedIp: host });
   }
 
   // Reject obvious localhost aliases before we even resolve.
@@ -95,5 +95,5 @@ export async function assertPublicUrl(raw: string): Promise<URL> {
     throw new ApiError(400, "URL points to a non-public address.");
   }
 
-  return u;
+  return Object.assign(u, { resolvedIp: records[0].address });
 }

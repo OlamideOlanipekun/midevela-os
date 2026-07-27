@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         reason: !ipLimit.ok ? "IP/identity rate limit exceeded" : "Email rate limit exceeded",
         userAgent: req.headers.get("user-agent") || undefined,
       });
-      return tooManyRequests(Math.min(ipLimit.resetSec, emailLimit.resetSec));
+      return tooManyRequests(Math.max(ipLimit.resetSec, emailLimit.resetSec));
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
@@ -65,5 +65,5 @@ export async function POST(req: NextRequest) {
       success: true,
       user: { id: user.id, email: user.email, name: user.name, orgId: user.orgId },
     });
-  });
+  }, req);
 }

@@ -77,5 +77,5 @@ export async function POST(req: NextRequest) {
         allowedDomains: widgetKey?.allowedDomains ?? [],
       },
     });
-  });
+  }, req);
 }

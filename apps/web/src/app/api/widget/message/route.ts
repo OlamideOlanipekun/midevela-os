@@ -324,6 +324,7 @@ export async function POST(req: NextRequest) {
           data: { context: contextData as unknown as Prisma.InputJsonValue },
         }),
       ]);
+      await recordAiUsage(org.id);
     }
 
     // ── 1. Conversation Director ──────────────────────────────────────
@@ -635,8 +636,11 @@ export async function POST(req: NextRequest) {
 
     // ── NEW_SHOPPING_JOURNEY ───────────────────────────────────────────
     if (route.intent === "NEW_SHOPPING_JOURNEY") {
-      const freshState = resetShoppingState(state);
-      await saveResponse("", "", [], freshState);
+      state = resetShoppingState(state);
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { context: stateToContext(state) as unknown as Prisma.InputJsonValue },
+      });
       // Fall through to adaptive discovery below with the fresh state
     }
 
@@ -723,7 +727,6 @@ export async function POST(req: NextRequest) {
       const result = escalate("low_confidence", settings);
       nextState = { ...nextState, mode: "GENERAL_CHAT" };
       await saveResponse(result.replyText, "escalation", [], nextState);
-      await recordAiUsage(org.id);
       return NextResponse.json(
         { replyText: result.replyText, intent: "escalation", recommendations: [], isNewConversation },
         { headers },
@@ -748,7 +751,6 @@ export async function POST(req: NextRequest) {
       llmResult.intent === "discovery" ? "DISCOVERY" : "GENERAL_CHAT";
     const newState: ConversationState = { ...state, mode: llmMode };
     await saveResponse(llmResult.replyText, llmResult.intent, llmResult.recommendations, newState);
-    await recordAiUsage(org.id);
 
     publishAIResponse(org.id, conversation.id, 0, llmResult.aiConfidence, llmResult.inputTokens + llmResult.outputTokens, llmResult.intent);
     publishMessageSent(conversation.id, org.id, "ai", llmResult.inputTokens, llmResult.outputTokens);
@@ -776,7 +778,8 @@ export async function POST(req: NextRequest) {
 }
 
 /** Parse a budget label like "0-50000" or "10000-20000" into min/max numbers */
-function parseBudgetLabel(label: string): { min?: number; max?: number } | undefined {
+function parseBudgetLabel(label: unknown): { min?: number; max?: number } | undefined {
+  if (typeof label !== "string") return undefined;
   const parts = label.split("-").map(Number);
   if (parts.length !== 2 || parts.some((n) => !Number.isFinite(n))) return undefined;
   const result: { min?: number; max?: number } = {};

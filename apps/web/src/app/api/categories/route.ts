@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const category = await createCategory(org.id, body);
     return NextResponse.json({ success: true, category });
-  });
+  }, req);
 }
 
 /** Also handles reordering: { orderedIds: string[] } instead of an id+patch. */
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest) {
     if (!body.id) return jsonError(400, "Category id is required.");
     const category = await updateCategory(org.id, body.id, body);
     return NextResponse.json({ success: true, category });
-  });
+  }, req);
 }
 
 export async function DELETE(req: NextRequest) {
@@ -50,5 +50,5 @@ export async function DELETE(req: NextRequest) {
     if (!id) return jsonError(400, "Category id is required.");
     await deleteCategory(org.id, id);
     return NextResponse.json({ success: true });
-  });
+  }, req);
 }

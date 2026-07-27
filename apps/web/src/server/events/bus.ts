@@ -5,7 +5,7 @@ import type { MidevelaEvent, EventHandler } from "@/server/events/types";
 class EventBus {
   private emitter = new EventEmitter();
   private history: MidevelaEvent[] = [];
-  private maxHistory = 1000;
+  private maxHistory = 100;
 
   publish(type: MidevelaEvent["type"], data: Record<string, unknown>): void;
   publish(event: { type: MidevelaEvent["type"] } & Record<string, unknown>): void;

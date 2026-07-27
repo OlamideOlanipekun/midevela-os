@@ -109,5 +109,5 @@ export async function POST(req: NextRequest) {
       widgetPublicKey,
       embedSnippet: embedSnippet(appOrigin, widgetPublicKey),
     });
-  });
+  }, req);
 }

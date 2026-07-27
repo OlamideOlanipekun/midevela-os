@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes, createHash } from "crypto";
 import prisma from "@/lib/prisma";
 import { withErrorHandling, jsonError } from "@/server/http";
+import { hashPassword } from "@/server/auth/password";
 import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
 import { logRateLimitBlock } from "@/server/ratelimit/logger";
 
@@ -32,13 +33,24 @@ export async function POST(req: NextRequest) {
         reason: !ipLimit.ok ? "IP/identity rate limit exceeded" : "Email rate limit exceeded",
         userAgent: req.headers.get("user-agent") || undefined,
       });
-      const retryAfter = Math.min(ipLimit.resetSec, emailLimit.resetSec);
+      const retryAfter = Math.max(ipLimit.resetSec, emailLimit.resetSec);
       const humanTime = formatRetryAfter(retryAfter);
       return NextResponse.json(
         { error: `Too many requests. Try again in ${humanTime}.`, retryAfterSec: retryAfter },
         { status: 429, headers: { "Retry-After": String(retryAfter) } }
       );
     }
+
+    // Best-effort cleanup of expired or used tokens to prevent table bloat (H5)
+    await prisma.passwordResetToken.deleteMany({
+      where: {
+        OR: [
+          { email },
+          { expiresAt: { lt: new Date() } },
+          { usedAt: { not: null } },
+        ],
+      },
+    }).catch(() => undefined);
 
     const user = await prisma.user.findUnique({ where: { email } });
 
@@ -56,12 +68,12 @@ export async function POST(req: NextRequest) {
       // e.g. `https://midevela.com/reset-password?token=${token}`
       console.log(`[password-reset] Token created for ${email} (expires ${expiresAt.toISOString()})`);
     } else {
-      // Constant-time delay to prevent email enumeration
-      await new Promise((r) => setTimeout(r, 100));
+      // Constant-time delay to prevent email enumeration via timing (M1)
+      await hashPassword("dummy-constant-time-guard");
     }
 
     return NextResponse.json({
       message: "If an account with that email exists, a password reset link has been sent.",
     });
-  });
+  }, req);
 }

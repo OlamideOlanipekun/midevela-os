@@ -75,6 +75,15 @@ export async function getSubscriptionForOrg(orgId: string): Promise<Subscription
     effectiveStatus = now < graceEnd ? "PAST_DUE" : "EXPIRED";
   }
 
+  if (effectiveStatus !== sub.status) {
+    await prisma.subscription
+      .update({
+        where: { id: sub.id },
+        data: { status: effectiveStatus },
+      })
+      .catch(() => undefined);
+  }
+
   return {
     plan: sub.plan.code,
     status: STATUS_MAP[effectiveStatus],

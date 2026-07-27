@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
     const faq = await createFaq(org.id, body);
     return NextResponse.json({ success: true, faq });
-  });
+  }, req);
 }
 
 export async function DELETE(req: NextRequest) {
@@ -40,5 +40,5 @@ export async function DELETE(req: NextRequest) {
     }
     await deleteFaq(org.id, { id, question });
     return NextResponse.json({ success: true });
-  });
+  }, req);
 }
