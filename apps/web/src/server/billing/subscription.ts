@@ -96,9 +96,56 @@ export async function getSubscriptionForOrg(orgId: string): Promise<Subscription
   };
 }
 
+export const DEFAULT_PLANS = [
+  {
+    code: "starter",
+    name: "Starter",
+    priceMonthly: 15000,
+    currency: "NGN",
+    monthlyMessageCap: 500,
+    productCap: 50,
+    channelCap: 1,
+    knowledgeCap: 10,
+  },
+  {
+    code: "growth",
+    name: "Growth",
+    priceMonthly: 35000,
+    currency: "NGN",
+    monthlyMessageCap: 2500,
+    productCap: 250,
+    channelCap: 3,
+    knowledgeCap: 50,
+  },
+  {
+    code: "pro",
+    name: "Pro",
+    priceMonthly: 75000,
+    currency: "NGN",
+    monthlyMessageCap: 10000,
+    productCap: 1000,
+    channelCap: 5,
+    knowledgeCap: 200,
+  },
+];
+
+export async function ensurePlansSeeded() {
+  for (const p of DEFAULT_PLANS) {
+    await prisma.plan.upsert({
+      where: { code: p.code },
+      update: {},
+      create: p,
+    }).catch(() => undefined);
+  }
+}
+
 /** Called once, at onboarding. */
 export async function createTrialSubscription(orgId: string) {
-  const plan = await prisma.plan.findUnique({ where: { code: TRIAL_PLAN_CODE } });
+  let plan = await prisma.plan.findUnique({ where: { code: TRIAL_PLAN_CODE } });
+  if (!plan) {
+    await ensurePlansSeeded();
+    plan = await prisma.plan.findUnique({ where: { code: TRIAL_PLAN_CODE } });
+  }
   if (!plan) throw new Error(`Trial plan "${TRIAL_PLAN_CODE}" not seeded.`);
 
   const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 86400000);
