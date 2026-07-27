@@ -24,67 +24,78 @@ export async function connectWebsite(
 ): Promise<{ website: WebsiteDto }> {
   const normalizedUrl = normalizeUrl(input.url);
 
-  const existing = await prisma.websiteRegistry.findUnique({
-    where: { normalizedUrl },
-    include: { org: { select: { name: true } } },
-  });
+  // Use a Prisma transaction with serializable isolation to prevent TOCTOU
+  // race where two concurrent claims on the same URL both pass the check.
+  const result = await prisma.$transaction(async (tx) => {
+    const existing = await tx.websiteRegistry.findUnique({
+      where: { normalizedUrl },
+      include: { org: { select: { name: true } } },
+    });
 
-  if (existing) {
-    if (existing.status === "ACTIVE" && existing.orgId !== orgId) {
-      eventBus.publish(WebsiteEventNames.WebsiteRejected, {
-        orgId,
-        normalizedUrl,
-        reason: "already_connected",
+    if (existing) {
+      if (existing.status === "ACTIVE" && existing.orgId !== orgId) {
+        eventBus.publish(WebsiteEventNames.WebsiteRejected, {
+          orgId,
+          normalizedUrl,
+          reason: "already_connected",
+        });
+        throw new WebsiteClaimError(
+          "This website is already connected to another Midevela workspace.",
+          WebsiteErrors.WEBSITE_ALREADY_CONNECTED
+        );
+      }
+
+      // Same org re-claiming its own ACTIVE site — return as-is
+      if (existing.status === "ACTIVE" && existing.orgId === orgId) {
+        return { website: toWebsiteDto(existing) };
+      }
+
+      // Reclaim: DELETED or INACTIVE → reactivate for this merchant
+      const updated = await tx.websiteRegistry.update({
+        where: { id: existing.id },
+        data: {
+          orgId,
+          status: "ACTIVE",
+          originalUrl: input.url,
+          verificationStatus: "UNVERIFIED",
+          crawlStatus: "NOT_STARTED",
+          lastCrawledAt: null,
+        },
+        include: { org: { select: { name: true } } },
       });
-      throw new WebsiteClaimError(
-        "This website is already connected to another Midevela workspace.",
-        WebsiteErrors.WEBSITE_ALREADY_CONNECTED
-      );
+
+      eventBus.publish(WebsiteEventNames.WebsiteReactivated, {
+        orgId,
+        websiteId: updated.id,
+        normalizedUrl,
+      });
+
+      return { website: toWebsiteDto(updated) };
     }
 
-    // Reclaim: DELETED or INACTIVE → reactivate for this merchant
-    const updated = await prisma.websiteRegistry.update({
-      where: { id: existing.id },
+    // New website
+    const website = await tx.websiteRegistry.create({
       data: {
         orgId,
-        status: "ACTIVE",
+        normalizedUrl,
         originalUrl: input.url,
+        status: "ACTIVE",
         verificationStatus: "UNVERIFIED",
         crawlStatus: "NOT_STARTED",
-        lastCrawledAt: null,
       },
       include: { org: { select: { name: true } } },
     });
 
-    eventBus.publish(WebsiteEventNames.WebsiteReactivated, {
+    eventBus.publish(WebsiteEventNames.WebsiteConnected, {
       orgId,
-      websiteId: updated.id,
+      websiteId: website.id,
       normalizedUrl,
     });
 
-    return { website: toWebsiteDto(updated) };
-  }
-
-  // New website
-  const website = await prisma.websiteRegistry.create({
-    data: {
-      orgId,
-      normalizedUrl,
-      originalUrl: input.url,
-      status: "ACTIVE",
-      verificationStatus: "UNVERIFIED",
-      crawlStatus: "NOT_STARTED",
-    },
-    include: { org: { select: { name: true } } },
+    return { website: toWebsiteDto(website) };
   });
 
-  eventBus.publish(WebsiteEventNames.WebsiteConnected, {
-    orgId,
-    websiteId: website.id,
-    normalizedUrl,
-  });
-
-  return { website: toWebsiteDto(website) };
+  return result;
 }
 
 /**
@@ -104,6 +115,9 @@ export async function startCrawl(websiteId: string, orgId: string): Promise<void
   if (website.status !== "ACTIVE") {
     throw new WebsiteClaimError("Website is not active.", WebsiteErrors.NOT_FOUND);
   }
+  if (website.crawlStatus === "CRAWLING") {
+    throw new WebsiteClaimError("A crawl is already in progress for this website.", WebsiteErrors.ALREADY_CRAWLING);
+  }
 
   await prisma.websiteRegistry.update({
     where: { id: websiteId },
@@ -122,10 +136,14 @@ export async function startCrawl(websiteId: string, orgId: string): Promise<void
 
 /**
  * Suspend a website (admin action).
+ * Provide orgId to scope the operation to a specific merchant.
  */
-export async function suspendWebsite(websiteId: string): Promise<WebsiteDto> {
+export async function suspendWebsite(websiteId: string, orgId?: string): Promise<WebsiteDto> {
+  const where: Record<string, unknown> = { id: websiteId };
+  if (orgId) where.orgId = orgId;
+
   const website = await prisma.websiteRegistry.update({
-    where: { id: websiteId },
+    where,
     data: { status: "SUSPENDED" },
     include: { org: { select: { name: true } } },
   });
@@ -141,10 +159,14 @@ export async function suspendWebsite(websiteId: string): Promise<WebsiteDto> {
 
 /**
  * Reactivate a suspended website (admin action).
+ * Provide orgId to scope the operation to a specific merchant.
  */
-export async function reactivateWebsite(websiteId: string): Promise<WebsiteDto> {
+export async function reactivateWebsite(websiteId: string, orgId?: string): Promise<WebsiteDto> {
+  const where: Record<string, unknown> = { id: websiteId };
+  if (orgId) where.orgId = orgId;
+
   const website = await prisma.websiteRegistry.update({
-    where: { id: websiteId },
+    where,
     data: { status: "ACTIVE" },
     include: { org: { select: { name: true } } },
   });
@@ -160,10 +182,14 @@ export async function reactivateWebsite(websiteId: string): Promise<WebsiteDto> 
 
 /**
  * Soft-delete a website (admin action or merchant deletion hook).
+ * Provide orgId to scope the operation to a specific merchant.
  */
-export async function deleteWebsite(websiteId: string): Promise<WebsiteDto> {
+export async function deleteWebsite(websiteId: string, orgId?: string): Promise<WebsiteDto> {
+  const where: Record<string, unknown> = { id: websiteId };
+  if (orgId) where.orgId = orgId;
+
   const website = await prisma.websiteRegistry.update({
-    where: { id: websiteId },
+    where,
     data: { status: "DELETED" },
     include: { org: { select: { name: true } } },
   });

@@ -96,7 +96,7 @@ function internalLinks(html: string, origin: string): string[] {
   while ((linkMatch = linkRegex.exec(html)) !== null) {
     let link = linkMatch[1];
     if (link.startsWith("/")) link = `${origin}${link}`;
-    if (link.startsWith(origin) && !links.includes(link)) links.push(link);
+    if (link.startsWith(origin) && link.startsWith("http") && !links.includes(link)) links.push(link);
   }
   return links;
 }
@@ -104,10 +104,16 @@ function internalLinks(html: string, origin: string): string[] {
 export async function POST(req: NextRequest) {
   return withErrorHandling(async () => {
     const { org } = await requireActiveOrg();
-    const { url } = await req.json();
-    if (!url) return jsonError(400, "URL is required.");
+    const body = await req.json();
+    const rawUrl = body?.url;
+    if (typeof rawUrl !== "string" || !rawUrl.trim()) {
+      return jsonError(400, "URL is required.");
+    }
+    if (rawUrl.length > 2048) {
+      return jsonError(400, "URL is too long.");
+    }
 
-    let targetUrl = String(url).trim();
+    let targetUrl = rawUrl.trim();
     if (!/^https?:\/\//i.test(targetUrl)) targetUrl = `https://${targetUrl}`;
 
     // Ownership check: the website must be registered and ACTIVE for this org
@@ -116,13 +122,13 @@ export async function POST(req: NextRequest) {
       where: { normalizedUrl },
     });
     if (!registryEntry) {
-      return jsonError(400, "Connect this website first via the dashboard before crawling.");
+      return jsonError(404, "Connect this website first via the dashboard before crawling.");
     }
     if (registryEntry.orgId !== org.id) {
       return jsonError(403, "This website belongs to another workspace.");
     }
     if (registryEntry.status !== "ACTIVE") {
-      return jsonError(400, "Website is not active.");
+      return jsonError(422, "Website is not active.");
     }
 
     // Products: layered importer (platform-JSON → JSON-LD → fetch+LLM →

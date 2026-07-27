@@ -44,6 +44,13 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: transform .2s cubic-bezier(0.16,1,0.3,1), box-shadow .2s ease, border-color .2s ease;
+}
+
+.cat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(15,31,28,0.12);
+  box-shadow: var(--shadow-luxury, 0 16px 32px -18px rgba(0,0,0,0.12));
 }
 
 .cat-card-top {

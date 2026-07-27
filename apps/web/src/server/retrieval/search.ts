@@ -63,6 +63,9 @@ export async function retrieveContext(
   queryEmbedding: number[],
   limit = 6
 ): Promise<RetrievedContext[]> {
+  if (!queryEmbedding.every((v) => typeof v === "number" && Number.isFinite(v))) {
+    throw new Error("Query embedding contains non-numeric values");
+  }
   const vectorLiteral = `[${queryEmbedding.join(",")}]`;
 
   const hits = await prisma.$queryRaw<EmbeddingHit[]>`

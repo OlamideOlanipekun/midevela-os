@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { LocalRateLimiter } from "./localRateLimiter";
 
 /** Singleton local fallback shared across all rateLimit calls. */
@@ -28,28 +29,11 @@ export function rateLimitEnabled(): boolean {
 }
 
 /**
- * Redact sensitive parts of a rate-limit key for safe logging. Shows enough
- * to distinguish which dimension (ip / key / session / usage) was hit.
- *
- *   wl:ip:192.168.1.99     → "wl:ip:192.168.1.x"
- *   wl:key:abc-def-ghi     → "wl:key:abc-def…"
- *   session:min:org:vis    → "session:min:org:vis…"
+ * Hash rate-limit keys for safe logging so IPs and emails never appear
+ * in log output, even partially.
  */
 function safeKey(key: string): string {
-  const parts = key.split(":");
-  if (parts.length >= 3 && parts[1] === "ip") {
-    const ipParts = parts[2].split(".");
-    if (ipParts.length === 4) {
-      ipParts[3] = "x";
-      return `${parts[0]}:${parts[1]}:${ipParts.join(".")}`;
-    }
-  }
-  if (parts.length >= 3) {
-    const prefix = parts.slice(0, 2).join(":");
-    const val = parts.slice(2).join(":");
-    return val.length > 12 ? `${prefix}:${val.slice(0, 12)}…` : `${prefix}:${val}`;
-  }
-  return key.length > 24 ? key.slice(0, 24) + "…" : key;
+  return createHash("sha256").update(key).digest("hex").slice(0, 16);
 }
 
 /**

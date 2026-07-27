@@ -36,22 +36,39 @@ function formatMessageTime(iso: string): string {
 export default function ConversationsPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [inputText, setInputText] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const PAGE_SIZE = 50;
+
+  const loadConversations = async (pageNum: number, append = false) => {
+    if (!append) setLoading(true);
+    else setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/conversations?page=${pageNum}&limit=${PAGE_SIZE}`);
+      const data = await res.json();
+      const list: Conversation[] = Array.isArray(data.conversations) ? data.conversations : [];
+      setConversations(append ? (prev) => [...prev, ...list] : list);
+      setTotal(data.total ?? 0);
+      setPages(data.pages ?? 1);
+      setPage(pageNum);
+      if (!append && list.length > 0) setActiveId(list[0].id);
+    } catch {
+      if (!append) setConversations([]);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    fetch("/api/conversations")
-      .then((res) => res.json())
-      .then((data) => {
-        const list: Conversation[] = Array.isArray(data.conversations) ? data.conversations : [];
-        setConversations(list);
-        if (list.length > 0) setActiveId(list[0].id);
-      })
-      .catch(() => setConversations([]))
-      .finally(() => setLoading(false));
+    loadConversations(1);
   }, []);
 
   const activeConv = conversations.find((c) => c.id === activeId) ?? null;
@@ -128,6 +145,17 @@ export default function ConversationsPage() {
           </div>
 
           <div className="conv-list-scroll">
+            {page < pages && (
+              <div style={{ padding: "12px 16px", textAlign: "center" }}>
+                <button
+                  onClick={() => loadConversations(page + 1, true)}
+                  disabled={loadingMore}
+                  style={{ background: "none", border: "1px solid var(--line)", borderRadius: "var(--radius-sm)", padding: "8px 20px", color: "var(--ink-soft)", fontSize: 12.5, cursor: "pointer", width: "100%" }}
+                >
+                  {loadingMore ? "Loading…" : `Load more (${conversations.length} of ${total})`}
+                </button>
+              </div>
+            )}
             {visibleConversations.map((c) => (
               <div
                 role="button"

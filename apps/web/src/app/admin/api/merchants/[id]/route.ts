@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAdminHandler } from "@/server/http";
 import { requireAdmin } from "@/server/admin/auth";
 import { requirePermission } from "@/server/admin/rbac";
+import { rateLimit } from "@/server/ratelimit/limiter";
 import {
   getMerchant,
   suspendMerchant,
@@ -28,6 +29,13 @@ export const GET = withAdminHandler(async (_req, context) => {
 export const PATCH = withAdminHandler(async (req, context) => {
   const id = await getId(context);
   const admin = await requireAdmin();
+  const rl = await rateLimit(`admin:merchant:write:${admin.id}`, 30, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please slow down." },
+      { status: 429, headers: { "Retry-After": String(rl.resetSec) } }
+    );
+  }
   const body = await req.json();
 
   if (body.action === "suspend") {
@@ -59,6 +67,13 @@ export const PATCH = withAdminHandler(async (req, context) => {
 export const DELETE = withAdminHandler(async (_req, context) => {
   const id = await getId(context);
   const admin = await requireAdmin();
+  const rl = await rateLimit(`admin:merchant:delete:${admin.id}`, 10, 300);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please slow down." },
+      { status: 429, headers: { "Retry-After": String(rl.resetSec) } }
+    );
+  }
   await requirePermission(admin, { module: "merchants", action: "delete" });
 
   const result = await deleteMerchant(admin.id, id);

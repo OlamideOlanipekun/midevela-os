@@ -4,6 +4,10 @@ import { withAdminHandler } from "@/server/http";
 import { requireAdmin, invalidateAdminSessions, createAdminSession } from "@/server/admin/auth";
 import { hashPassword, verifyPassword, validatePasswordStrength } from "@/server/auth/password";
 import { logAudit } from "@/server/admin/audit";
+import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
+
+const PW_CHANGE_PER_ADMIN = 5;
+const PW_CHANGE_WINDOW_SEC = 900;
 
 export const POST = withAdminHandler(async (req: NextRequest, _context) => {
   const admin = await requireAdmin();
@@ -13,9 +17,20 @@ export const POST = withAdminHandler(async (req: NextRequest, _context) => {
     return NextResponse.json({ error: "Current password and new password are required." }, { status: 400 });
   }
 
+  if (currentPassword === newPassword) {
+    return NextResponse.json({ error: "New password must differ from your current password." }, { status: 400 });
+  }
+
   const strengthError = validatePasswordStrength(newPassword);
   if (strengthError) {
     return NextResponse.json({ error: strengthError }, { status: 400 });
+  }
+
+  // Rate limit password change attempts per admin
+  const ip = clientIp(req.headers);
+  const limit = await rateLimit(`admin:change-pw:${admin.id}`, PW_CHANGE_PER_ADMIN, PW_CHANGE_WINDOW_SEC);
+  if (!limit.ok) {
+    return NextResponse.json({ error: "Too many attempts. Please wait a while." }, { status: 429 });
   }
 
   const valid = await verifyPassword(currentPassword, admin.passwordHash);

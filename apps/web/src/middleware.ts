@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/server/auth/constants";
 
+const ADMIN_SESSION_COOKIE = "midevela_admin_session";
+
 /**
  * Fast-path redirect only — checks cookie *presence*, not validity
  * (session tokens are opaque and validated against the DB, which this
@@ -11,8 +13,23 @@ import { SESSION_COOKIE } from "@/server/auth/constants";
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasSessionCookie = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
 
+  // Admin route protection — redirect to admin login
+  if (pathname.startsWith("/admin")) {
+    // Don't redirect the login page itself or its API
+    if (pathname === "/admin/login" || pathname === "/admin/api/auth/login") {
+      return NextResponse.next();
+    }
+    const hasAdminSession = Boolean(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
+    if (!hasAdminSession) {
+      const loginUrl = new URL("/admin/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // Merchant route protection
+  const hasSessionCookie = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
   const isProtectedPage =
     pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding");
 
@@ -26,5 +43,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*"],
+  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/admin/:path*"],
 };

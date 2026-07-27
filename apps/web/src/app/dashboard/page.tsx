@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -36,9 +36,14 @@ export default function DashboardHome() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [overviewError, setOverviewError] = useState(false);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
 
   useEffect(() => {
+    if (!firstName || firstName === "there") {
+      setGreeting("Good day!");
+      return;
+    }
     const hours = new Date().getHours();
     let greet = "Good morning";
     if (hours >= 12 && hours < 17) greet = "Good afternoon";
@@ -46,40 +51,40 @@ export default function DashboardHome() {
     setGreeting(`${greet}, ${firstName}.`);
   }, [firstName]);
 
-  useEffect(() => {
-    let active = true;
+  const fetchOverview = useCallback(() => {
+    setOverviewError(false);
+    setLoading(true);
     fetch("/api/dashboard/overview")
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
-        if (active) setData(json);
+        if (!json) { setData(null); setOverviewError(true); }
+        else setData(json);
       })
       .catch(() => {
-        if (active) setData(null);
+        setData(null);
+        setOverviewError(true);
       })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    fetch("/api/health/readiness")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (active) setReadiness(json);
-      })
-      .catch(() => {
-        if (active) setReadiness(null);
-      });
-    return () => {
-      active = false;
-    };
+      .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    fetchOverview();
+    fetch("/api/health/readiness")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => setReadiness(json))
+      .catch(() => undefined);
+  }, [fetchOverview]);
+
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleQuickAction = (actionName: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     if (actionName === "Add Product") {
       router.push("/dashboard/products?action=add");
     } else if (actionName === "Import Catalog") {
       router.push("/dashboard/knowledge?tab=docs");
     } else if (actionName === "Launch Automation" || actionName === "Broadcast Campaign") {
       setToastMessage(`${actionName} isn't available yet — it's on the roadmap, not built.`);
-      setTimeout(() => setToastMessage(null), 3500);
+      toastTimer.current = setTimeout(() => setToastMessage(null), 3500);
     } else if (actionName === "Invite Team Member") {
       router.push("/dashboard/settings?tab=team");
     } else if (actionName === "Connect Integration") {
@@ -105,6 +110,21 @@ export default function DashboardHome() {
           boxShadow: "0 10px 30px rgba(0,0,0,0.15)", zIndex: 1000, animation: "fadeIn 0.2s ease",
         }}>
           ⚡ {toastMessage}
+        </div>
+      )}
+
+      {/* Error banner */}
+      {overviewError && !loading && (
+        <div style={{
+          background: "rgba(178, 58, 46, 0.08)", border: "1px solid var(--rust)",
+          borderRadius: "var(--radius-md)", padding: "12px 16px", fontSize: "13px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <span style={{ color: "var(--rust)" }}>Couldn't load dashboard data. Check your connection.</span>
+          <button onClick={fetchOverview} style={{
+            background: "none", border: "1px solid var(--rust)", borderRadius: "var(--radius-sm)",
+            padding: "6px 14px", color: "var(--rust)", fontWeight: 600, cursor: "pointer", fontSize: "12px",
+          }}>Retry</button>
         </div>
       )}
 

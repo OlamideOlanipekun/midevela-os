@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAdminHandler } from "@/server/http";
 import { requireAdmin } from "@/server/admin/auth";
 import { requirePermission } from "@/server/admin/rbac";
+import { rateLimit } from "@/server/ratelimit/limiter";
 import {
   listAllWebsites,
   suspendWebsite,
@@ -19,6 +20,13 @@ export const GET = withAdminHandler(async (_req: NextRequest, _context) => {
 
 export const PATCH = withAdminHandler(async (req: NextRequest, _context) => {
   const admin = await requireAdmin();
+  const rl = await rateLimit(`admin:websites:${admin.id}`, 20, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please slow down." },
+      { status: 429, headers: { "Retry-After": String(rl.resetSec) } }
+    );
+  }
   await requirePermission(admin, { module: "merchants", action: "write" });
 
   const { websiteId, action } = await req.json();

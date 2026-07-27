@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { eventBus } from "@/server/events/bus";
 import { metricsStore } from "@/server/metrics/store";
 import { redis } from "@/server/metrics/redis";
+import { getAdminSessionUser } from "@/server/admin/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,12 @@ export const dynamic = "force-dynamic";
  * Streams live metric updates and events to connected admin clients.
  */
 export async function GET(req: NextRequest): Promise<Response> {
+  // Require admin session
+  const admin = await getAdminSessionUser();
+  if (!admin) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const channels = (searchParams.get("channels") || "dashboard").split(",");
 

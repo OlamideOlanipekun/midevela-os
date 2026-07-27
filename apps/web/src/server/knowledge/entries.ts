@@ -5,7 +5,7 @@ import { syncKnowledgeEmbedding, deleteEmbedding } from "@/server/knowledge/sync
 import { relativeTime } from "@/server/shared/time";
 import { getPlanCaps, isUnlimited } from "@/server/billing/caps";
 
-/** Throws a 403 once the org's total knowledge entries (FAQ + POLICY +
+/** Throws a 402 once the org's total knowledge entries (FAQ + POLICY +
  *  DOCUMENT) are at its plan's cap. Call before creating a NEW row —
  *  updates to an existing entry never need this. */
 async function assertKnowledgeBudget(orgId: string) {
@@ -14,7 +14,7 @@ async function assertKnowledgeBudget(orgId: string) {
   const count = await prisma.knowledgeEntry.count({ where: { orgId } });
   if (count >= knowledgeCap) {
     throw new ApiError(
-      403,
+      402,
       `You've reached your plan's knowledge base limit (${knowledgeCap} entries). Upgrade to add more.`
     );
   }

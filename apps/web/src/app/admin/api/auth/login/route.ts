@@ -18,7 +18,7 @@ export const POST = withAdminHandler(async (req: NextRequest, _context) => {
   if (!ipLimit.ok) {
     return NextResponse.json(
       { error: "Too many attempts. Please wait a few minutes and try again." },
-      { status: 429, headers: { "Retry-After": String(ADMIN_LOGIN_WINDOW_SEC) } }
+      { status: 429, headers: { "Retry-After": String(ipLimit.resetSec) } }
     );
   }
 

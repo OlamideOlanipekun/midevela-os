@@ -10,6 +10,9 @@
  *   https://shop.jumia.com/p?q=1 → shop.jumia.com
  */
 export function normalizeUrl(raw: string): string {
+  if (typeof raw !== "string" || !raw.trim()) {
+    throw new Error("URL is empty.");
+  }
   let url = raw.trim();
 
   // Prepend scheme so the URL constructor works for bare domains
@@ -21,6 +24,10 @@ export function normalizeUrl(raw: string): string {
   try {
     hostname = new URL(url).hostname.toLowerCase();
   } catch {
+    throw new Error(`Invalid URL: ${raw}`);
+  }
+
+  if (!hostname) {
     throw new Error(`Invalid URL: ${raw}`);
   }
 

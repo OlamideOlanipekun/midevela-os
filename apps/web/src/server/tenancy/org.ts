@@ -165,12 +165,14 @@ export function toSettingsResponse(org: Organization) {
     ...stored,
     features: { ...defaultOrgSettings.features, ...(stored.features ?? {}) },
   };
+  // Never leak payment credentials to the frontend
+  const { paystackSecretKey, paystackPublicKey, ...safe } = merged;
   return {
     orgName: org.name,
     website: org.websiteUrl ?? "",
     country: org.country,
     currency: org.currency,
-    ...merged,
+    ...safe,
   };
 }
 

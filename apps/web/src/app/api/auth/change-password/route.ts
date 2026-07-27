@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { withErrorHandling, jsonError } from "@/server/http";
+import { withErrorHandling, jsonError, assertOrigin } from "@/server/http";
 import { requireUser } from "@/server/auth/context";
 import { hashPassword, verifyPassword, validatePasswordStrength } from "@/server/auth/password";
 import { invalidateUserSessions, createSession } from "@/server/auth/session";
+import { rateLimit, clientIp } from "@/server/ratelimit/limiter";
+
+const PW_CHANGE_PER_USER = 5;
+const PW_CHANGE_WINDOW_SEC = 900;
 
 export async function POST(req: NextRequest) {
   return withErrorHandling(async () => {
+    assertOrigin(req);
+
     const user = await requireUser();
     const { currentPassword, newPassword } = await req.json();
 
@@ -14,8 +20,17 @@ export async function POST(req: NextRequest) {
       return jsonError(400, "Current password and new password are required.");
     }
 
+    if (currentPassword === newPassword) {
+      return jsonError(400, "New password must differ from your current password.");
+    }
+
     const strengthError = validatePasswordStrength(newPassword);
     if (strengthError) return jsonError(400, strengthError);
+
+    // Rate limit password change attempts per user
+    const ip = clientIp(req.headers);
+    const limit = await rateLimit(`change-pw:${user.id}`, PW_CHANGE_PER_USER, PW_CHANGE_WINDOW_SEC);
+    if (!limit.ok) return jsonError(429, "Too many attempts. Please wait a while.");
 
     const valid = await verifyPassword(currentPassword, user.passwordHash);
     if (!valid) {

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       rateLimit(`login:email:${email}`, LOGIN_PER_EMAIL, LOGIN_WINDOW_SEC),
     ]);
     if (!ipLimit.ok || !emailLimit.ok) {
-      return tooManyRequests(LOGIN_WINDOW_SEC);
+      return tooManyRequests(Math.min(ipLimit.resetSec, emailLimit.resetSec));
     }
 
     const user = await prisma.user.findUnique({ where: { email } });

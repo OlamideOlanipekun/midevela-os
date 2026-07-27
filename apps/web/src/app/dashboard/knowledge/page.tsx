@@ -201,11 +201,14 @@ export default function KnowledgeBasePage() {
       <div className="know-layout">
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
           {loading ? (
-            [1, 2, 3].map((i) => (
-              <div key={i} className="know-row" style={{ height: 78, opacity: 0.5 }} />
-            ))
+            <div className="know-list-scroll" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="know-row" style={{ height: 78, opacity: 0.5 }} />
+              ))}
+            </div>
           ) : (
             <>
+              <div className="know-list-scroll" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {activeTab === "faq" &&
                 faqs.map((faq, i) => (
                   <div key={i} className="know-row">
@@ -320,6 +323,7 @@ export default function KnowledgeBasePage() {
                   </div>
                 </div>
               )}
+            </div>
             </>
           )}
         </div>

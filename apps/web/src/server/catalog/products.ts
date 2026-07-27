@@ -119,7 +119,7 @@ export async function createProduct(orgId: string, input: ProductInput) {
   }
   const { productCap } = await getPlanCaps(orgId);
   if (remainingBudget(await prisma.product.count({ where: { orgId } }), productCap) <= 0) {
-    throw new ApiError(403, `You've reached your plan's product limit (${productCap}). Upgrade to add more.`);
+    throw new ApiError(402, `You've reached your plan's product limit (${productCap}). Upgrade to add more.`);
   }
   const category = await getOrCreateCategoryByName(orgId, input.category);
   const imageUrl = input.imageUrl?.trim();

@@ -16,8 +16,17 @@ class EventBus {
       ...(typeof typeOrEvent === "string" ? { type: typeOrEvent, ...data } : typeOrEvent),
     } as MidevelaEvent;
 
-    this.emitter.emit(event.type, event);
-    this.emitter.emit("*", event);
+    // Wrap emitter calls so a crashing listener never bubbles to the caller
+    try {
+      this.emitter.emit(event.type, event);
+    } catch (e) {
+      console.error("EventBus: listener error on", event.type, e);
+    }
+    try {
+      this.emitter.emit("*", event);
+    } catch (e) {
+      console.error("EventBus: wildcard listener error on", event.type, e);
+    }
 
     this.history.push(event);
     if (this.history.length > this.maxHistory) {

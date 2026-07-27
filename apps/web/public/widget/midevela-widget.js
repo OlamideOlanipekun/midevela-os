@@ -41,6 +41,14 @@
     return typeof value === 'string' && /^https?:\/\//i.test(value);
   }
 
+  function safeUrl(value) {
+    if (!value) return '';
+    var s = String(value).trim();
+    if (/^https?:\/\//i.test(s)) return s;
+    if (/^mailto:/i.test(s) || /^tel:/i.test(s)) return s;
+    return '';
+  }
+
   function isHexColor(value) {
     return typeof value === 'string' && /^#[0-9a-f]{3,8}$/i.test(value);
   }
@@ -337,14 +345,6 @@
       --on-primary: ${onPrimary};
       --bg: #ffffff;
       --icon-size: 20px;
-
-    .mdv-icon {
-      width: var(--icon-size);
-      height: var(--icon-size);
-      vertical-align: middle;
-      display: inline-block;
-      flex-shrink: 0;
-    }
       --bg-soft: #f8fafc;
       --text: #111827;
       --muted: #6b7280;
@@ -366,6 +366,14 @@
       --bubble-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
       --user-gradient: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 85%, #000) 100%);
       --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .mdv-icon {
+      width: var(--icon-size);
+      height: var(--icon-size);
+      vertical-align: middle;
+      display: inline-block;
+      flex-shrink: 0;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2466,6 +2474,7 @@
         trackEvent('widget_opened', { view: funnel.view });
         if (focusInput && funnel.view === 'conversation') input.focus();
       } else {
+        clearInterval(stateRotationTimer);
         updateBackToTop();
         markAutoOpened();
         trackEvent('widget_dismissed', { view: funnel.view });
@@ -2832,7 +2841,7 @@
       { key: 'productType', words: ['serum', 'moisturizer', 'cleanser', 'toner', 'sunscreen', 'shampoo', 'conditioner', 'oil', 'mask', 'cream', 'lotion', 'treatment'] },
       { key: 'budget', words: ['under \$?(\d+)', 'budget \$?(\d+)', 'less than \$?(\d+)', 'cheap', 'affordable', 'inexpensive', 'premium', 'luxury'] },
       { key: 'skinType', words: ['dry skin', 'oily skin', 'combination', 'sensitive skin', 'normal skin'] },
-      { key: 'brand', words: ['from (\w+)', 'by (\w+)', 'brand (\w+)'] },
+      { key: 'brand', words: ['from (\w+)\b', 'by (\w+)\b', 'brand (\w+)\b'] },
     ];
 
     function parseIntent(text) {
@@ -4503,7 +4512,7 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
           '<span class="business-card-title">' + escapeHtml(title) + '</span>' +
         '</div>' +
         '<div class="business-card-body">' + escapeHtml(body) + '</div>' +
-        (linkText ? '<a class="business-card-link" href="' + escapeHtml(linkUrl || '#') + '" target="_blank">' + escapeHtml(linkText) + ' ' + icon('arrow-right') + '</a>' : '');
+        (linkText ? '<a class="business-card-link" href="' + safeUrl(linkUrl) + '" target="_blank">' + escapeHtml(linkText) + ' ' + icon('arrow-right') + '</a>' : '');
       return card;
     }
 
@@ -4592,7 +4601,7 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
         '<div class="contact-card-title">Need Human Assistance?</div>' +
         '<div class="contact-card-subtitle">Our team would be happy to help.</div>' +
         '<div class="contact-card-actions">' +
-          (whatsapp ? '<a class="contact-btn" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
+          (whatsapp ? '<a class="contact-btn" href="' + safeUrl(whatsapp) + '" target="_blank">' +
             '<span class="contact-btn-icon">' + icon('chat') + '</span>' +
             '<span class="contact-btn-label">WhatsApp</span></a>' : '') +
           (phone ? '<a class="contact-btn" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +
@@ -4615,7 +4624,7 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
         '<div class="escalation-card-title">Need Personal Assistance?</div>' +
         '<div class="escalation-card-subtitle">Our team would be happy to help.</div>' +
         '<div class="escalation-actions">' +
-          (whatsapp ? '<a class="escalation-btn escalation-btn-whatsapp" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
+          (whatsapp ? '<a class="escalation-btn escalation-btn-whatsapp" href="' + safeUrl(whatsapp) + '" target="_blank">' +
             '<span class="escalation-btn-icon">' + icon('chat') + '</span><span>WhatsApp</span></a>' : '') +
           (phone ? '<a class="escalation-btn escalation-btn-call" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +
             '<span class="escalation-btn-icon">' + icon('phone') + '</span><span>Call</span></a>' : '') +
@@ -4634,7 +4643,7 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
       card.innerHTML =
         '<div class="business-unknown-text">I couldn\u2019t find verified information about that. Would you like me to connect you with our team?</div>' +
         '<div class="business-unknown-actions">' +
-          (whatsapp ? '<a class="contact-btn" href="' + escapeHtml(whatsapp) + '" target="_blank">' +
+          (whatsapp ? '<a class="contact-btn" href="' + safeUrl(whatsapp) + '" target="_blank">' +
             '<span class="contact-btn-icon">' + icon('chat') + '</span>' +
             '<span class="contact-btn-label">WhatsApp</span></a>' : '') +
           (phone ? '<a class="contact-btn" href="tel:' + escapeHtml(String(phone).replace(/[^+\d]/g, '')) + '">' +

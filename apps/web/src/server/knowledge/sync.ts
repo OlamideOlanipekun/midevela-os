@@ -24,6 +24,10 @@ async function upsertEmbedding(params: {
   chunkText: string;
 }) {
   const vector = await embedText(params.chunkText);
+  // Validate every value is a finite number to guard against SQL injection via embedding service compromise
+  if (!vector.every((v) => typeof v === "number" && Number.isFinite(v))) {
+    throw new Error("Embedding service returned non-numeric values");
+  }
   const vectorLiteral = `[${vector.join(",")}]`;
 
   await prisma.$executeRaw`

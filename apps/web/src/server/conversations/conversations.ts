@@ -56,7 +56,7 @@ function toConversationResponse(c: ConversationWithRelations) {
   };
 }
 
-export async function listConversations(orgId: string) {
+export async function listConversations(orgId: string, page = 1, limit = 50) {
   const conversations = await prisma.conversation.findMany({
     where: { orgId },
     include: {
@@ -64,8 +64,14 @@ export async function listConversations(orgId: string) {
       messages: { orderBy: { createdAt: "asc" } },
     },
     orderBy: { startedAt: "desc" },
+    skip: (page - 1) * limit,
+    take: limit,
   });
   return conversations.map(toConversationResponse);
+}
+
+export async function countConversations(orgId: string) {
+  return prisma.conversation.count({ where: { orgId } });
 }
 
 const RECENT_CATEGORY_WINDOW_DAYS = 30;

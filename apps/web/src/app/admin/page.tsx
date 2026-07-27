@@ -140,7 +140,7 @@ export default function AdminMissionControl() {
                 <div key={i} className="admin-feed-item">
                   <div className="admin-feed-icon"><FeedIcon type={a.icon} /></div>
                   <div>
-                    <div className="admin-feed-text" dangerouslySetInnerHTML={{ __html: a.text }} />
+                    <div className="admin-feed-text">{a.text}</div>
                     <div className="admin-feed-time">{a.time}</div>
                   </div>
                 </div>

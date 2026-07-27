@@ -50,7 +50,11 @@ export default function AnalyticsPage() {
           </div>
         </div>
         <div className="card" style={{ padding: 60, textAlign: "center", color: "var(--ink-soft)" }}>
-          Couldn&apos;t load analytics right now. Try refreshing.
+          <p style={{ marginBottom: 16 }}>Couldn&apos;t load analytics right now.</p>
+          <button onClick={() => { setLoading(true); window.location.reload(); }}
+            style={{ background: "var(--teal)", color: "#fff", border: "none", borderRadius: "var(--radius-sm)", padding: "10px 24px", fontWeight: 600, cursor: "pointer" }}>
+            Retry
+          </button>
         </div>
       </div>
     );
