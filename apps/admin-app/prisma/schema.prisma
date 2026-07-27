@@ -120,6 +120,7 @@ model AdminRole {
 
   admins      AdminAdminRole[]
   permissions AdminRolePermission[]
+  adminUsers  AdminUser[]
 
   @@map("admin_roles")
 }
@@ -241,6 +242,10 @@ model Organization {
   enterpriseAccounts EnterpriseAccount[]
   alerts          Alert[]
   supportTickets  SupportTicket[]
+  widgetKeys      WidgetKey[]
+  categories      Category[]
+  channelIntegrations ChannelIntegration[]
+  customerEvents  CustomerEvent[]
 
   @@map("organizations")
 }
@@ -370,6 +375,7 @@ model Customer {
 
   org           Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   conversations Conversation[]
+  customerEvents CustomerEvent[]
 
   @@index([orgId, lastSeen])
   @@map("customers")
@@ -453,6 +459,7 @@ model User {
   lastLoginAt DateTime? @map("last_login_at") @db.Timestamptz
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sessions Session[]
 
   @@index([orgId])
   @@map("users")
@@ -1628,4 +1635,129 @@ model SupportMessage {
 
   @@index([ticketId, createdAt])
   @@map("support_messages")
+}
+
+// ══════════════════════════════════════════════════════════
+// Web-App Shared Models (added for schema coexistence)
+// ══════════════════════════════════════════════════════════
+
+model Session {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model AdminUser {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String        @unique
+  passwordHash  String        @map("password_hash")
+  name          String
+  roleId        String?       @map("role_id") @db.Uuid
+  avatarUrl     String?       @map("avatar_url")
+  emailVerified Boolean       @default(false) @map("email_verified")
+  isActive      Boolean       @default(true) @map("is_active")
+  lastLoginAt   DateTime?     @map("last_login_at") @db.Timestamptz
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  role            AdminRole?         @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  @@map("admin_users")
+}
+
+model WidgetKey {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId          String   @map("org_id") @db.Uuid
+  publicKey      String   @unique @map("public_key")
+  label          String   @default("Default")
+  allowedDomains String[] @default([]) @map("allowed_domains")
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("widget_keys")
+}
+
+model Category {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId             String   @map("org_id") @db.Uuid
+  name              String
+  slug              String?
+  image             String?
+  icon              String?
+  displayOrder      Int      @default(0) @map("display_order")
+  qualificationFlow Json     @default("[]") @map("qualification_flow")
+  parentId          String?  @map("parent_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  parent   Category?    @relation("SubCategories", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[]   @relation("SubCategories")
+
+  @@unique([orgId, name])
+  @@map("categories")
+}
+
+model WebhookEvent {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider  String
+  signature String   @unique
+  eventType String   @map("event_type")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("webhook_events")
+}
+
+model ChannelIntegration {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  channel     String
+  status      String   @default("PENDING")
+  credentials String?
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, channel])
+  @@map("channel_integrations")
+}
+
+model CustomerEvent {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId      String   @map("org_id") @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  eventType  String   @map("event_type")
+  pageUrl    String?  @map("page_url")
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customer Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@index([customerId, createdAt])
+  @@map("customer_events")
+}
+
+model FeatureFlag {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String   @unique
+  label       String
+  description String?
+  enabled     Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("feature_flags")
 }
