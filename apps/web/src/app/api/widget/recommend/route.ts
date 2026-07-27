@@ -22,9 +22,6 @@ export async function POST(req: NextRequest) {
     if (!widgetKey || typeof widgetKey !== "string") {
       return NextResponse.json({ error: "widgetKey is required." }, { status: 400, headers });
     }
-    if (!categoryId || typeof categoryId !== "string") {
-      return NextResponse.json({ error: "categoryId is required." }, { status: 400, headers });
-    }
 
     const ipLimit = await rateLimit(`wr:ip:${clientIp(req.headers)}`, RECOMMEND_IP_PER_MIN, 60);
     if (!ipLimit.ok) {

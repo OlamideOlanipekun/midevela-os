@@ -4121,10 +4121,10 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
       var container = document.createElement('div');
       container.className = 'empty-conversation';
 
-      var icon = document.createElement('div');
-      icon.className = 'empty-conversation-icon';
-      icon.innerHTML = icon('chat');
-      container.appendChild(icon);
+      var emptyIcon = document.createElement('div');
+      emptyIcon.className = 'empty-conversation-icon';
+      emptyIcon.innerHTML = icon('chat');
+      container.appendChild(emptyIcon);
 
       var title = document.createElement('div');
       title.className = 'empty-conversation-title';
@@ -4503,12 +4503,12 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
       return wrap;
     }
 
-    function renderInfoCard(icon, title, body, linkText, linkUrl) {
+    function renderInfoCard(cardIcon, title, body, linkText, linkUrl) {
       var card = document.createElement('div');
       card.className = 'business-card';
       card.innerHTML =
         '<div class="business-card-header">' +
-          '<span class="business-card-icon">' + icon + '</span>' +
+          '<span class="business-card-icon">' + cardIcon + '</span>' +
           '<span class="business-card-title">' + escapeHtml(title) + '</span>' +
         '</div>' +
         '<div class="business-card-body">' + escapeHtml(body) + '</div>' +

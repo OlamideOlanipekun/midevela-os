@@ -30,10 +30,25 @@ export async function resolveWidgetKey(publicKey: string) {
  * endpoint; see createOrganizationForUser() and normalizeAllowedDomains().
  */
 export function isOriginAllowed(allowedDomains: string[], origin: string | null): boolean {
-  if (!allowedDomains.length) return false;
-  if (!origin) return false;
+  // Same-origin GET requests from browsers omit the Origin header — allow them
+  if (!origin) return true;
+
   try {
     const hostname = new URL(origin).hostname;
+
+    // Always allow preview/testing origins (localhost and Vercel preview domains)
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.endsWith(".vercel.app") ||
+      hostname.endsWith(".midevela.com")
+    ) {
+      return true;
+    }
+
+    // If merchant hasn't configured domain restriction yet, allow during initial setup
+    if (!allowedDomains.length) return true;
+
     return allowedDomains.some(
       (d) => hostname === d || hostname.endsWith(`.${d}`)
     );
