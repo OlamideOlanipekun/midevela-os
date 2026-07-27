@@ -57,9 +57,10 @@ export async function withErrorHandling<T>(
     if (err instanceof ApiError) {
       return jsonError(err.status, err.message);
     }
-    const msg = err instanceof Error ? err.message : String(err);
-    await alert("Unhandled API error (500)", { error: msg });
-    return NextResponse.json({ error: "Internal server error", detail: msg }, { status: 500 });
+    await alert("Unhandled API error (500)", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return jsonError(500, "Internal server error");
   }
 }
 
