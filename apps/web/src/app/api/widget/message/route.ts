@@ -636,10 +636,10 @@ export async function POST(req: NextRequest) {
 
     // ── NEW_SHOPPING_JOURNEY ───────────────────────────────────────────
     if (route.intent === "NEW_SHOPPING_JOURNEY") {
-      state = resetShoppingState(state);
+      const freshState = resetShoppingState(state);
       await prisma.conversation.update({
         where: { id: conversation.id },
-        data: { context: stateToContext(state) as unknown as Prisma.InputJsonValue },
+        data: { context: stateToContext(freshState) as unknown as Prisma.InputJsonValue },
       });
       // Fall through to adaptive discovery below with the fresh state
     }
