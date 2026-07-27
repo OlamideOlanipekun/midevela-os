@@ -8,6 +8,10 @@ import { importCatalogFromUrl } from "@/server/catalog/catalogImporter";
 import { getPlanCaps, remainingBudget } from "@/server/billing/caps";
 import { normalizeUrl } from "@/server/website/normalizer";
 
+// Force Node.js runtime — this route uses dns/promises (ssrfGuard) and
+// other Node built-ins that are unavailable in the Edge runtime.
+export const runtime = "nodejs";
+
 // Products now come from the layered catalogImporter (platform-JSON →
 // JSON-LD → fetch+LLM → Firecrawl). This route additionally does a light,
 // best-effort knowledge pass (shipping/FAQ) over a few pages.

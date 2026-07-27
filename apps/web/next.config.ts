@@ -36,6 +36,16 @@ const nextConfig: NextConfig = {
   // Monorepo root — prevents Next from guessing the workspace root from
   // stray lockfiles elsewhere on the machine.
   outputFileTracingRoot: path.join(__dirname, "../.."),
+  // All API routes use Node.js built-ins (dns/promises, crypto/scrypt,
+  // Prisma). Ensuring the Node.js runtime is the default prevents Vercel
+  // from accidentally bundling these routes for the Edge runtime, which
+  // would cause 404s on cold start.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
+  serverExternalPackages: ["@prisma/client", "prisma"],
   images: {
     remotePatterns: [
       {
