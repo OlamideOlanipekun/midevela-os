@@ -5,6 +5,7 @@ import { requireUser } from "@/server/auth/context";
 import { hashPassword, verifyPassword, validatePasswordStrength } from "@/server/auth/password";
 import { invalidateUserSessions, createSession } from "@/server/auth/session";
 import { rateLimit, clientIp, formatRetryAfter } from "@/server/ratelimit/limiter";
+import { logRateLimitBlock } from "@/server/ratelimit/logger";
 
 const PW_CHANGE_PER_USER = 5;
 const PW_CHANGE_WINDOW_SEC = 900;
@@ -31,6 +32,14 @@ export async function POST(req: NextRequest) {
     const ip = clientIp(req.headers);
     const limit = await rateLimit(`change-pw:${user.id}`, PW_CHANGE_PER_USER, PW_CHANGE_WINDOW_SEC);
     if (!limit.ok) {
+      await logRateLimitBlock({
+        type: "warning",
+        ip,
+        email: user.email,
+        endpoint: "auth.change-password",
+        reason: "User rate limit exceeded",
+        userAgent: req.headers.get("user-agent") || undefined,
+      });
       const humanTime = formatRetryAfter(limit.resetSec);
       return NextResponse.json(
         { error: `Too many attempts. Try again in ${humanTime}.`, retryAfterSec: limit.resetSec },

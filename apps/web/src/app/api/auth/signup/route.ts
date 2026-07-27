@@ -4,6 +4,7 @@ import { withErrorHandling, jsonError } from "@/server/http";
 import { hashPassword, validatePasswordStrength } from "@/server/auth/password";
 import { createSession } from "@/server/auth/session";
 import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
+import { logRateLimitBlock } from "@/server/ratelimit/logger";
 
 const SIGNUP_WINDOW_SEC = 15 * 60;
 const SIGNUP_PER_IP = 3;
@@ -31,6 +32,14 @@ export async function POST(req: NextRequest) {
       rateLimit(`signup:email:${email}`, SIGNUP_PER_EMAIL, SIGNUP_WINDOW_SEC),
     ]);
     if (!ipLimit.ok || !emailLimit.ok) {
+      await logRateLimitBlock({
+        type: "warning",
+        ip,
+        email,
+        endpoint: "auth.signup",
+        reason: !ipLimit.ok ? "IP/identity rate limit exceeded" : "Email rate limit exceeded",
+        userAgent: req.headers.get("user-agent") || undefined,
+      });
       const retryAfter = Math.min(ipLimit.resetSec, emailLimit.resetSec);
       const humanTime = formatRetryAfter(retryAfter);
       return NextResponse.json(

@@ -5,6 +5,7 @@ import { requireAdmin, invalidateAdminSessions, createAdminSession } from "@/ser
 import { hashPassword, verifyPassword, validatePasswordStrength } from "@/server/auth/password";
 import { logAudit } from "@/server/admin/audit";
 import { rateLimit, clientIp, formatRetryAfter } from "@/server/ratelimit/limiter";
+import { logRateLimitBlock } from "@/server/ratelimit/logger";
 
 const PW_CHANGE_PER_ADMIN = 5;
 const PW_CHANGE_WINDOW_SEC = 900;
@@ -30,6 +31,14 @@ export const POST = withAdminHandler(async (req: NextRequest, _context) => {
   const ip = clientIp(req.headers);
   const limit = await rateLimit(`admin:change-pw:${admin.id}`, PW_CHANGE_PER_ADMIN, PW_CHANGE_WINDOW_SEC);
   if (!limit.ok) {
+    await logRateLimitBlock({
+      type: "warning",
+      ip,
+      email: admin.email,
+      endpoint: "admin.auth.change-password",
+      reason: "Admin rate limit exceeded",
+      userAgent: req.headers.get("user-agent") || undefined,
+    });
     const humanTime = formatRetryAfter(limit.resetSec);
     return NextResponse.json(
       { error: `Too many attempts. Try again in ${humanTime}.`, retryAfterSec: limit.resetSec },

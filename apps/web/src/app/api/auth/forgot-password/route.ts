@@ -3,6 +3,7 @@ import { randomBytes, createHash } from "crypto";
 import prisma from "@/lib/prisma";
 import { withErrorHandling, jsonError } from "@/server/http";
 import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
+import { logRateLimitBlock } from "@/server/ratelimit/logger";
 
 const RESET_WINDOW_SEC = 30 * 60;
 const RESET_PER_EMAIL = 1;
@@ -23,6 +24,14 @@ export async function POST(req: NextRequest) {
       rateLimit(`forgot-password:email:${email}`, RESET_PER_EMAIL, RESET_WINDOW_SEC),
     ]);
     if (!ipLimit.ok || !emailLimit.ok) {
+      await logRateLimitBlock({
+        type: "warning",
+        ip,
+        email,
+        endpoint: "auth.forgot-password",
+        reason: !ipLimit.ok ? "IP/identity rate limit exceeded" : "Email rate limit exceeded",
+        userAgent: req.headers.get("user-agent") || undefined,
+      });
       const retryAfter = Math.min(ipLimit.resetSec, emailLimit.resetSec);
       const humanTime = formatRetryAfter(retryAfter);
       return NextResponse.json(

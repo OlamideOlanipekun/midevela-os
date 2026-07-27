@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAdminHandler } from "@/server/http";
 import { loginAsAdmin } from "@/server/admin/auth";
 import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
+import { logRateLimitBlock } from "@/server/ratelimit/logger";
 
 const ADMIN_LOGIN_WINDOW_SEC = 900;
 const ADMIN_LOGIN_PER_IP = 10;
@@ -16,6 +17,14 @@ export const POST = withAdminHandler(async (req: NextRequest, _context) => {
   const ip = clientIp(req.headers);
   const ipLimit = await rateLimit(identityKey("admin:login", ip, email), ADMIN_LOGIN_PER_IP, ADMIN_LOGIN_WINDOW_SEC);
   if (!ipLimit.ok) {
+    await logRateLimitBlock({
+      type: "warning",
+      ip,
+      email,
+      endpoint: "admin.auth.login",
+      reason: "IP/identity rate limit exceeded",
+      userAgent: req.headers.get("user-agent") || undefined,
+    });
     const humanTime = formatRetryAfter(ipLimit.resetSec);
     return NextResponse.json(
       { error: `Too many attempts. Try again in ${humanTime}.`, retryAfterSec: ipLimit.resetSec },

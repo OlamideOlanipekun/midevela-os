@@ -5,6 +5,7 @@ import { withErrorHandling, jsonError } from "@/server/http";
 import { hashPassword, validatePasswordStrength } from "@/server/auth/password";
 import { invalidateUserSessions, createSession } from "@/server/auth/session";
 import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
+import { logRateLimitBlock } from "@/server/ratelimit/logger";
 
 const RESET_PW_WINDOW_SEC = 15 * 60;
 const RESET_PW_PER_TOKEN = 3;
@@ -25,6 +26,13 @@ export async function POST(req: NextRequest) {
     const ip = clientIp(req.headers);
     const limit = await rateLimit(identityKey("reset-password", ip, token), RESET_PW_PER_TOKEN, RESET_PW_WINDOW_SEC);
     if (!limit.ok) {
+      await logRateLimitBlock({
+        type: "warning",
+        ip,
+        endpoint: "auth.reset-password",
+        reason: "Token rate limit exceeded",
+        userAgent: req.headers.get("user-agent") || undefined,
+      });
       const humanTime = formatRetryAfter(limit.resetSec);
       return NextResponse.json(
         { error: `Too many attempts. Try again in ${humanTime}.`, retryAfterSec: limit.resetSec },

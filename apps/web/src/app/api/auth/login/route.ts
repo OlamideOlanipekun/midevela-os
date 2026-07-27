@@ -4,6 +4,7 @@ import { withErrorHandling, jsonError } from "@/server/http";
 import { verifyPassword, DUMMY_PASSWORD_HASH } from "@/server/auth/password";
 import { createSession } from "@/server/auth/session";
 import { rateLimit, clientIp, identityKey, formatRetryAfter } from "@/server/ratelimit/limiter";
+import { logRateLimitBlock } from "@/server/ratelimit/logger";
 
 const LOGIN_WINDOW_SEC = 15 * 60;
 const LOGIN_PER_IP = 10;
@@ -35,6 +36,14 @@ export async function POST(req: NextRequest) {
       rateLimit(`login:email:${email}`, LOGIN_PER_EMAIL, LOGIN_WINDOW_SEC),
     ]);
     if (!ipLimit.ok || !emailLimit.ok) {
+      await logRateLimitBlock({
+        type: "warning",
+        ip,
+        email,
+        endpoint: "auth.login",
+        reason: !ipLimit.ok ? "IP/identity rate limit exceeded" : "Email rate limit exceeded",
+        userAgent: req.headers.get("user-agent") || undefined,
+      });
       return tooManyRequests(Math.min(ipLimit.resetSec, emailLimit.resetSec));
     }
 
