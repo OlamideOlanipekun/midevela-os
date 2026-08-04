@@ -160,6 +160,7 @@ model WebsiteRegistry {
   updatedAt          DateTime                     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  brandTheme BrandTheme?
 
   @@index([orgId])
   @@map("website_registry")
@@ -674,3 +675,84 @@ model SupportMessage {
   @@index([ticketId, createdAt])
   @@map("support_messages")
 }
+
+// ─────────────────────────────────────────────────────────────
+// Brand Theme & Customization
+// ─────────────────────────────────────────────────────────────
+
+enum ThemeMode {
+  LIGHT
+  DARK
+  AUTO
+}
+
+enum BorderRadiusStyle {
+  SQUARE
+  SLIGHTLY_ROUNDED
+  ROUNDED
+  PILL
+}
+
+enum LauncherStyle {
+  CIRCLE
+  ROUNDED
+  SQUARE
+  GLASS
+  MINIMAL
+}
+
+enum WidgetPosition {
+  BOTTOM_RIGHT
+  BOTTOM_LEFT
+}
+
+enum WidgetAnimation {
+  FADE
+  SLIDE
+  BOUNCE
+  NONE
+}
+
+model BrandTheme {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  websiteId         String            @unique @map("website_id") @db.Uuid
+  orgId             String            @map("org_id") @db.Uuid
+
+  // Detected branding (auto-populated by crawler)
+  logoUrl           String?           @map("logo_url")
+  faviconUrl        String?           @map("favicon_url")
+  primaryColor      String?           @map("primary_color")
+  secondaryColor    String?           @map("secondary_color")
+  accentColor       String?           @map("accent_color")
+  backgroundColor   String?           @map("background_color")
+  fontFamily        String?           @map("font_family")
+  borderRadius      String?           @map("border_radius")
+  borderRadiusStyle BorderRadiusStyle? @map("border_radius_style")
+  buttonStyle       Json?             @map("button_style")
+  themeMode         ThemeMode         @default(AUTO) @map("theme_mode")
+
+  // Generated widget theme (Phase 2 output)
+  widgetTheme       Json              @default("{}") @map("widget_theme")
+
+  // Merchant overrides (Phase 3 — manual edits)
+  overrides         Json              @default("{}")
+  isAutoDetected    Boolean           @default(true) @map("is_auto_detected")
+
+  // Widget appearance settings
+  businessName      String?           @map("business_name")
+  assistantName     String?           @map("assistant_name")
+  launcherStyle     LauncherStyle     @default(CIRCLE) @map("launcher_style")
+  widgetPosition    WidgetPosition    @default(BOTTOM_RIGHT) @map("widget_position")
+  animation         WidgetAnimation   @default(FADE)
+  launcherSize      Int               @default(56) @map("launcher_size")
+  headerHeight      Int               @default(64) @map("header_height")
+
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  website           WebsiteRegistry   @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("brand_themes")
+}
+

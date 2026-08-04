@@ -137,7 +137,37 @@ CREATE TABLE IF NOT EXISTS customer_events (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 11. Security policies (Row Level Security - RLS)
+-- 11. Brand Customization & Theme Table
+CREATE TABLE IF NOT EXISTS brand_themes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    website_id UUID UNIQUE REFERENCES website_registry(id) ON DELETE CASCADE,
+    org_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    logo_url TEXT,
+    favicon_url TEXT,
+    primary_color VARCHAR(50),
+    secondary_color VARCHAR(50),
+    accent_color VARCHAR(50),
+    background_color VARCHAR(50),
+    font_family VARCHAR(100),
+    border_radius VARCHAR(50),
+    border_radius_style VARCHAR(50),
+    button_style JSONB,
+    theme_mode VARCHAR(20) DEFAULT 'AUTO',
+    widget_theme JSONB DEFAULT '{}'::jsonb,
+    overrides JSONB DEFAULT '{}'::jsonb,
+    is_auto_detected BOOLEAN DEFAULT true,
+    business_name VARCHAR(255),
+    assistant_name VARCHAR(255),
+    launcher_style VARCHAR(50) DEFAULT 'CIRCLE',
+    widget_position VARCHAR(50) DEFAULT 'BOTTOM_RIGHT',
+    animation VARCHAR(50) DEFAULT 'FADE',
+    launcher_size INT DEFAULT 56,
+    header_height INT DEFAULT 64,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 12. Security policies (Row Level Security - RLS)
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -148,3 +178,5 @@ ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customer_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE brand_themes ENABLE ROW LEVEL SECURITY;
+

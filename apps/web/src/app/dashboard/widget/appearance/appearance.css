@@ -1,0 +1,325 @@
+.wg-customizer-grid {
+  display: grid;
+  grid-template-columns: 1fr 440px;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .wg-customizer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wg-controls-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.wg-preview-column {
+  position: sticky;
+  top: 24px;
+}
+
+.wg-color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.wg-color-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+
+.wg-color-card label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.wg-select {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--ink);
+  outline: none;
+}
+
+.wg-radio-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wg-radio-card {
+  flex: 1;
+  min-width: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink);
+  transition: all 0.15s ease;
+}
+
+.wg-radio-card.selected {
+  border-color: var(--teal);
+  background: rgba(30, 111, 100, 0.05);
+  font-weight: 600;
+  color: var(--teal);
+}
+
+.wg-auto-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(30, 230, 122, 0.12);
+  border: 1px solid rgba(30, 230, 122, 0.3);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* Sandbox Browser Mock */
+.wg-preview-sandbox {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+}
+
+.wg-preview-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.wg-preview-browser-bar .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.wg-preview-browser-bar .dot.red { background: #ef4444; }
+.wg-preview-browser-bar .dot.yellow { background: #f59e0b; }
+.wg-preview-browser-bar .dot.green { background: #10b981; }
+
+.wg-preview-browser-bar .url-bar {
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #64748b;
+  background: #ffffff;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  flex: 1;
+}
+
+.wg-preview-canvas {
+  height: 520px;
+  position: relative;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.wg-mock-page {
+  padding: 24px;
+}
+
+.wg-mock-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.wg-mock-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.wg-preview-logo {
+  max-height: 24px;
+  max-width: 80px;
+  object-fit: contain;
+}
+
+.wg-mock-logo-box {
+  width: 24px; height: 24px;
+  background: var(--mv-primary);
+  color: var(--mv-on-primary);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: bold;
+}
+
+.wg-mock-links {
+  display: flex; gap: 16px; font-size: 11px; color: #64748b;
+}
+
+.wg-mock-hero {
+  margin-top: 40px;
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.wg-mock-hero h3 {
+  margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #0f172a;
+}
+
+.wg-mock-hero p {
+  margin: 0; font-size: 12px; color: #64748b;
+}
+
+.wg-preview-widget-position {
+  position: absolute;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  z-index: 10;
+}
+
+.wg-preview-widget-position.position-bottom_right { right: 16px; }
+.wg-preview-widget-position.position-bottom_left { left: 16px; align-items: flex-start; }
+
+.wg-preview-chat-window {
+  width: 320px;
+  height: 420px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.16);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--mv-border);
+  background: var(--mv-background);
+}
+
+.wg-preview-header {
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wg-preview-header-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wg-header-avatar {
+  width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+}
+
+.wg-header-avatar-fallback {
+  width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 14px;
+}
+
+.wg-assistant-title {
+  font-size: 13px; font-weight: 700; line-height: 1.2;
+}
+
+.wg-assistant-status {
+  font-size: 10px; opacity: 0.8;
+}
+
+.wg-preview-close {
+  background: none; border: none; color: inherit; font-size: 16px; cursor: pointer; opacity: 0.8;
+}
+
+.wg-preview-body {
+  flex: 1;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.wg-msg-time {
+  text-align: center; font-size: 10px; color: #94a3b8; margin-bottom: 4px;
+}
+
+.wg-preview-msg {
+  display: flex;
+}
+
+.wg-preview-msg.ai { justify-content: flex-start; }
+.wg-preview-msg.user { justify-content: flex-end; }
+
+.wg-bubble {
+  max-width: 80%;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.45;
+  border: 1px solid transparent;
+}
+
+.wg-preview-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.wg-chip {
+  font-size: 10.5px;
+  padding: 6px 10px;
+  border: 1px solid;
+  color: #334155;
+  cursor: pointer;
+}
+
+.wg-preview-input-bar {
+  padding: 10px;
+  background: #ffffff;
+  border-top: 1px solid;
+  display: flex;
+  gap: 8px;
+}
+
+.wg-preview-input-bar input {
+  flex: 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  outline: none;
+}
+
+.wg-preview-input-bar button {
+  width: 30px; height: 30px; border-radius: 50%; border: none;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}

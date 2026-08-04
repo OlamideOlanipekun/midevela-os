@@ -341,30 +341,39 @@
 
     const styleText = `
     :host {
-      --primary: ${config.theme.accentColor};
-      --on-primary: ${onPrimary};
+      --primary: ${config.theme.primary || config.theme.accentColor || '#0F62FE'};
+      --on-primary: ${config.theme.onPrimary || onPrimary};
+      --mv-header: ${config.theme.header || config.theme.primary || config.theme.accentColor || '#0F62FE'};
+      --mv-launcher: ${config.theme.launcher || config.theme.primary || config.theme.accentColor || '#0F62FE'};
+      --mv-user-bubble: ${config.theme.userBubble || config.theme.primary || config.theme.accentColor || '#0F62FE'};
+      --mv-ai-bubble: ${config.theme.assistantBubble || '#ffffff'};
+      --mv-background: ${config.theme.background || '#F8FAFC'};
+      --mv-quick-reply: ${config.theme.quickReply || '#EFF6FF'};
+      --mv-border: ${config.theme.border || '#e5e7eb'};
+      --mv-font-family: ${config.theme.fontFamily ? `'${config.theme.fontFamily}', -apple-system, sans-serif` : "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"};
+      --mv-radius: ${config.theme.borderRadius || '16px'};
       --bg: #ffffff;
       --icon-size: 20px;
-      --bg-soft: #f8fafc;
+      --bg-soft: var(--mv-quick-reply);
       --text: #111827;
       --muted: #6b7280;
-      --border: #e5e7eb;
+      --border: var(--mv-border);
       --card: #ffffff;
       --success: #22c55e;
       --error: #ef4444;
       --radius-xs: 8px;
       --radius-sm: 12px;
-      --radius-md: 18px;
-      --radius-lg: 20px;
-      --radius-xl: 28px;
+      --radius-md: var(--mv-radius);
+      --radius-lg: var(--mv-radius);
+      --radius-xl: var(--mv-radius);
       --radius-full: 999px;
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font: var(--mv-font-family);
       --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
       --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
       --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
       --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.16);
       --bubble-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
-      --user-gradient: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 85%, #000) 100%);
+      --user-gradient: linear-gradient(135deg, var(--mv-user-bubble) 0%, color-mix(in srgb, var(--mv-user-bubble) 85%, #000) 100%);
       --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -387,7 +396,7 @@
       cursor: pointer;
       border: none;
       outline: none;
-      background: var(--primary);
+      background: var(--mv-launcher);
       border-radius: 50%;
       width: 52px;
       height: 52px;

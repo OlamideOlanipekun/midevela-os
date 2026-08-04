@@ -43,12 +43,16 @@ export async function GET(req: NextRequest) {
     const stored = (key.org.settings ?? {}) as Partial<OrgSettings>;
     const settings = { ...defaultOrgSettings, ...stored };
 
+    const { resolveThemeForOrg } = await import("@/server/branding/resolve");
+    const fullTheme = await resolveThemeForOrg(key.orgId);
+
     return NextResponse.json(
       {
-        orgName: key.org.name,
-        aiName: settings.aiName,
+        orgName: fullTheme.businessName || key.org.name,
+        aiName: fullTheme.assistantName || settings.aiName,
         greeting: settings.greeting,
-        accentColor: settings.accentColor,
+        accentColor: fullTheme.header || settings.accentColor,
+        theme: fullTheme,
         engagementDelay: settings.engagementDelay,
         showProductImages: settings.features?.showProductImages ?? true,
       },

@@ -132,6 +132,7 @@ export async function startCrawl(websiteId: string, orgId: string): Promise<void
 
   // Queue the crawl job — ownership confirmed before enqueue
   await enqueue("import", { orgId, websiteId, source: "website_claim" });
+  await enqueue("brand-detect", { orgId, websiteId, url: website.normalizedUrl });
 }
 
 /**

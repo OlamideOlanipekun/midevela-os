@@ -59,12 +59,36 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const { resolveThemeForOrg } = await import("@/server/branding/resolve");
+    const fullTheme = await resolveThemeForOrg(key.orgId);
+
     return NextResponse.json(
       {
-        business: { name: key.org.name, currency: key.org.currency },
-        theme: { accentColor: settings.accentColor },
+        business: { name: fullTheme.businessName || key.org.name, currency: key.org.currency },
+        theme: {
+          accentColor: fullTheme.header || settings.accentColor,
+          primary: fullTheme.primary,
+          secondary: fullTheme.secondary,
+          accent: fullTheme.accent,
+          header: fullTheme.header,
+          launcher: fullTheme.launcher,
+          userBubble: fullTheme.userBubble,
+          assistantBubble: fullTheme.assistantBubble,
+          background: fullTheme.background,
+          quickReply: fullTheme.quickReply,
+          border: fullTheme.border,
+          fontFamily: fullTheme.fontFamily,
+          borderRadius: fullTheme.borderRadius,
+          onPrimary: fullTheme.onPrimary,
+          logoUrl: fullTheme.logoUrl,
+          launcherStyle: fullTheme.launcherStyle,
+          position: fullTheme.position,
+          animation: fullTheme.animation,
+          launcherSize: fullTheme.launcherSize,
+          headerHeight: fullTheme.headerHeight,
+        },
         greeting: settings.greeting,
-        aiName: settings.aiName,
+        aiName: fullTheme.assistantName || settings.aiName,
         settings: {
           engagementDelay: settings.engagementDelay,
           showProductImages: settings.features?.showProductImages ?? true,

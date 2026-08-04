@@ -21,6 +21,16 @@ export function registerWorkers(): void {
   });
 
   createWorker({
+    name: "brand-detect",
+    concurrency: 2,
+    handler: async (job) => {
+      const { orgId, websiteId, url } = job.data;
+      const { detectAndSaveBrand } = await import("@/server/branding/service");
+      await detectAndSaveBrand(websiteId, orgId, url);
+    },
+  });
+
+  createWorker({
     name: "notification",
     concurrency: 10,
     handler: async (job) => {
