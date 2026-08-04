@@ -138,7 +138,7 @@ export default function WidgetPreview({ theme }: WidgetPreviewProps) {
                         color: "var(--mv-on-primary)",
                         display: "flex",
                         alignItems: "center",
-                        justify-content: "center",
+                        justifyContent: "center",
                         fontWeight: "bold",
                         fontSize: 13,
                       }}
