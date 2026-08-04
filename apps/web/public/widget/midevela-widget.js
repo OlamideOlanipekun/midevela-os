@@ -351,7 +351,39 @@
       --mv-quick-reply: ${config.theme.quickReply || '#EFF6FF'};
       --mv-border: ${config.theme.border || '#e5e7eb'};
       --mv-font-family: ${config.theme.fontFamily ? `'${config.theme.fontFamily}', -apple-system, sans-serif` : "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"};
-      --mv-radius: ${config.theme.borderRadius || '16px'};
+
+      /* Strict 8px Spacing System */
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 32px;
+
+      /* Typography Scale */
+      --font-header: 20px;
+      --font-title: 16px;
+      --font-body: 15px;
+      --font-chip: 13px;
+      --font-timestamp: 11px;
+
+      /* Border Radius Scale */
+      --radius-card: 16px;
+      --radius-msg: 20px;
+      --radius-btn: 24px;
+      --radius-input: 28px;
+      --radius-full: 999px;
+
+      /* Bubble Radii */
+      --radius-ai-bubble: 20px 20px 20px 6px;
+      --radius-user-bubble: 20px 20px 6px 20px;
+
+      /* Structural Tokens */
+      --widget-width-desktop: 400px;
+      --widget-width-tablet: 380px;
+      --input-height: 56px;
+      --avatar-size: 32px;
+      --avatar-gap: 12px;
+      --msg-max-width: 72%;
+
       --bg: #ffffff;
       --icon-size: 20px;
       --bg-soft: var(--mv-quick-reply);
@@ -361,18 +393,10 @@
       --card: #ffffff;
       --success: #22c55e;
       --error: #ef4444;
-      --radius-xs: 8px;
-      --radius-sm: 12px;
-      --radius-md: var(--mv-radius);
-      --radius-lg: var(--mv-radius);
-      --radius-xl: var(--mv-radius);
-      --radius-full: 999px;
       --font: var(--mv-font-family);
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
       --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
-      --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.16);
-      --bubble-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+      --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.14);
+      --bubble-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       --user-gradient: linear-gradient(135deg, var(--mv-user-bubble) 0%, color-mix(in srgb, var(--mv-user-bubble) 85%, #000) 100%);
       --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -398,10 +422,10 @@
       outline: none;
       background: var(--mv-launcher);
       border-radius: 50%;
-      width: 52px;
-      height: 52px;
+      width: 56px;
+      height: 56px;
       padding: 0;
-      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.22);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
       transition: transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out);
       display: flex;
       align-items: center;
@@ -411,7 +435,7 @@
 
     .fab:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 28px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
     }
     .fab:active { transform: scale(0.94); }
 
@@ -453,7 +477,7 @@
     /* ─── BACK TO TOP ─── */
     .back-to-top {
       position: fixed;
-      bottom: 80px;
+      bottom: 88px;
       left: 24px;
       z-index: 999999;
       cursor: pointer;
@@ -486,7 +510,11 @@
     .back-to-top:active { transform: scale(0.92); }
     .back-to-top svg { width: 18px; height: 18px; display: block; }
 
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
+      .chat-panel { width: var(--widget-width-tablet); }
+    }
+
+    @media (max-width: 480px) {
       .fab { bottom: 16px; left: 16px; width: 48px; height: 48px; }
       .back-to-top { bottom: 72px; left: 16px; width: 36px; height: 36px; }
       .back-to-top svg { width: 16px; height: 16px; }
@@ -494,17 +522,17 @@
 
     .backdrop { display: none; }
 
-    /* ─── CHAT PANEL ─── */
+    /* ─── CHAT PANEL (Phase 1 Layout Foundation) ─── */
     .chat-panel {
       position: fixed;
       top: 50%;
       right: 24px;
       transform: translateY(-50%) translateX(calc(100% + 24px));
-      width: 400px;
+      width: var(--widget-width-desktop);
       height: min(700px, calc(100vh - 48px));
       max-width: calc(100vw - 48px);
       background: var(--bg);
-      border-radius: var(--radius-xl);
+      border-radius: 24px;
       box-shadow: var(--shadow-xl);
       display: flex;
       flex-direction: column;
@@ -522,9 +550,10 @@
       opacity: 1;
     }
 
-    /* ─── HEADER ─── */
+    /* ─── HEADER (Phase 7 Header Alignment) ─── */
     .header {
-      padding: 18px 20px 14px;
+      padding: var(--space-2);
+      margin-bottom: var(--space-2);
       flex-shrink: 0;
       position: relative;
     }
@@ -538,7 +567,7 @@
     .header-info {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .header-avatar {
@@ -551,22 +580,22 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 14px;
+      font-size: var(--font-title);
       flex-shrink: 0;
     }
 
     .header-name {
-      font-size: 14px;
+      font-size: var(--font-title);
       font-weight: 700;
       color: var(--text);
       line-height: 1.2;
     }
 
     .header-subtitle {
-      font-size: 11px;
+      font-size: 13px;
       color: var(--muted);
       line-height: 1.3;
-      margin-top: 1px;
+      margin-top: 2px;
     }
 
     .header-status {
@@ -574,28 +603,28 @@
       color: var(--muted);
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       margin-top: 2px;
     }
 
     .header-status-dot {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--success);
     }
 
     .header-actions {
       display: flex;
-      gap: 2px;
+      gap: 4px;
     }
 
     .header-btn {
       background: none;
       border: none;
-      width: 30px;
-      height: 30px;
-      border-radius: var(--radius-xs);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -604,23 +633,23 @@
       transition: background 0.18s var(--ease-out), color 0.18s;
     }
     .header-btn:hover { background: var(--bg-soft); color: var(--text); }
-    .header-btn svg { width: 16px; height: 16px; fill: currentColor; }
+    .header-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
     .header-divider {
       height: 1px;
       background: var(--border);
-      margin-top: 12px;
+      margin-top: var(--space-2);
       opacity: 0.6;
     }
 
-    /* ─── BODY ─── */
+    /* ─── BODY (Phase 1 & 4 Internal Padding & Message Stack) ─── */
     .body {
       flex: 1;
       overflow-y: auto;
-      padding: 20px 20px;
+      padding: var(--space-2);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: var(--space-2);
       background: var(--bg-soft);
       scroll-behavior: smooth;
     }
@@ -628,25 +657,36 @@
     .body::-webkit-scrollbar { display: none; }
     .body { scrollbar-width: none; }
 
-    /* ─── MESSAGES ─── */
+    /* ─── MESSAGES (Phase 2, 3, 5 Message Layout & Alignment) ─── */
     .msg-row {
       display: flex;
-      gap: 10px;
-      max-width: 82%;
+      gap: var(--avatar-gap);
+      width: 100%;
       animation: msgIn 0.25s var(--ease-out) both;
-      margin-bottom: 10px;
+      margin-bottom: var(--space-2);
     }
-    .msg-row.ai { align-self: flex-start; }
-    .msg-row.customer { align-self: flex-end; }
+    .msg-row.ai {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+    .msg-row.customer {
+      justify-content: flex-end;
+      align-self: flex-end;
+    }
+
+    .msg-group-gap {
+      margin-bottom: var(--space-3);
+    }
 
     @keyframes msgIn {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Phase 3 — Top Aligned Avatar */
     .msg-avatar {
-      width: 30px;
-      height: 30px;
+      width: var(--avatar-size);
+      height: var(--avatar-size);
       border-radius: 50%;
       background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 70%, #000) 100%);
       display: flex;
@@ -655,11 +695,19 @@
       font-size: 15px;
       flex-shrink: 0;
       align-self: flex-start;
-      margin-top: 3px;
+      margin-top: 0;
     }
 
-    .msg-col { display: flex; flex-direction: column; min-width: 0; max-width: 100%; gap: 2px; }
-    .customer .msg-col { align-items: flex-end; }
+    .msg-col {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      max-width: 100%;
+      gap: 4px;
+    }
+    .customer .msg-col {
+      align-items: flex-end;
+    }
 
     .msg-sender {
       font-size: 12px;
@@ -669,48 +717,53 @@
       margin-left: 2px;
     }
 
+    /* Phase 2 — Bubble Width, Padding & Radius */
     .msg-bubble {
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: var(--font-body);
+      line-height: 1.5;
       color: var(--text);
       word-wrap: break-word;
       overflow-wrap: anywhere;
+      min-width: fit-content;
     }
 
     .ai .msg-bubble {
-      background: var(--bg);
+      background: var(--mv-ai-bubble);
       color: var(--text);
-      border-radius: var(--radius-lg);
-      padding: 14px 16px;
+      border-radius: var(--radius-ai-bubble);
+      padding: 12px var(--space-2);
+      border: 1px solid var(--border);
       box-shadow: var(--bubble-shadow);
       white-space: pre-wrap;
+      max-width: var(--msg-max-width);
     }
 
     .customer .msg-bubble {
       background: var(--user-gradient);
       color: var(--on-primary);
-      border-radius: var(--radius-lg);
-      border-bottom-right-radius: 4px;
-      padding: 12px 16px;
-      max-width: 78%;
+      border-radius: var(--radius-user-bubble);
+      padding: 12px var(--space-2);
+      max-width: var(--msg-max-width);
     }
 
+    /* Phase 5 — Timestamp System */
     .msg-time {
-      font-size: 11px;
+      font-size: var(--font-timestamp);
       color: var(--muted);
-      margin-top: 6px;
-      opacity: 0.5;
+      margin-top: 4px;
+      opacity: 0.6;
     }
+    .ai .msg-time { text-align: left; }
     .customer .msg-time { text-align: right; }
 
-    /* ─── CHIPS (after message chip suggestions) ─── */
+    /* ─── CHIPS / QUICK REPLIES (Phase 6 Quick Reply System) ─── */
     .chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      padding-left: 38px;
-      margin-top: -6px;
-      margin-bottom: 18px;
+      gap: 10px;
+      padding-left: 44px;
+      margin-top: 4px;
+      margin-bottom: var(--space-2);
       animation: msgIn 0.3s var(--ease-out);
     }
 
@@ -718,16 +771,20 @@
       background: var(--bg);
       border: 1px solid var(--border);
       color: var(--text);
-      border-radius: var(--radius-full);
-      padding: 12px 16px;
-      font-size: 13px;
+      border-radius: var(--radius-btn);
+      min-height: 44px;
+      padding: 14px 18px;
+      font-size: var(--font-chip);
       font-weight: 500;
       cursor: pointer;
       font-family: var(--font);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       transition: background 0.18s, transform 0.18s, border-color 0.18s, box-shadow 0.18s;
     }
     .chip:hover { background: var(--bg-soft); border-color: var(--primary); transform: translateY(-1px); box-shadow: var(--bubble-shadow); }
-    .chip:active { transform: scale(0.97); background: color-mix(in srgb, var(--primary) 6%, var(--bg)); }
+    .chip:active { transform: scale(0.96); background: color-mix(in srgb, var(--primary) 6%, var(--bg)); }
     .chip:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
 
     /* ─── CATEGORY GRID ─── */
@@ -735,7 +792,7 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
-      padding-left: 36px;
+      padding-left: 44px;
       animation: msgIn 0.3s var(--ease-out);
     }
 
@@ -1539,9 +1596,9 @@
     .compare-table th { color: var(--muted); font-weight: 600; font-size: 11px; }
     .compare-table tr:last-child td { border-bottom: none; }
 
-    /* ─── INPUT COMPOSER ─── */
+    /* ─── INPUT COMPOSER (Phase 8 Input Bar) ─── */
     .input-area {
-      padding: 12px 16px;
+      padding: var(--space-2);
       background: var(--bg);
       flex-shrink: 0;
       border-top: 1px solid var(--border);
@@ -1550,13 +1607,13 @@
     .input-wrap {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       background: var(--bg-soft);
       border: 1.5px solid var(--border);
-      border-radius: var(--radius-full);
-      padding: 4px 4px 4px 16px;
-      height: 48px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      border-radius: var(--radius-input);
+      padding: 0 8px 0 var(--space-2);
+      height: var(--input-height);
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
     }
 
     .input-wrap:focus-within {
@@ -1571,7 +1628,7 @@
       background: transparent;
       padding: 0;
       color: var(--text);
-      font-size: 14px;
+      font-size: var(--font-body);
       outline: none;
       font-family: var(--font);
       min-width: 0;

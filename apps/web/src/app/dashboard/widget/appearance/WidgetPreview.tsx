@@ -126,33 +126,53 @@ export default function WidgetPreview({ theme }: WidgetPreviewProps) {
 
               {/* Chat Body */}
               <div className="wg-preview-body" style={{ backgroundColor: "var(--mv-background)" }}>
-                <div className="wg-msg-time">Today</div>
-
-                {/* AI Bubble */}
+                {/* AI Row */}
                 <div className="wg-preview-msg ai">
-                  <div
-                    className="wg-bubble ai"
-                    style={{
-                      backgroundColor: "var(--mv-ai-bubble)",
-                      borderColor: "var(--mv-border)",
-                      borderRadius: "var(--mv-radius)",
-                    }}
-                  >
-                    Welcome to {theme.businessName || "our store"}! How can I help you find what you need today?
+                  {theme.logoUrl ? (
+                    <img src={theme.logoUrl} alt="AI Avatar" className="wg-preview-avatar" />
+                  ) : (
+                    <div
+                      className="wg-preview-avatar"
+                      style={{
+                        backgroundColor: "var(--mv-primary)",
+                        color: "var(--mv-on-primary)",
+                        display: "flex",
+                        alignItems: "center",
+                        justify-content: "center",
+                        fontWeight: "bold",
+                        fontSize: 13,
+                      }}
+                    >
+                      {(theme.assistantName || "A")[0]}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div
+                      className="wg-bubble ai"
+                      style={{
+                        backgroundColor: "var(--mv-ai-bubble)",
+                        borderColor: "var(--mv-border)",
+                      }}
+                    >
+                      Welcome to {theme.businessName || "our store"}! How can I help you find what you need today?
+                    </div>
+                    <div className="wg-msg-time">2:40 PM</div>
                   </div>
                 </div>
 
-                {/* User Bubble */}
+                {/* User Row */}
                 <div className="wg-preview-msg user">
-                  <div
-                    className="wg-bubble user"
-                    style={{
-                      backgroundColor: "var(--mv-user-bubble)",
-                      color: "var(--mv-on-primary)",
-                      borderRadius: "var(--mv-radius)",
-                    }}
-                  >
-                    I'm looking for recommendations.
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <div
+                      className="wg-bubble user"
+                      style={{
+                        backgroundColor: "var(--mv-user-bubble)",
+                        color: "var(--mv-on-primary)",
+                      }}
+                    >
+                      I'm looking for recommendations.
+                    </div>
+                    <div className="wg-msg-time">2:41 PM</div>
                   </div>
                 </div>
 
@@ -163,7 +183,6 @@ export default function WidgetPreview({ theme }: WidgetPreviewProps) {
                     style={{
                       backgroundColor: "var(--mv-quick-reply)",
                       borderColor: "var(--mv-border)",
-                      borderRadius: "var(--mv-radius)",
                     }}
                   >
                     🔍 Best sellers
@@ -173,7 +192,6 @@ export default function WidgetPreview({ theme }: WidgetPreviewProps) {
                     style={{
                       backgroundColor: "var(--mv-quick-reply)",
                       borderColor: "var(--mv-border)",
-                      borderRadius: "var(--mv-radius)",
                     }}
                   >
                     🚚 Shipping info
@@ -183,7 +201,8 @@ export default function WidgetPreview({ theme }: WidgetPreviewProps) {
 
               {/* Input Bar */}
               <div className="wg-preview-input-bar" style={{ borderColor: "var(--mv-border)" }}>
-                <input type="text" placeholder="Ask a question..." disabled />
+                <span style={{ fontSize: 18, opacity: 0.6, cursor: "pointer" }}>😊</span>
+                <input type="text" placeholder="Ask anything..." disabled />
                 <button style={{ backgroundColor: "var(--mv-primary)", color: "var(--mv-on-primary)" }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="22" y1="2" x2="11" y2="13" />
