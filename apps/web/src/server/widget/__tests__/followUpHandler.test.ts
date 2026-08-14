@@ -45,9 +45,9 @@ const mockListCategories = listCategoriesForWidget as unknown as ReturnType<type
 const mockRecommend = recommendProducts as unknown as ReturnType<typeof vi.fn>;
 
 const sampleRecs: RecommendedProduct[] = [
-  { id: "p1", name: "Hydrating Moisturizer", brand: "BrandA", price: "₦25,000", imageUrl: null, url: null, inStock: true },
-  { id: "p2", name: "Rich Night Cream", brand: "BrandB", price: "₦45,000", imageUrl: null, url: null, inStock: true },
-  { id: "p3", name: "Brightening Serum", brand: "BrandC", price: "₦35,000", imageUrl: null, url: null, inStock: true },
+  { id: "p1", name: "Hydrating Moisturizer", brand: "BrandA", price: "₦25,000", priceRaw: 25000, currency: "NGN", imageUrl: null, url: null, inStock: true },
+  { id: "p2", name: "Rich Night Cream", brand: "BrandB", price: "₦45,000", priceRaw: 45000, currency: "NGN", imageUrl: null, url: null, inStock: true },
+  { id: "p3", name: "Brightening Serum", brand: "BrandC", price: "₦35,000", priceRaw: 35000, currency: "NGN", imageUrl: null, url: null, inStock: true },
 ];
 
 const emptyContext: ShoppingContext = {};

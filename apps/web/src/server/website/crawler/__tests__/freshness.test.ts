@@ -42,7 +42,7 @@ describe("Freshness — Scheduled Recrawls & Stale Cleanup", () => {
       { id: "site-2", orgId: "org-2", originalUrl: "https://store2.com" },
     ] as any);
 
-    vi.mocked(prisma.websiteRegistry.findUnique).mockImplementation(async (args: any) => {
+    (prisma.websiteRegistry.findUnique as unknown as ReturnType<typeof vi.fn>).mockImplementation(async (args: any) => {
       const id = args.where.id;
       if (id === "site-1") return { id: "site-1", orgId: "org-1", crawlStatus: "READY" } as any;
       if (id === "site-2") return { id: "site-2", orgId: "org-2", crawlStatus: "READY" } as any;
