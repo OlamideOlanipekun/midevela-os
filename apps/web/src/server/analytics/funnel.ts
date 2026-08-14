@@ -83,7 +83,7 @@ export async function trackSearch(
   payload: FunnelEventPayload & {
     query: string;
     resultCount: number;
-    constraints?: Record<string, unknown>;
+    constraints?: Record<string, unknown> | object;
   }
 ): Promise<void> {
   const event: FunnelEvent = payload.resultCount === 0 ? "zero_results" : "search";

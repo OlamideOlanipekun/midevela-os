@@ -36,6 +36,7 @@ export interface AccumulatedConstraints {
   useCase?: string;
   /** Extra key-value attributes from qualification answers */
   answers?: Record<string, string>;
+  [key: string]: unknown;
 }
 
 export interface ConversationState {
