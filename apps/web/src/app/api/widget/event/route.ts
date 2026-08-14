@@ -31,7 +31,7 @@ const MAX_PAGE_URL_LENGTH = 2000;
  * Unknown event types are still stored (forward-compat) but are flagged
  * so we can detect and fix instrumentation drift early.
  */
-export const MILESTONE_A_EVENTS = new Set([
+const MILESTONE_A_EVENTS = new Set([
   // Core A10 events
   "SESSION_STARTED",
   "PAGE_VIEWED",
