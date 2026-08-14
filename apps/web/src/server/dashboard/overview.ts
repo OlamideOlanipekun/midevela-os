@@ -1,6 +1,7 @@
 import type { BuyingStage, Channel } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { shortRelativeTime } from "@/server/shared/time";
+import { AttributionEngine } from "@/server/analytics/attributionEngine";
 
 /**
  * Real workspace overview for the dashboard home. Every figure is derived
@@ -43,6 +44,15 @@ export interface DashboardOverview {
   avgConfidence: number;
   recentActivity: Array<{ id: string; name: string; text: string; meta: string; color: string }>;
   insights: Array<{ tag: string; text: string; action: string; href: string }>;
+  revenueMetrics?: {
+    revenueInfluenced: number;
+    ordersInfluenced: number;
+    aiAssistedOrders: number;
+    conversionRate: number;
+    averageOrderValue: number;
+    addToCartRate: number;
+    currency: string;
+  };
 }
 
 export async function getDashboardOverview(orgId: string): Promise<DashboardOverview> {
@@ -193,6 +203,8 @@ export async function getDashboardOverview(orgId: string): Promise<DashboardOver
     });
   }
 
+  const revenueMetrics = await AttributionEngine.getRevenueMetrics(orgId);
+
   return {
     kpis,
     activeConversations,
@@ -201,5 +213,6 @@ export async function getDashboardOverview(orgId: string): Promise<DashboardOver
     avgConfidence,
     recentActivity,
     insights: insights.slice(0, 3),
+    revenueMetrics,
   };
 }

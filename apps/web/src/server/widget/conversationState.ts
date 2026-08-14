@@ -5,6 +5,7 @@ export type ConversationGoal =
   | "RECOMMENDATION"
   | "PRODUCT_DETAILS"
   | "COMPARE"
+  | "DECISION"
   | "BUSINESS_SUPPORT"
   | "OBJECTION"
   | "CHECKOUT"
@@ -18,6 +19,24 @@ export type ConversationMode =
   | "PRODUCT_DETAILS"
   | "COMPARE"
   | "GENERAL_CHAT";
+
+/**
+ * Accumulated shopping constraints — merged across conversation turns (B4).
+ * Every turn contributes new constraints; nothing is lost unless the shopper
+ * explicitly starts a new journey.
+ */
+export interface AccumulatedConstraints {
+  categoryId?: string;
+  categoryName?: string;
+  maxPrice?: number;
+  minPrice?: number;
+  color?: string;
+  style?: string;
+  brand?: string;
+  useCase?: string;
+  /** Extra key-value attributes from qualification answers */
+  answers?: Record<string, string>;
+}
 
 export interface ConversationState {
   mode: ConversationMode;
@@ -66,6 +85,32 @@ export interface ConversationState {
 
   /** Last business topic discussed (for BUSINESS_SUPPORT) */
   lastBusinessTopic?: string;
+
+  // ── Milestone B additions ─────────────────────────────────────────────
+
+  /**
+   * Cumulative shopping constraints merged across ALL turns (B4).
+   * Hard constraints (maxPrice, category, color) persist through refinement.
+   * Reset only on NEW_SHOPPING_JOURNEY.
+   */
+  accumulatedConstraints?: AccumulatedConstraints;
+
+  /**
+   * Active shortlist of product IDs the shopper is considering (B9).
+   * Supports:
+   *   "Keep the first one", "Remove the expensive one", "Compare the remaining two"
+   */
+  shortlistProductIds?: string[];
+
+  /**
+   * The product on the page the shopper is currently viewing (B11).
+   * Grounds implicit references: "Is this available in size 42?"
+   */
+  activePageProductId?: string;
+
+  /** Category of the page currently being viewed (B11 current-page intelligence) */
+  activePageCategoryId?: string;
+  activePageCategoryName?: string;
 }
 
 export function createInitialState(): ConversationState {
@@ -83,6 +128,72 @@ export function transitionTo(
   overrides: Partial<ConversationState>,
 ): ConversationState {
   return { ...state, ...overrides };
+}
+
+/**
+ * Merge new constraints into the accumulated constraint set (B4).
+ * Incoming constraints win (shopper may change their mind).
+ * Undefined incoming values leave the existing value intact.
+ */
+export function mergeConstraints(
+  existing: AccumulatedConstraints | undefined,
+  incoming: Partial<AccumulatedConstraints>,
+): AccumulatedConstraints {
+  const merged: AccumulatedConstraints = { ...(existing ?? {}) };
+
+  if (incoming.categoryId !== undefined) merged.categoryId = incoming.categoryId;
+  if (incoming.categoryName !== undefined) merged.categoryName = incoming.categoryName;
+  if (incoming.maxPrice !== undefined) merged.maxPrice = incoming.maxPrice;
+  if (incoming.minPrice !== undefined) merged.minPrice = incoming.minPrice;
+  if (incoming.color !== undefined) merged.color = incoming.color;
+  if (incoming.style !== undefined) merged.style = incoming.style;
+  if (incoming.brand !== undefined) merged.brand = incoming.brand;
+  if (incoming.useCase !== undefined) merged.useCase = incoming.useCase;
+  if (incoming.answers && Object.keys(incoming.answers).length > 0) {
+    merged.answers = { ...(merged.answers ?? {}), ...incoming.answers };
+  }
+
+  return merged;
+}
+
+// ── Shortlist management (B9) ─────────────────────────────────────────────
+
+/** Add a product to the shortlist. Deduplicates automatically. */
+export function addToShortlist(
+  state: ConversationState,
+  productId: string,
+): ConversationState {
+  const list = state.shortlistProductIds ?? [];
+  if (list.includes(productId)) return state;
+  return { ...state, shortlistProductIds: [...list, productId] };
+}
+
+/** Remove a product from the shortlist by ID. */
+export function removeFromShortlist(
+  state: ConversationState,
+  productId: string,
+): ConversationState {
+  return {
+    ...state,
+    shortlistProductIds: (state.shortlistProductIds ?? []).filter((id) => id !== productId),
+  };
+}
+
+/** Keep only the specified product IDs in the shortlist. */
+export function keepInShortlist(
+  state: ConversationState,
+  productIds: string[],
+): ConversationState {
+  const set = new Set(productIds);
+  return {
+    ...state,
+    shortlistProductIds: (state.shortlistProductIds ?? []).filter((id) => set.has(id)),
+  };
+}
+
+/** Clear the shortlist entirely. */
+export function clearShortlist(state: ConversationState): ConversationState {
+  return { ...state, shortlistProductIds: [] };
 }
 
 /** Convert ConversationState to the flat context shape stored in DB */
@@ -108,13 +219,29 @@ export function stateToContext(state: ConversationState): Record<string, unknown
       : {}),
     ...(state.missingInformation?.length ? { missingInformation: state.missingInformation } : {}),
     ...(state.answeredQuestions?.length ? { answeredQuestions: state.answeredQuestions } : {}),
+    // Milestone B
+    ...(state.accumulatedConstraints && Object.keys(state.accumulatedConstraints).length > 0
+      ? { accumulatedConstraints: state.accumulatedConstraints }
+      : {}),
+    ...(state.shortlistProductIds?.length ? { shortlistProductIds: state.shortlistProductIds } : {}),
+    ...(state.activePageProductId ? { activePageProductId: state.activePageProductId } : {}),
+    ...(state.activePageCategoryId ? { activePageCategoryId: state.activePageCategoryId } : {}),
+    ...(state.activePageCategoryName ? { activePageCategoryName: state.activePageCategoryName } : {}),
   };
 }
 
+const VALID_MODES: ConversationMode[] = [
+  "DISCOVERY", "QUALIFICATION", "RECOMMENDATION", "PRODUCT_DETAILS", "COMPARE", "GENERAL_CHAT",
+];
+
+const VALID_GOALS: ConversationGoal[] = [
+  "WELCOME", "DISCOVERY", "QUALIFICATION", "RECOMMENDATION", "PRODUCT_DETAILS", "COMPARE",
+  "DECISION", "BUSINESS_SUPPORT", "OBJECTION", "CHECKOUT", "ESCALATION", "GENERAL_CHAT",
+];
+
 /** Parse ConversationState from the flat context shape stored in DB */
 export function contextToState(context: Record<string, unknown>): ConversationState {
-  const mode = (typeof context.mode === "string" &&
-    ["DISCOVERY", "QUALIFICATION", "RECOMMENDATION", "PRODUCT_DETAILS", "COMPARE", "GENERAL_CHAT"].includes(context.mode))
+  const mode = (typeof context.mode === "string" && VALID_MODES.includes(context.mode as ConversationMode))
     ? (context.mode as ConversationMode)
     : "DISCOVERY";
 
@@ -123,16 +250,19 @@ export function contextToState(context: Record<string, unknown>): ConversationSt
 
   return {
     mode,
-    goal: (typeof context.goal === "string" &&
-      ["WELCOME", "DISCOVERY", "QUALIFICATION", "RECOMMENDATION", "PRODUCT_DETAILS", "COMPARE", "BUSINESS_SUPPORT", "OBJECTION", "CHECKOUT", "ESCALATION", "GENERAL_CHAT"].includes(context.goal))
+    goal: (typeof context.goal === "string" && VALID_GOALS.includes(context.goal as ConversationGoal))
       ? (context.goal as ConversationGoal)
       : undefined,
     categoryId: typeof context.categoryId === "string" ? context.categoryId : undefined,
     categoryName: typeof context.categoryName === "string" ? context.categoryName : undefined,
     productType: typeof context.productType === "string" ? context.productType : undefined,
-    budget: budgetMin !== undefined || budgetMax !== undefined
-      ? { ...(budgetMin !== undefined ? { min: budgetMin } : {}), ...(budgetMax !== undefined ? { max: budgetMax } : {}) }
-      : undefined,
+    budget:
+      budgetMin !== undefined || budgetMax !== undefined
+        ? {
+            ...(budgetMin !== undefined ? { min: budgetMin } : {}),
+            ...(budgetMax !== undefined ? { max: budgetMax } : {}),
+          }
+        : undefined,
     recommendedProducts: Array.isArray(context.recommendedProducts)
       ? context.recommendedProducts.map(String)
       : undefined,
@@ -146,14 +276,29 @@ export function contextToState(context: Record<string, unknown>): ConversationSt
     conversationSummary: typeof context.conversationSummary === "string" ? context.conversationSummary : undefined,
     nextBestAction: typeof context.nextBestAction === "string" ? context.nextBestAction : undefined,
     lastBusinessTopic: typeof context.lastBusinessTopic === "string" ? context.lastBusinessTopic : undefined,
-    knownInformation: typeof context.knownInformation === "object" && context.knownInformation !== null
-      ? (context.knownInformation as Record<string, string>)
-      : undefined,
+    knownInformation:
+      typeof context.knownInformation === "object" && context.knownInformation !== null
+        ? (context.knownInformation as Record<string, string>)
+        : undefined,
     missingInformation: Array.isArray(context.missingInformation)
       ? context.missingInformation.map(String)
       : undefined,
     answeredQuestions: Array.isArray(context.answeredQuestions)
       ? context.answeredQuestions.map(String)
       : undefined,
+    // Milestone B
+    accumulatedConstraints:
+      typeof context.accumulatedConstraints === "object" && context.accumulatedConstraints !== null
+        ? (context.accumulatedConstraints as AccumulatedConstraints)
+        : undefined,
+    shortlistProductIds: Array.isArray(context.shortlistProductIds)
+      ? context.shortlistProductIds.map(String)
+      : undefined,
+    activePageProductId:
+      typeof context.activePageProductId === "string" ? context.activePageProductId : undefined,
+    activePageCategoryId:
+      typeof context.activePageCategoryId === "string" ? context.activePageCategoryId : undefined,
+    activePageCategoryName:
+      typeof context.activePageCategoryName === "string" ? context.activePageCategoryName : undefined,
   };
 }

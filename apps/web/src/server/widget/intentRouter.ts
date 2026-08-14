@@ -23,6 +23,11 @@
 import type { ConversationState } from "./conversationState";
 
 export type RouteIntent =
+  | "ADD_TO_CART"
+  | "REMOVE_FROM_CART"
+  | "UPDATE_CART_QUANTITY"
+  | "VIEW_CART"
+  | "CHECKOUT"
   | "PRODUCT_SELECTION"
   | "PRODUCT_DETAILS"
   | "COMPARE"
@@ -42,6 +47,29 @@ export interface RouteResult {
 }
 
 // ── Pattern lists ──────────────────────────────────────────────────────
+
+const ADD_TO_CART_PATTERNS = [
+  /\b(?:add|put)\b.*\b(?:cart|bag)\b/i,
+  /\badd\s+(?:it|this|that|one)\b/i,
+  /\bi['']?ll\s+take\s+(?:it|this|that|the)\b/i,
+  /\badd\s+to\s+cart\b/i,
+];
+
+const REMOVE_FROM_CART_PATTERNS = [
+  /\b(?:remove|delete)\b.*\b(?:cart|bag)\b/i,
+  /\bremove\s+(?:the|this|that)\b/i,
+];
+
+const VIEW_CART_PATTERNS = [
+  /\b(?:what|show|view|see)\b.*\b(?:cart|bag)\b/i,
+  /\bmy\s+cart\b/i,
+  /\bhow\s+much\s+is\s+everything\b/i,
+];
+
+const CHECKOUT_PATTERNS = [
+  /\b(?:checkout|proceed\s+to\s+checkout|buy\s+now|pay\s+now|ready\s+to\s+pay)\b/i,
+  /^(?:checkout|buy)\s*$/i,
+];
 
 const PRODUCT_SELECTION_SHORT = [
   /^(?:the\s+)?(?:first|second|third|last)\b/,
@@ -134,6 +162,20 @@ export function routeConversation(
   const hasRecs = (state.recommendedProducts?.length ?? 0) > 0;
   const hasRecsCount = state.recommendedProducts?.length ?? 0;
   const lower = message.toLowerCase().trim();
+
+  // ── Priority 0: Commerce Actions (CHECKOUT, ADD_TO_CART, REMOVE_FROM_CART, VIEW_CART) ──
+  for (const pat of CHECKOUT_PATTERNS) {
+    if (pat.test(lower)) return { intent: "CHECKOUT" };
+  }
+  for (const pat of ADD_TO_CART_PATTERNS) {
+    if (pat.test(lower)) return { intent: "ADD_TO_CART" };
+  }
+  for (const pat of REMOVE_FROM_CART_PATTERNS) {
+    if (pat.test(lower)) return { intent: "REMOVE_FROM_CART" };
+  }
+  for (const pat of VIEW_CART_PATTERNS) {
+    if (pat.test(lower)) return { intent: "VIEW_CART" };
+  }
 
   // ── Priority 1: PRODUCT_SELECTION ──
   if (hasRecs) {

@@ -1,25 +1,14 @@
 import { assertPublicUrl } from "@/server/net/ssrfGuard";
+import { safeFetch } from "@/server/website/crawler/fetcher";
 import { importProducts, type ImportRow, type ImportResult } from "@/server/catalog/products";
 import { normalizeCurrencyCode } from "@/server/catalog/money";
 
-/**
- * Layered catalog importer. Tries strategies cheapest-and-most-accurate
- * first, stops at the first that yields products, then persists them
- * through importProducts (dedupe + embeddings + category auto-seed).
- *
- *   1. Platform JSON (Shopify /products.json, WooCommerce Store API)
- *      — exact, free, and (crucially) NOT behind the storefront's bot
- *        wall, so it works on protected Shopify/Woo stores.
- *   2. JSON-LD (schema.org Product) from the fetched HTML — exact, free.
- *   3. fetch + Groq LLM extraction — free, handles server-rendered sites.
- *   4. Firecrawl + Groq — paid (optional), renders JS-heavy sites; runs
- *      last so it only spends credits when the free paths found nothing.
- *
- * Bot protection: strategy 1 routes around it entirely for the common
- * platforms; strategy 4 escalates to Firecrawl's stealth proxy; and if
- * everything fails, the caller falls back to CSV/manual (the merchant
- * owns this catalog and can always export it themselves).
- */
+// Filenames that are almost never the actual product photo — nav logos,
+// payment badges, UI sprites — so the LLM isn't distracted by them.
+const NON_PRODUCT_IMAGE = /logo|icon|sprite|badge|payment|favicon|avatar|placeholder/i;
+
+const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36";
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const MAX_PRODUCTS = 250;
@@ -34,13 +23,6 @@ export interface CatalogImportResult extends ImportResult {
 
 // ─── helpers ───────────────────────────────────────────────────────────
 
-/**
- * Resolves a possibly-relative image URL (site-relative "/img/x.jpg",
- * protocol-relative "//cdn.x.com/y.jpg", or already-absolute) against the
- * page it came from, so the widget always gets a real, loadable image
- * instead of silently dropping it (safeHttpUrl/firstImageUrl in
- * server/retrieval/search.ts only accept absolute http(s) URLs).
- */
 function absolutizeUrl(maybe: string | undefined, base: string): string {
   if (!maybe) return "";
   try {
@@ -61,13 +43,6 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-// Filenames that are almost never the actual product photo — nav logos,
-// payment badges, UI sprites — so the LLM isn't distracted by them.
-const NON_PRODUCT_IMAGE = /logo|icon|sprite|badge|payment|favicon|avatar|placeholder/i;
-
-/** Pulls the real image URL out of an <img> tag, preferring lazy-load
- *  attributes (data-src, srcset) over `src`, since many storefronts put a
- *  1x1 placeholder gif in `src` and the real photo in a data-* attribute. */
 function imgSrc(tag: string): string {
   const attr = (name: string) => {
     const m = tag.match(new RegExp(`${name}\\s*=\\s*["']([^"']+)["']`, "i"));
@@ -78,9 +53,6 @@ function imgSrc(tag: string): string {
   return attr("data-src") || attr("data-original") || attr("data-lazy-src") || firstFromSrcset || attr("src");
 }
 
-/** Like stripHtml, but turns <img> tags into inline `![alt](url)` markers
- *  first, so a product's photo survives into the text the LLM sees instead
- *  of being discarded along with every other tag. */
 function htmlToMarkdownish(html: string, baseUrl: string): string {
   const withImages = html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -100,33 +72,20 @@ function htmlToMarkdownish(html: string, baseUrl: string): string {
     .trim();
 }
 
-// A realistic browser UA. Many storefronts (and their public /products.json
-// endpoints) block non-browser user-agents behind bot protection — with a
-// bot UA, allbirds' free Shopify endpoint 403s and we waste a paid Firecrawl
-// credit instead. The merchant is importing their own catalog, so presenting
-// as a normal browser to read a public product endpoint is appropriate.
-const BROWSER_UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36";
-
-async function timedFetch(url: string, init?: RequestInit): Promise<Response | null> {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    return await fetch(url, {
-      ...init,
-      signal: controller.signal,
-      headers: {
-        "User-Agent": BROWSER_UA,
-        Accept: "application/json, text/html;q=0.9, */*;q=0.8",
-        ...(init?.headers ?? {}),
-      },
-    });
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(t);
-  }
+async function timedFetch(url: string): Promise<{ ok: boolean; text: () => Promise<string>; json: <T>() => Promise<T> } | null> {
+  const result = await safeFetch(url, {
+    timeoutMs: FETCH_TIMEOUT_MS,
+    allowCrossHost: true,
+    maxBytes: 5 * 1024 * 1024,
+  });
+  if (!("ok" in result) || !result.ok) return null;
+  return {
+    ok: true,
+    text: async () => result.html,
+    json: async <T>() => JSON.parse(result.html) as T,
+  };
 }
+
 
 /** Extract products from arbitrary page text/markdown via Groq (higher
  *  token cap than the conversation engine's completeJson). Never invents.

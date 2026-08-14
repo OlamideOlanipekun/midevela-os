@@ -30,8 +30,8 @@ export async function resolveWidgetKey(publicKey: string) {
  * endpoint; see createOrganizationForUser() and normalizeAllowedDomains().
  */
 export function isOriginAllowed(allowedDomains: string[], origin: string | null): boolean {
-  // Same-origin GET requests from browsers omit the Origin header — allow them
-  if (!origin) return true;
+  if (!origin) return false;
+  if (!allowedDomains || !allowedDomains.length) return false;
 
   try {
     const hostname = new URL(origin).hostname;
@@ -45,9 +45,6 @@ export function isOriginAllowed(allowedDomains: string[], origin: string | null)
     ) {
       return true;
     }
-
-    // If merchant hasn't configured domain restriction yet, allow during initial setup
-    if (!allowedDomains.length) return true;
 
     return allowedDomains.some(
       (d) => hostname === d || hostname.endsWith(`.${d}`)

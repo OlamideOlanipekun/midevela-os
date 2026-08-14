@@ -264,6 +264,10 @@
     const avatarLetter = aiName.charAt(0).toUpperCase() || 'A';
     const showProductImages = config.settings.showProductImages !== false;
 
+    // Milestone A Telemetry: Log session start & initial page view on boot
+    trackEvent('SESSION_STARTED', { merchantId: config.business ? config.business.name : 'Store', entryPage: window.location.href });
+    trackEvent('PAGE_VIEWED', { pageUrl: window.location.href });
+
     // ─── SVG Icon Registry ───
     var ICONS = {
       bag: '<svg class="mdv-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h14l-1.5 11H4.5z"/><path d="M7 7V4a3 3 0 016 0v3"/></svg>',
@@ -4524,10 +4528,18 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
           }
         : undefined;
 
+      trackEvent('SEARCH_PERFORMED', { query: text });
+
       fetch(chatApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ widgetKey, customerId, messageText: text, context: contextPatch }),
+        body: JSON.stringify({
+          widgetKey: widgetKey,
+          customerId: customerId,
+          messageText: text,
+          context: contextPatch,
+          currentUrl: window.location.href,
+        }),
       })
         .then(function (res) {
           if (!res.ok) throw new Error('Widget API request failed with status ' + res.status);
@@ -5039,6 +5051,31 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
       var replyText = (data && data.replyText) || "Sorry, I didn\u2019t quite catch that. Could you rephrase?";
       var recommendations = Array.isArray(data && data.recommendations) ? data.recommendations : [];
 
+      // Milestone A (A6): Navigation Intelligence response handling
+      if (data && data.navigateTo) {
+        appendAiBubble(replyText);
+        trackEvent('NAVIGATION_REQUESTED', {
+          targetUrl: data.navigateTo.url,
+          targetTitle: data.navigateTo.title,
+          pageType: data.navigateTo.pageType,
+        });
+        // Dispatch postMessage to host window if embedded
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'MIDEVELA:NAVIGATE_TO', payload: data.navigateTo }, '*');
+          }
+        } catch (e) {}
+        // Redirect host page if valid target URL
+        if (data.navigateTo.url && window.location.href !== data.navigateTo.url) {
+          setTimeout(function () {
+            window.location.href = data.navigateTo.url;
+          }, 1200);
+        }
+        updateMemoryStrip();
+        scrollToBottom();
+        return;
+      }
+
       if (data && data.contextSnapshot) {
         if (data.contextSnapshot.categoryName) funnel.categoryName = data.contextSnapshot.categoryName;
         if (data.contextSnapshot.answers) funnel.answers = data.contextSnapshot.answers;
@@ -5211,5 +5248,16 @@ chip.innerHTML = (opt.icon || '') + (opt.icon ? ' ' : '') + escapeHtml(opt.label
       .catch(function () {
         /* history restore is best-effort — boot UI stays as-is */
       });
+
+    // Milestone A (A9): Host ↔ Widget postMessage protocol listener
+    window.addEventListener('message', function (event) {
+      if (!event.data || typeof event.data !== 'object') return;
+      var type = event.data.type;
+      var payload = event.data.payload;
+
+      if (type === 'MIDEVELA:PAGE_CHANGED' && payload && payload.url) {
+        trackEvent('PAGE_VIEWED', { pageUrl: payload.url, previousUrl: window.location.href });
+      }
+    });
   }
 })();

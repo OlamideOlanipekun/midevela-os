@@ -88,6 +88,42 @@ enum WebsiteCrawlStatus {
   FAILED
 }
 
+enum CrawlStatus {
+  QUEUED
+  RUNNING
+  CANCELLING
+  CANCELLED
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+enum CrawlTrigger {
+  MANUAL
+  SCHEDULED
+  CLAIM
+  REINDEX
+}
+
+enum CrawlPageType {
+  PRODUCT
+  CATEGORY
+  POLICY
+  FAQ
+  ABOUT
+  CONTACT
+  BLOG
+  OTHER
+}
+
+enum CrawlFrontierStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
 // ── Admin auth models ──
 
 model Admin {
@@ -252,10 +288,12 @@ model Organization {
   categories      Category[]
   channelIntegrations ChannelIntegration[]
   customerEvents  CustomerEvent[]
+  crawls          Crawl[]
+  pages           WebsitePage[]
+  crawlFrontier   CrawlFrontier[]
 
   @@map("organizations")
 }
-
 model Subscription {
   id                       String             @id @default(uuid()) @db.Uuid
   orgId                    String             @unique @map("org_id") @db.Uuid
@@ -314,6 +352,9 @@ model WebsiteRegistry {
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   crawlJobs  CrawlJob[]
   healthLogs WebsiteHealth[]
+  crawls Crawl[]
+  pages WebsitePage[]
+  crawlFrontier CrawlFrontier[]
 
   @@index([orgId])
   @@index([status])
@@ -357,6 +398,94 @@ model WebsiteHealth {
 
   @@index([websiteId, lastChecked])
   @@map("website_health")
+}
+
+model Crawl {
+  id                         String                 @id @default(uuid()) @db.Uuid
+  orgId                      String                 @map("org_id") @db.Uuid
+  websiteId                  String                 @map("website_id") @db.Uuid
+  status                     CrawlStatus            @default(QUEUED)
+  trigger                    CrawlTrigger           @default(MANUAL)
+  startedAt                  DateTime?              @map("started_at") @db.Timestamptz
+  completedAt                DateTime?              @map("completed_at") @db.Timestamptz
+  cancelledAt                DateTime?              @map("cancelled_at") @db.Timestamptz
+  error                      String?
+  pagesDiscovered            Int                    @default(0) @map("pages_discovered")
+  pagesProcessed             Int                    @default(0) @map("pages_processed")
+  pagesFailed                Int                    @default(0) @map("pages_failed")
+  productsDiscovered         Int                    @default(0) @map("products_discovered")
+  productsCreated            Int                    @default(0) @map("products_created")
+  productsUpdated            Int                    @default(0) @map("products_updated")
+  productsRemoved            Int                    @default(0) @map("products_removed")
+  knowledgeEntriesProcessed  Int                    @default(0) @map("knowledge_entries_processed")
+  createdAt                  DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                  DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org      Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  website  WebsiteRegistry @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  pages    WebsitePage[]
+  frontier CrawlFrontier[]
+
+  @@index([orgId, createdAt])
+  @@index([websiteId, status])
+  @@index([status, createdAt])
+  @@map("crawls")
+}
+
+model WebsitePage {
+  id                      String        @id @default(uuid()) @db.Uuid
+  orgId                   String        @map("org_id") @db.Uuid
+  websiteId               String        @map("website_id") @db.Uuid
+  crawlId                 String        @map("crawl_id") @db.Uuid
+  url                     String
+  canonicalUrl            String        @map("canonical_url")
+  pageType                CrawlPageType @default(OTHER) @map("page_type")
+  title                   String?
+  contentHash             String?       @map("content_hash")
+  httpStatus              Int?          @map("http_status")
+  contentType             String?       @map("content_type")
+  discoveredFrom          String?       @map("discovered_from")
+  depth                   Int           @default(0)
+  lastCrawledAt           DateTime      @default(now()) @map("last_crawled_at") @db.Timestamptz
+  lastSuccessfulCrawlAt   DateTime?     @map("last_successful_crawl_at") @db.Timestamptz
+  metadata                Json          @default("{}")
+  createdAt               DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org      Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  website  WebsiteRegistry @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  crawl    Crawl           @relation(fields: [crawlId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, canonicalUrl])
+  @@index([websiteId, pageType])
+  @@index([crawlId])
+  @@map("website_pages")
+}
+
+model CrawlFrontier {
+  id             String              @id @default(uuid()) @db.Uuid
+  crawlId        String              @map("crawl_id") @db.Uuid
+  orgId          String              @map("org_id") @db.Uuid
+  websiteId      String              @map("website_id") @db.Uuid
+  url            String
+  normalizedUrl  String              @map("normalized_url")
+  depth          Int                 @default(0)
+  priority       Int                 @default(0)
+  discoveredFrom String?             @map("discovered_from")
+  status         CrawlFrontierStatus @default(PENDING)
+  attempts       Int                 @default(0)
+  scheduledAt    DateTime            @default(now()) @map("scheduled_at") @db.Timestamptz
+  processedAt    DateTime?           @map("processed_at") @db.Timestamptz
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  crawl   Crawl           @relation(fields: [crawlId], references: [id], onDelete: Cascade)
+  org     Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  website WebsiteRegistry @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([crawlId, normalizedUrl])
+  @@index([crawlId, status, priority])
+  @@index([orgId, status])
+  @@map("crawl_frontier")
 }
 
 model KnowledgeEntry {

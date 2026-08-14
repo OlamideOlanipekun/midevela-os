@@ -289,6 +289,15 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
     }
 
     const category = await getOrCreateCategoryByName(orgId, row.category, { image: row.categoryImageUrl });
+    const brand = String(row.brand ?? "").trim() || null;
+    const inventoryStatus = LABEL_TO_STATUS[String(row.stockStatus ?? "")] ?? "IN_STOCK";
+
+    const attributes = {
+      brand,
+      category: row.category || null,
+      stockStatus: row.stockStatus || "In Stock",
+    };
+
     const product = await prisma.product.create({
       data: {
         orgId,
@@ -296,10 +305,11 @@ export async function importProducts(orgId: string, rows: ImportRow[]): Promise<
         price,
         currency: normalizeCurrencyCode(row.currency) ?? orgCurrency,
         categoryId: category?.id ?? null,
-        brand: String(row.brand ?? "").trim() || null,
+        brand,
         description: description || null,
         images: validImage ? [String(row.imageUrl).trim()] : [],
-        inventoryStatus: LABEL_TO_STATUS[String(row.stockStatus ?? "")] ?? "IN_STOCK",
+        attributes: attributes as unknown as object,
+        inventoryStatus,
         source: "IMPORT",
       },
       include: { category: true },

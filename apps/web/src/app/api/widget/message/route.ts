@@ -13,7 +13,7 @@ import type { ChatMessage } from "@/server/conversation/llm";
 import { tryAdaptiveDiscovery } from "@/server/widget/adaptiveDiscovery";
 import { routeConversation } from "@/server/widget/intentRouter";
 import type { RouteIntent } from "@/server/widget/intentRouter";
-import { contextToState, stateToContext, resetShoppingState } from "@/server/widget/conversationState";
+import { contextToState, stateToContext, resetShoppingState, mergeConstraints, addToShortlist, removeFromShortlist, keepInShortlist } from "@/server/widget/conversationState";
 import type { ConversationState } from "@/server/widget/conversationState";
 import { resolveProductReference } from "@/server/widget/referenceResolver";
 import { getProductDetails } from "@/server/widget/productDetails";
@@ -26,6 +26,15 @@ import { answerBusinessQuestion } from "@/server/widget/businessBrain";
 import { handleBrowse } from "@/server/widget/browseHandler";
 import { escalate } from "@/server/widget/escalationEngine";
 import { generatePaymentLink } from "@/server/widget/checkoutHandler";
+import { resolvePageContext, buildContextHint } from "@/server/widget/contextResolver";
+import { extractNavigationTarget, resolveNavigation } from "@/server/widget/navigationResolver";
+// ── Milestone B imports ───────────────────────────────────────────────────────
+import { classifyIntent, fastExtractConstraints } from "@/server/widget/intentEngine";
+import { getSimilarProducts } from "@/server/widget/similarProducts";
+import { checkVariantAvailability, listProductVariants } from "@/server/widget/variantEngine";
+import { decideProducts } from "@/server/widget/decisionEngine";
+import { explainRecommendations, summariseConstraints } from "@/server/widget/explain";
+import { trackSearch, trackComparison, trackVariantCheck, trackDecisionSupport, trackFunnelEvent } from "@/server/analytics/funnel";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const HISTORY_TURNS = 10;
@@ -86,7 +95,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { widgetKey, customerId, messageText, context: contextPatch } = body ?? {};
+    const { widgetKey, customerId, messageText, context: contextPatch, currentUrl } = body ?? {};
 
     if (!widgetKey || typeof widgetKey !== "string") {
       return NextResponse.json({ error: "widgetKey is required." }, { status: 400, headers });
@@ -268,32 +277,18 @@ export async function POST(req: NextRequest) {
     });
     publishMessageSent(conversation.id, org.id, "customer", 0, 0);
 
-    const shoppingContextRaw = {
-      categoryName: typeof mergedContext.categoryName === "string" ? mergedContext.categoryName : undefined,
-      budget: typeof mergedContext.budget === "string" ? mergedContext.budget : undefined,
-      brand: typeof mergedContext.brand === "string" ? mergedContext.brand : undefined,
-      answers:
-        mergedContext.answers && typeof mergedContext.answers === "object"
-          ? (mergedContext.answers as Record<string, string>)
-          : undefined,
-    };
+    // ── A3: Website Context Awareness ──────────────────────────────────────
+    // Resolve the shopper's current page URL into structured context from the
+    // Website Intelligence dataset. This anchors queries like "something cheaper"
+    // to the real active product price and category from the DB.
+    const pageContext = await resolvePageContext(
+      org.id,
+      typeof currentUrl === "string" ? currentUrl : null
+    );
+    const pageContextHint = buildContextHint(pageContext);
 
-    // ──────── CONVERSATION MANAGER v1 ────────
-    // Every message passes through the intent router before any LLM call.
-    // The router classifies the message using pure pattern matching (no LLM
-    // cost) and returns a RouteIntent. The state machine then dispatches to
-    // the correct handler.
-    //
-    //   RouteIntent             → Handler
-    //   ───────────               ───────
-    //   PRODUCT_SELECTION       → resolve product → PRODUCT_DETAILS handler
-    //   PRODUCT_DETAILS         → getProductDetails() from DB
-    //   COMPARE                 → compareProducts() engine
-    //   CHEAPER_ALTERNATIVE     → re-recommend with relaxed constraints
-    //   NEW_SHOPPING_JOURNEY    → resetShoppingState() → adaptive discovery
-    //   DISCOVERY               → tryAdaptiveDiscovery() or LLM
-    //   GENERAL_CHAT            → processConversationTurn()
-    //
+    // Derive ConversationState and saveResponse early — needed by the navigation
+    // short-circuit below as well as all the downstream handlers.
     const state: ConversationState = contextToState(mergedContext);
 
     // Layout helper types used by the handlers below
@@ -327,6 +322,73 @@ export async function POST(req: NextRequest) {
       await recordAiUsage(org.id);
     }
 
+    // ── A6: Navigation Intelligence — detect and short-circuit ─────────────
+    // Check for navigation intent BEFORE any LLM call (zero cost).
+    // Only returns URLs verified in the WebsitePage dataset.
+    const navTarget = extractNavigationTarget(messageText);
+    if (navTarget) {
+      const navResult = await resolveNavigation(org.id, navTarget);
+      if (navResult && navResult.confidence >= 0.6) {
+        const replyText = navResult.replyText;
+        await saveResponse(replyText, "navigation", [], { ...state });
+        return NextResponse.json(
+          {
+            replyText,
+            intent: "navigation",
+            recommendations: [],
+            isNewConversation,
+            navigateTo: {
+              url: navResult.targetUrl,
+              title: navResult.targetTitle,
+              pageType: navResult.pageType,
+            },
+          },
+          { headers }
+        );
+      }
+      // No verified URL found — fall through to general chat
+    }
+
+    const shoppingContextRaw = {
+      // If the shopper is on a product page, seed the category from page context
+      categoryName:
+        typeof mergedContext.categoryName === "string"
+          ? mergedContext.categoryName
+          : pageContext.categoryName ?? undefined,
+      // If the page is a product page and has a category, prioritise it
+      categoryId:
+        typeof mergedContext.categoryId === "string"
+          ? mergedContext.categoryId
+          : pageContext.categoryId ?? undefined,
+      // Active product from page context — enables "something cheaper" grounding
+      activeProductFromPage: pageContext.product ?? undefined,
+      // Page context hint injected into the system prompt
+      pageContextHint: pageContextHint ?? undefined,
+      budget: typeof mergedContext.budget === "string" ? mergedContext.budget : undefined,
+      brand: typeof mergedContext.brand === "string" ? mergedContext.brand : undefined,
+      answers:
+        mergedContext.answers && typeof mergedContext.answers === "object"
+          ? (mergedContext.answers as Record<string, string>)
+          : undefined,
+    };
+
+    // ──────── CONVERSATION MANAGER v1 ────────
+    // Every message passes through the intent router before any LLM call.
+    // The router classifies the message using pure pattern matching (no LLM
+    // cost) and returns a RouteIntent. The state machine then dispatches to
+    // the correct handler.
+    //
+    //   RouteIntent             → Handler
+    //   ───────────               ───────
+    //   PRODUCT_SELECTION       → resolve product → PRODUCT_DETAILS handler
+    //   PRODUCT_DETAILS         → getProductDetails() from DB
+    //   COMPARE                 → compareProducts() engine
+    //   CHEAPER_ALTERNATIVE     → re-recommend with relaxed constraints
+    //   NEW_SHOPPING_JOURNEY    → resetShoppingState() → adaptive discovery
+    //   DISCOVERY               → tryAdaptiveDiscovery() or LLM
+    //   GENERAL_CHAT            → processConversationTurn()
+    //
+
     // ── 1. Conversation Director ──────────────────────────────────────
     // Every message goes through the Conversation Director before any
     // engine. The director decides the route based on Sales Memory and
@@ -342,12 +404,33 @@ export async function POST(req: NextRequest) {
     //   GENERAL_CHAT        → processConversationTurn()      (LLM)
     //   ESCALATION          → escalate()                     (no LLM)
     //
-    const decision = directConversation(messageText, state);
+    // ── B11: Merge page context into ConversationState ────────────────────
+    // If the shopper is viewing a product page, pre-populate the active product
+    // and category in state so follow-up queries automatically reference it.
+    // Also store the page product/category in the dedicated activePageProduct
+    // fields so "this" always resolves to what the shopper is looking at.
+    const stateWithPageContext: ConversationState = {
+      ...state,
+      // Only override activeProductId if not already set by conversation state
+      ...(pageContext.product && !state.activeProductId
+        ? { activeProductId: pageContext.product.id }
+        : {}),
+      ...(pageContext.categoryId && !state.categoryId
+        ? { categoryId: pageContext.categoryId, categoryName: pageContext.categoryName ?? state.categoryName }
+        : {}),
+      // B11: Always track the page product/category independently
+      ...(pageContext.product ? { activePageProductId: pageContext.product.id } : {}),
+      ...(pageContext.categoryId
+        ? { activePageCategoryId: pageContext.categoryId, activePageCategoryName: pageContext.categoryName ?? state.activePageCategoryName }
+        : {}),
+    };
+
+    const decision = directConversation(messageText, stateWithPageContext);
     const route = decision.routeResult;
 
     // Track the decision for Sales Memory
     let nextState: ConversationState = {
-      ...state,
+      ...stateWithPageContext,
       goal: decision.goal,
       nextBestAction: decision.nextBestAction,
     };
@@ -541,27 +624,36 @@ export async function POST(req: NextRequest) {
 
     // ── COMPARE ────────────────────────────────────────────────────────
     if (route.intent === "COMPARE" && (state.recommendedProducts?.length ?? 0) >= 2) {
-      const recIds = state.recommendedProducts!.slice(0, 2);
+      const shortlistIds = state.shortlistProductIds?.length
+        ? state.shortlistProductIds.slice(0, 3)
+        : state.recommendedProducts!.slice(0, 2);
       try {
-        const compareResult = await compareProducts(org.id, recIds);
+        // B6: Pass shopper use case context for grounded recommendation
+        const intentData = await classifyIntent(messageText, state);
+        const compareResult = await compareProducts(org.id, shortlistIds, {
+          shopperUseCase: intentData.decisionContext?.useCase ?? state.accumulatedConstraints?.useCase,
+        });
         const rowsText = compareResult.rows
-          .map((r) => `• ${r.label}: ${r.values.join(" vs ")}`)
+          .filter((r) => !r.allMissing)
+          .map((r) => `• **${r.label}:** ${r.values.join(" vs ")}`)
           .join("\n");
+        const productNames = compareResult.products.map((p) => `**${p.name}**`).join(" and ");
         const replyText = [
-          `Here's how **${compareResult.products[0].name}** and **${compareResult.products[1].name}** compare:`,
+          `Here's how ${productNames} compare:`,
           ``,
-          rowsText,
+          rowsText || "_(No additional specifications available from the store.)_",
           ``,
           compareResult.recommendation,
           ``,
-          `Would you like to know more about either of these?`,
+          `Would you like to know more about either of these, or ask me which one I'd recommend?`,
         ].join("\n");
 
         const newState: ConversationState = {
           ...state,
           mode: "COMPARE",
-          comparedProducts: recIds,
+          comparedProducts: shortlistIds,
         };
+        await trackComparison({ orgId: org.id, customerId: customer.id, conversationId: conversation.id, productIds: shortlistIds });
         await saveResponse(replyText, "comparison", [], newState);
         return NextResponse.json(
           { replyText, intent: "comparison", recommendations: [], isNewConversation },
@@ -569,6 +661,192 @@ export async function POST(req: NextRequest) {
         );
       } catch {
         // Fall through to general chat on error
+      }
+    }
+
+    // ── B7: DECISION_SUPPORT ──────────────────────────────────────────
+    // Triggered by: "Which one should I choose?", "Which is better for office use?"
+    {
+      const intentData = await classifyIntent(messageText, state);
+      if (intentData.intent === "DECISION_SUPPORT") {
+        const candidateIds = (
+          state.shortlistProductIds?.length
+            ? state.shortlistProductIds
+            : state.recommendedProducts ?? []
+        ).slice(0, 3);
+
+        if (candidateIds.length > 0) {
+          const decisionResult = await decideProducts({
+            orgId: org.id,
+            productIds: candidateIds,
+            question: messageText,
+            context: {
+              useCase: intentData.decisionContext?.useCase ?? state.accumulatedConstraints?.useCase,
+              budget: state.budget,
+              categoryName: state.categoryName ?? state.accumulatedConstraints?.categoryName,
+              knownInformation: state.knownInformation,
+            },
+          });
+
+          const replyText = [
+            decisionResult.recommendation,
+            decisionResult.reasoning ? `\n${decisionResult.reasoning}` : "",
+            ``,
+            `Would you like to know more about this product, or compare them further?`,
+          ].filter(Boolean).join("\n");
+
+          const newState: ConversationState = {
+            ...state,
+            mode: "COMPARE",
+            goal: "DECISION",
+            activeProductId: decisionResult.recommendedProductId ?? state.activeProductId,
+          };
+          await trackDecisionSupport({
+            orgId: org.id,
+            customerId: customer.id,
+            conversationId: conversation.id,
+            productIds: candidateIds,
+            question: messageText,
+            recommendedProductId: decisionResult.recommendedProductId,
+          });
+          await saveResponse(replyText, "decision", [], newState);
+          return NextResponse.json(
+            { replyText, intent: "decision", recommendations: [], isNewConversation },
+            { headers },
+          );
+        }
+      }
+
+      // ── B10: VARIANT_CHECK ─────────────────────────────────────────────
+      // "Do you have this in size 42?", "Is this available in black?"
+      if (intentData.intent === "VARIANT_CHECK") {
+        const targetProductId =
+          state.activeProductId ??
+          state.activePageProductId ??
+          (state.shortlistProductIds?.[0]) ??
+          (state.recommendedProducts?.[0]);
+
+        if (targetProductId && intentData.variantQuery) {
+          const variantResult = await checkVariantAvailability(
+            org.id,
+            targetProductId,
+            intentData.variantQuery,
+          );
+
+          await trackVariantCheck({
+            orgId: org.id,
+            customerId: customer.id,
+            conversationId: conversation.id,
+            productId: targetProductId,
+            variantQuery: {
+              size: intentData.variantQuery.size,
+              color: intentData.variantQuery.color,
+            },
+            found: variantResult.found,
+          });
+
+          const replyText = [
+            variantResult.answer,
+            ``,
+            variantResult.found
+              ? `Would you like to go to the product page or compare it with something else?`
+              : `Can I help you find a different option?`,
+          ].join("\n");
+
+          await saveResponse(replyText, "variant_check", [], { ...state });
+          return NextResponse.json(
+            { replyText, intent: "variant_check", recommendations: [], isNewConversation },
+            { headers },
+          );
+        }
+      }
+
+      // ── B5: SIMILARITY ────────────────────────────────────────────────
+      // "Show me something similar", "More like this"
+      if (intentData.intent === "SIMILARITY") {
+        const refProductId =
+          state.activeProductId ??
+          state.activePageProductId ??
+          (state.shortlistProductIds?.[0]) ??
+          (state.recommendedProducts?.[0]);
+
+        if (refProductId) {
+          const similar = await getSimilarProducts(org.id, refProductId, { limit: 5 });
+
+          if (similar.length > 0) {
+            const lines = similar.map((p) => `**${p.name}** — ${p.price}`);
+            const replyText = [
+              `Here are similar products:`,
+              ``,
+              ...lines,
+              ``,
+              `Would you like to compare any of these or get more details?`,
+            ].join("\n");
+
+            const newState: ConversationState = {
+              ...state,
+              mode: "RECOMMENDATION",
+              recommendedProducts: similar.map((p) => p.id),
+            };
+            await trackFunnelEvent("similar_request", { orgId: org.id, customerId: customer.id, conversationId: conversation.id });
+            await saveResponse(replyText, "discovery", similar.map((p) => ({ id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl, url: p.url, brand: p.brand, inStock: p.inStock })), newState);
+            return NextResponse.json(
+              { replyText, intent: "discovery", recommendations: similar, isNewConversation },
+              { headers },
+            );
+          }
+        }
+      }
+
+      // ── B4: CONSTRAINT_REFINEMENT — merge accumulated constraints ─────
+      // "Something more casual", "Under ₦80k instead", "Actually, make it blue"
+      if (intentData.intent === "CONSTRAINT_REFINEMENT" && state.categoryId) {
+        const newConstraints = intentData.constraints;
+        const merged = mergeConstraints(state.accumulatedConstraints, {
+          categoryId: state.categoryId,
+          categoryName: state.categoryName,
+          maxPrice: newConstraints.maxPrice,
+          minPrice: newConstraints.minPrice,
+          color: newConstraints.color,
+          style: newConstraints.style,
+          brand: newConstraints.brand,
+          useCase: newConstraints.useCase,
+        });
+
+        const newRecs = await recommendProducts({
+          orgId: org.id,
+          categoryId: state.categoryId,
+          answers: state.budget ? { budget: `${state.budget.min ?? 0}-${state.budget.max ?? ""}` } : {},
+          constraints: merged,
+        });
+
+        if (newRecs.length > 0) {
+          const constraintSummary = summariseConstraints(merged);
+          const lines = newRecs.map((p) => `**${p.name}** — ${p.price}`);
+          const replyText = [
+            constraintSummary
+              ? `Here are refined results matching your preferences (${constraintSummary}):`
+              : `Here are refined results:`,
+            ``,
+            ...lines,
+            ``,
+            `Would you like to compare any of these or narrow your search further?`,
+          ].join("\n");
+
+          const newState: ConversationState = {
+            ...state,
+            mode: "RECOMMENDATION",
+            recommendedProducts: newRecs.map((p) => p.id),
+            accumulatedConstraints: merged,
+            shortlistProductIds: newRecs.map((p) => p.id),
+          };
+          await trackSearch({ orgId: org.id, customerId: customer.id, conversationId: conversation.id, query: messageText, resultCount: newRecs.length, constraints: merged });
+          await saveResponse(replyText, "discovery", newRecs, newState);
+          return NextResponse.json(
+            { replyText, intent: "discovery", recommendations: newRecs, isNewConversation },
+            { headers },
+          );
+        }
       }
     }
 
@@ -646,6 +924,18 @@ export async function POST(req: NextRequest) {
 
     // ── DISCOVERY — try adaptive discovery ─────────────────────────────
     if (route.intent === "DISCOVERY" || route.intent === "NEW_SHOPPING_JOURNEY") {
+      // B4: Extract constraints from the message and merge into accumulated state
+      const localConstraints = fastExtractConstraints(messageText);
+      const updatedConstraints = mergeConstraints(nextState.accumulatedConstraints, {
+        ...(nextState.categoryId ? { categoryId: nextState.categoryId } : {}),
+        ...(nextState.categoryName ? { categoryName: nextState.categoryName } : {}),
+        maxPrice: localConstraints.maxPrice,
+        minPrice: localConstraints.minPrice,
+        color: localConstraints.color,
+        style: localConstraints.style,
+        useCase: localConstraints.useCase,
+      });
+
       const result = await tryAdaptiveDiscovery(
         org.id,
         messageText,
@@ -664,6 +954,12 @@ export async function POST(req: NextRequest) {
           ...state,
           mode: newMode,
           recommendedProducts: result.recommendations.map((p) => p.id),
+          // B4: Persist accumulated constraints
+          accumulatedConstraints: updatedConstraints,
+          // B9: Seed shortlist from initial recommendations
+          shortlistProductIds: result.recommendations.length > 0
+            ? result.recommendations.map((p) => p.id)
+            : nextState.shortlistProductIds,
           ...(result.shoppingContext.categoryName
             ? { categoryName: result.shoppingContext.categoryName }
             : {}),
@@ -671,6 +967,15 @@ export async function POST(req: NextRequest) {
             ? { budget: parseBudgetLabel(result.shoppingContext.budget) }
             : {}),
         };
+
+        // B15: Track funnel event
+        await trackSearch({
+          orgId: org.id,
+          customerId: customer.id,
+          conversationId: conversation.id,
+          query: messageText,
+          resultCount: result.recommendations.length,
+        });
 
         // Recovery: when adaptive discovery found no products and didn't
         // ask a follow-up question, try broadening the search.

@@ -3,11 +3,28 @@ import { publishKnowledgeIndexed, publishImportStarted } from "@/server/events/i
 
 export function registerWorkers(): void {
   createWorker({
+    name: "crawl",
+    concurrency: 1,
+    handler: async (job) => {
+      const { orgId, websiteId, crawlId, rawUrl, trigger } = job.data;
+      const { runCrawl } = await import("@/server/website/crawler/orchestrator");
+      await runCrawl({
+        orgId,
+        websiteId,
+        crawlId,
+        rawUrl,
+        trigger: trigger || "MANUAL",
+        log: (msg) => console.log(`[worker:crawl:${crawlId}] ${msg}`),
+      });
+    },
+  });
+
+  createWorker({
     name: "embedding",
     concurrency: 3,
     handler: async (job) => {
-      const { orgId, entryId } = job.data;
-      publishKnowledgeIndexed(orgId, entryId, "document", 1);
+      const { orgId, entryId, type } = job.data;
+      publishKnowledgeIndexed(orgId, entryId, type || "document", 1);
     },
   });
 
@@ -15,8 +32,12 @@ export function registerWorkers(): void {
     name: "import",
     concurrency: 2,
     handler: async (job) => {
-      const { orgId, source } = job.data;
-      publishImportStarted(orgId, source, 0);
+      const { orgId, websiteId, rawUrl, source } = job.data;
+      publishImportStarted(orgId, source || "URL", 0);
+      if (rawUrl) {
+        const { importCatalogFromUrl } = await import("@/server/catalog/catalogImporter");
+        await importCatalogFromUrl(orgId, rawUrl);
+      }
     },
   });
 
@@ -54,3 +75,7 @@ export function registerWorkers(): void {
 
   console.log("[Workers] registered");
 }
+
+// Auto-register workers on module load so handlers are ready
+registerWorkers();
+

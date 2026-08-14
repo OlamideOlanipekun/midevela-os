@@ -112,6 +112,42 @@ enum WebsiteCrawlStatus {
   FAILED
 }
 
+enum CrawlStatus {
+  QUEUED
+  RUNNING
+  CANCELLING
+  CANCELLED
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+enum CrawlTrigger {
+  MANUAL
+  SCHEDULED
+  CLAIM
+  REINDEX
+}
+
+enum CrawlPageType {
+  PRODUCT
+  CATEGORY
+  POLICY
+  FAQ
+  ABOUT
+  CONTACT
+  BLOG
+  OTHER
+}
+
+enum CrawlFrontierStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
 // ─────────────────────────────────────────────────────────────
 // Tenancy & identity
 // ─────────────────────────────────────────────────────────────
@@ -143,6 +179,20 @@ model Organization {
   channelIntegrations ChannelIntegration[]
   supportTickets      SupportTicket[]
   websites            WebsiteRegistry[]
+  crawls              Crawl[]
+  pages               WebsitePage[]
+  crawlFrontier       CrawlFrontier[]
+  productVariants     ProductVariant[]
+  carts               Cart[]
+  attributedOrders    AttributedOrder[]
+  abandonedCarts      AbandonedCart[]
+  shopperSessions     ShopperSession[]
+  productPerformanceMetrics ProductPerformanceMetric[]
+  intentProductPerformances IntentProductPerformance[]
+  conversationSignals       ConversationSignal[]
+  experiments               Experiment[]
+  experimentAssignments     ExperimentAssignment[]
+  rankingModels             RankingModel[]
 
   @@map("organizations")
 }
@@ -161,9 +211,104 @@ model WebsiteRegistry {
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   brandTheme BrandTheme?
+  crawls Crawl[]
+  pages WebsitePage[]
+  crawlFrontier CrawlFrontier[]
 
   @@index([orgId])
   @@map("website_registry")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Website Intelligence (Phase 2 — crawl orchestration)
+// ─────────────────────────────────────────────────────────────
+
+model Crawl {
+  id                         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId                      String                 @map("org_id") @db.Uuid
+  websiteId                  String                 @map("website_id") @db.Uuid
+  status                     CrawlStatus            @default(QUEUED)
+  trigger                    CrawlTrigger           @default(MANUAL)
+  startedAt                  DateTime?              @map("started_at") @db.Timestamptz
+  completedAt                DateTime?              @map("completed_at") @db.Timestamptz
+  cancelledAt                DateTime?              @map("cancelled_at") @db.Timestamptz
+  error                      String?
+  pagesDiscovered            Int                    @default(0) @map("pages_discovered")
+  pagesProcessed             Int                    @default(0) @map("pages_processed")
+  pagesFailed                Int                    @default(0) @map("pages_failed")
+  productsDiscovered         Int                    @default(0) @map("products_discovered")
+  productsCreated            Int                    @default(0) @map("products_created")
+  productsUpdated            Int                    @default(0) @map("products_updated")
+  productsRemoved            Int                    @default(0) @map("products_removed")
+  knowledgeEntriesProcessed  Int                    @default(0) @map("knowledge_entries_processed")
+  createdAt                  DateTime               @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                  DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org      Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  website  WebsiteRegistry @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  pages    WebsitePage[]
+  frontier CrawlFrontier[]
+
+  @@index([orgId, createdAt])
+  @@index([websiteId, status])
+  @@index([status, createdAt])
+  @@map("crawls")
+}
+
+model WebsitePage {
+  id                      String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId                   String        @map("org_id") @db.Uuid
+  websiteId               String        @map("website_id") @db.Uuid
+  crawlId                 String        @map("crawl_id") @db.Uuid
+  url                     String
+  canonicalUrl            String        @map("canonical_url")
+  pageType                CrawlPageType @default(OTHER) @map("page_type")
+  title                   String?
+  contentHash             String?       @map("content_hash")
+  httpStatus              Int?          @map("http_status")
+  contentType             String?       @map("content_type")
+  discoveredFrom          String?       @map("discovered_from")
+  depth                   Int           @default(0)
+  lastCrawledAt           DateTime      @default(now()) @map("last_crawled_at") @db.Timestamptz
+  lastSuccessfulCrawlAt   DateTime?     @map("last_successful_crawl_at") @db.Timestamptz
+  metadata                Json          @default("{}")
+  createdAt               DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org      Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  website  WebsiteRegistry @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  crawl    Crawl           @relation(fields: [crawlId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, canonicalUrl])
+  @@index([websiteId, pageType])
+  @@index([crawlId])
+  @@map("website_pages")
+}
+
+model CrawlFrontier {
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  crawlId        String              @map("crawl_id") @db.Uuid
+  orgId          String              @map("org_id") @db.Uuid
+  websiteId      String              @map("website_id") @db.Uuid
+  url            String
+  normalizedUrl  String              @map("normalized_url")
+  depth          Int                 @default(0)
+  priority       Int                 @default(0)
+  discoveredFrom String?             @map("discovered_from")
+  status         CrawlFrontierStatus @default(PENDING)
+  attempts       Int                 @default(0)
+  scheduledAt    DateTime            @default(now()) @map("scheduled_at") @db.Timestamptz
+  processedAt    DateTime?           @map("processed_at") @db.Timestamptz
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  crawl   Crawl           @relation(fields: [crawlId], references: [id], onDelete: Cascade)
+  org     Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  website WebsiteRegistry @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([crawlId, normalizedUrl])
+  @@index([crawlId, status, priority])
+  @@index([orgId, status])
+  @@map("crawl_frontier")
 }
 
 model User {
@@ -259,13 +404,42 @@ model Product {
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  category Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  org      Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  category Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  variants ProductVariant[]
+  cartItems CartItem[]
+  performanceMetrics ProductPerformanceMetric[]
+  intentPerformances IntentProductPerformance[]
 
   @@index([orgId, createdAt])
   @@index([orgId, categoryId])
   @@index([orgId, brand])
   @@map("products")
+}
+
+model ProductVariant {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId         String          @map("product_id") @db.Uuid
+  orgId             String          @map("org_id") @db.Uuid
+  sku               String?
+  name              String?
+  price             Decimal?        @db.Decimal(12, 2)
+  currency          String          @default("NGN")
+  attributes        Json            @default("{}")
+  inventoryStatus   InventoryStatus @default(IN_STOCK) @map("inventory_status")
+  inventoryQuantity Int?            @map("inventory_quantity")
+  images            Json            @default("[]")
+  sourceUrl         String?         @map("source_url")
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  cartItems CartItem[]
+
+  @@index([productId])
+  @@index([orgId])
+  @@map("product_variants")
 }
 
 model KnowledgeEntry {
@@ -321,6 +495,10 @@ model Customer {
   org            Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   conversations  Conversation[]
   customerEvents CustomerEvent[]
+  carts          Cart[]
+  attributedOrders AttributedOrder[]
+  abandonedCarts   AbandonedCart[]
+  shopperSessions  ShopperSession[]
 
   @@unique([orgId, externalId])
   @@index([orgId, lastSeen])
@@ -347,6 +525,9 @@ model Conversation {
   org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   customer Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   messages Message[]
+  carts    Cart[]
+  attributedOrders AttributedOrder[]
+  abandonedCarts AbandonedCart[]
 
   @@index([orgId, startedAt])
   @@index([customerId])
@@ -385,6 +566,42 @@ model CustomerEvent {
   @@index([orgId, createdAt])
   @@index([customerId, createdAt])
   @@map("customer_events")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Milestone D — Customer Intelligence & Shopper Session
+// ─────────────────────────────────────────────────────────────
+
+model ShopperSession {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId               String    @map("org_id") @db.Uuid
+  sessionId           String    @unique @map("session_id")
+  customerId          String?   @map("customer_id") @db.Uuid
+  isAnonymous         Boolean   @default(true) @map("is_anonymous")
+  journeyState        String    @default("DISCOVERY") @map("journey_state")
+  intentStage         String    @default("INITIAL") @map("intent_stage")
+  currentIntent       String?   @map("current_intent")
+  intentConstraints   Json      @default("{}") @map("intent_constraints")
+  scores              Json      @default("{}")
+  explicitPreferences Json      @default("{}") @map("explicit_preferences")
+  inferredPreferences Json      @default("{}") @map("inferred_preferences")
+  categoriesViewed    Json      @default("[]") @map("categories_viewed")
+  productsViewed      Json      @default("[]") @map("products_viewed")
+  productsCompared    Json      @default("[]") @map("products_compared")
+  shortlist           Json      @default("[]")
+  pageContext         Json      @default("{}") @map("page_context")
+  segment             String    @default("NEW_VISITOR")
+  lastActivityAt      DateTime  @default(now()) @updatedAt @map("last_activity_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt           DateTime? @map("expires_at") @db.Timestamptz
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customer Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, sessionId])
+  @@index([orgId, customerId])
+  @@index([orgId, lastActivityAt])
+  @@map("shopper_sessions")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -755,4 +972,240 @@ model BrandTheme {
   @@index([orgId])
   @@map("brand_themes")
 }
+
+// ─────────────────────────────────────────────────────────────
+// Milestone C — Commerce Actions & Conversion Engine
+// ─────────────────────────────────────────────────────────────
+
+enum CartStatus {
+  ACTIVE
+  CHECKOUT_STARTED
+  COMPLETED
+  ABANDONED
+  EXPIRED
+}
+
+enum AttributionType {
+  DIRECT
+  ASSISTED
+}
+
+model Cart {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId           String      @map("org_id") @db.Uuid
+  sessionId       String      @map("session_id")
+  customerId      String?     @map("customer_id") @db.Uuid
+  conversationId  String?     @map("conversation_id") @db.Uuid
+  externalCartId  String?     @map("external_cart_id")
+  status          CartStatus  @default(ACTIVE)
+  currency        String      @default("NGN")
+  totalAmount     Decimal     @default(0) @db.Decimal(12, 2)
+  metadata        Json        @default("{}")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org              Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customer         Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  conversation     Conversation?     @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  items            CartItem[]
+  abandonedCart    AbandonedCart?
+  attributedOrders AttributedOrder[]
+
+  @@index([orgId, sessionId])
+  @@index([orgId, status])
+  @@map("carts")
+}
+
+model CartItem {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cartId      String   @map("cart_id") @db.Uuid
+  productId   String   @map("product_id") @db.Uuid
+  variantId   String?  @map("variant_id") @db.Uuid
+  productName String   @map("product_name")
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(12, 2)
+  totalPrice  Decimal  @map("total_price") @db.Decimal(12, 2)
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  cart    Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+model AttributedOrder {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId           String          @map("org_id") @db.Uuid
+  orderId         String          @map("order_id")
+  cartId          String?         @map("cart_id") @db.Uuid
+  customerId      String?         @map("customer_id") @db.Uuid
+  conversationId  String?         @map("conversation_id") @db.Uuid
+  attributionType AttributionType @default(DIRECT) @map("attribution_type")
+  amount          Decimal         @db.Decimal(12, 2)
+  currency        String          @default("NGN")
+  items           Json            @default("[]")
+  metadata        Json            @default("{}")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  org          Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  cart         Cart?         @relation(fields: [cartId], references: [id], onDelete: SetNull)
+  customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@unique([orgId, orderId])
+  @@index([orgId, attributionType, createdAt])
+  @@map("attributed_orders")
+}
+
+model AbandonedCart {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId          String    @map("org_id") @db.Uuid
+  cartId         String    @unique @map("cart_id") @db.Uuid
+  customerId     String?   @map("customer_id") @db.Uuid
+  conversationId String?   @map("conversation_id") @db.Uuid
+  sessionId      String    @map("session_id")
+  cartValue      Decimal   @map("cart_value") @db.Decimal(12, 2)
+  itemCount      Int       @map("item_count")
+  lastActivityAt DateTime  @map("last_activity_at") @db.Timestamptz
+  recoveredAt    DateTime? @map("recovered_at") @db.Timestamptz
+  status         String    @default("ABANDONED")
+  metadata       Json      @default("{}")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org          Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  cart         Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, status, lastActivityAt])
+  @@map("abandoned_carts")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Milestone E — Learning Engine & Adaptive Commerce
+// ─────────────────────────────────────────────────────────────
+
+model ProductPerformanceMetric {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId          String   @map("org_id") @db.Uuid
+  productId      String   @map("product_id") @db.Uuid
+  impressions    Int      @default(0)
+  clicks         Int      @default(0)
+  carts          Int      @default(0)
+  purchases      Int      @default(0)
+  returns        Int      @default(0)
+  ctr            Float    @default(0)
+  cartRate       Float    @default(0) @map("cart_rate")
+  conversionRate Float    @default(0) @map("conversion_rate")
+  returnRate     Float    @default(0) @map("return_rate")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, productId])
+  @@index([orgId, conversionRate])
+  @@map("product_performance_metrics")
+}
+
+model IntentProductPerformance {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId          String   @map("org_id") @db.Uuid
+  intentKey      String   @map("intent_key")
+  productId      String   @map("product_id") @db.Uuid
+  impressions    Int      @default(0)
+  clicks         Int      @default(0)
+  purchases      Int      @default(0)
+  conversionRate Float    @default(0) @map("conversion_rate")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, intentKey, productId])
+  @@index([orgId, intentKey])
+  @@map("intent_product_performances")
+}
+
+model ConversationSignal {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId          String   @map("org_id") @db.Uuid
+  topic          String
+  stage          String   @default("DISCOVERY")
+  sessionCount   Int      @default(0) @map("session_count")
+  purchaseCount  Int      @default(0) @map("purchase_count")
+  conversionRate Float    @default(0) @map("conversion_rate")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, topic, stage])
+  @@map("conversation_signals")
+}
+
+model Experiment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  name        String
+  key         String
+  description String?
+  status      String   @default("DRAFT") // "DRAFT", "RUNNING", "PAUSED", "COMPLETED"
+  variants    Json     @default("[]")
+  metrics     Json     @default("{}")
+  startedAt   DateTime? @map("started_at") @db.Timestamptz
+  endedAt     DateTime? @map("ended_at") @db.Timestamptz
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  assignments ExperimentAssignment[]
+
+  @@unique([orgId, key])
+  @@index([orgId, status])
+  @@map("experiments")
+}
+
+model ExperimentAssignment {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String   @map("org_id") @db.Uuid
+  experimentId String   @map("experiment_id") @db.Uuid
+  sessionId    String   @map("session_id")
+  variantId    String   @map("variant_id")
+  assignedAt   DateTime @default(now()) @map("assigned_at") @db.Timestamptz
+
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  experiment Experiment   @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@unique([experimentId, sessionId])
+  @@index([orgId, experimentId])
+  @@map("experiment_assignments")
+}
+
+model RankingModel {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId               String    @map("org_id") @db.Uuid
+  version             String
+  status              String    @default("CANDIDATE") // "CANDIDATE", "PRODUCTION", "ARCHIVED", "ROLLED_BACK"
+  weights             Json      @default("{}")
+  metrics             Json      @default("{}")
+  trainingWindowStart DateTime? @map("training_window_start") @db.Timestamptz
+  trainingWindowEnd   DateTime? @map("training_window_end") @db.Timestamptz
+  promotedAt          DateTime? @map("promoted_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, version])
+  @@index([orgId, status])
+  @@map("ranking_models")
+}
+
 

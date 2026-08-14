@@ -1,5 +1,6 @@
 import type { DetectedBrand } from "./types";
 import { BorderRadiusStyle, ThemeMode } from "@prisma/client";
+import { safeFetch } from "@/server/website/crawler/fetcher";
 
 /**
  * Normalizes relative URLs to absolute URLs using baseUrl.
@@ -180,20 +181,22 @@ function detectBorderRadius(html: string): { borderRadius: string; style: Border
 
 /**
  * Crawl website homepage and run visual identity detection.
+ * All requests are strictly routed through safeFetch SSRF guard.
  */
 export async function detectBrandFromUrl(url: string): Promise<DetectedBrand> {
   const targetUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
   let html = "";
 
   try {
-    const res = await fetch(targetUrl, {
-      headers: {
-        "User-Agent": "MidevelaBrandDetector/1.0 (+https://midevela.com)",
-      },
-      signal: AbortSignal.timeout(8000),
+    const fetchRes = await safeFetch(targetUrl, {
+      timeoutMs: 8000,
+      maxBytes: 5 * 1024 * 1024,
+      allowCrossHost: true,
     });
-    if (res.ok) {
-      html = await res.text();
+    if ("ok" in fetchRes && fetchRes.ok) {
+      html = fetchRes.html;
+    } else {
+      console.warn(`[BrandDetector] SafeFetch rejected or failed for ${targetUrl}:`, fetchRes);
     }
   } catch (err) {
     console.warn(`[BrandDetector] Could not fetch ${targetUrl}:`, err);
@@ -218,3 +221,4 @@ export async function detectBrandFromUrl(url: string): Promise<DetectedBrand> {
     themeMode: ThemeMode.LIGHT,
   };
 }
+

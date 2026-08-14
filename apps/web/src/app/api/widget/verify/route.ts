@@ -2,19 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireOrg } from "@/server/auth/context";
 import { withErrorHandling, jsonError } from "@/server/http";
-import { assertPublicUrl } from "@/server/net/ssrfGuard";
+import { safeFetch } from "@/server/website/crawler/fetcher";
 
 const FETCH_TIMEOUT_MS = 6000;
 
 /**
  * Checks whether the widget snippet is present on the merchant's site.
- * Server-side fetch (SSRF-guarded via assertPublicUrl) + a raw-HTML scan
+ * Server-side fetch (SSRF-guarded via safeFetch) + a raw-HTML scan
  * for our script / the org's public key.
- *
- * HONEST LIMITATION (surfaced to the caller): a raw-HTML scan can't see a
- * script injected by a tag manager (GTM) or a fully client-rendered site —
- * the tag won't be in the initial HTML. So a negative result is reported as
- * "couldn't detect", never "it's broken", with guidance to eyeball the site.
  */
 export async function POST(req: NextRequest) {
   return withErrorHandling(async () => {
@@ -34,42 +29,21 @@ export async function POST(req: NextRequest) {
     let target = rawUrl;
     if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
 
-    let url: URL;
-    try {
-      url = await assertPublicUrl(target); // throws ApiError(400) on private/invalid
-    } catch {
+    const fetchResult = await safeFetch(target, {
+      timeoutMs: FETCH_TIMEOUT_MS,
+      allowCrossHost: true,
+      maxBytes: 2 * 1024 * 1024,
+    });
+
+    if (!("ok" in fetchResult) || !fetchResult.ok) {
       return NextResponse.json({
         installed: false,
         reachable: false,
-        message: "That URL isn't a public web address we can reach. Check the spelling, or verify by opening your site yourself.",
+        message: "We couldn't load your site to check. It may be down, blocking bots, or not a public address — open it yourself to confirm the chat button appears.",
       });
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    let html = "";
-    let reachable = true;
-    try {
-      const res = await fetch(url.toString(), {
-        signal: controller.signal,
-        headers: { "User-Agent": "MidevelaBot/1.0 (+https://midevela.com/bot)", Accept: "text/html" },
-      });
-      if (!res.ok) reachable = false;
-      else html = await res.text();
-    } catch {
-      reachable = false;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-
-    if (!reachable) {
-      return NextResponse.json({
-        installed: false,
-        reachable: false,
-        message: "We couldn't load your site to check. It may be down, blocking bots, or not public yet — open it yourself to confirm the chat button appears.",
-      });
-    }
-
+    const html = fetchResult.html;
     const hasScript = /midevela-widget\.js/i.test(html);
     const hasKey = Boolean(key?.publicKey && html.includes(key.publicKey));
     const installed = hasScript || hasKey;
@@ -83,3 +57,4 @@ export async function POST(req: NextRequest) {
     });
   });
 }
+

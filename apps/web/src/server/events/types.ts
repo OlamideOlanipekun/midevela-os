@@ -239,6 +239,67 @@ export interface WebsiteCrawlFailedEvent extends BaseEvent {
   error: string;
 }
 
+// ── Milestone C Conversion Events ─────────────────────────────
+
+export interface ProductAddedEvent extends BaseEvent {
+  type: "product.added";
+  sessionId: string;
+  merchantId: string;
+  productId: string;
+  variantId?: string;
+  cartId: string;
+  quantity: number;
+  unitPrice: number;
+  source: "midevela" | "organic";
+}
+
+export interface ProductClickedEvent extends BaseEvent {
+  type: "product.clicked";
+  sessionId: string;
+  merchantId: string;
+  productId: string;
+  conversationId?: string;
+  source: "midevela" | "organic";
+}
+
+export interface ProductViewedEvent extends BaseEvent {
+  type: "product.viewed";
+  sessionId: string;
+  merchantId: string;
+  productId: string;
+}
+
+export interface CartViewedEvent extends BaseEvent {
+  type: "cart.viewed";
+  sessionId: string;
+  merchantId: string;
+  cartId: string;
+  totalAmount: number;
+}
+
+export interface CartUpdatedEvent extends BaseEvent {
+  type: "cart.updated";
+  sessionId: string;
+  merchantId: string;
+  cartId: string;
+  totalAmount: number;
+}
+
+export interface CheckoutStartedEvent extends BaseEvent {
+  type: "checkout.started";
+  sessionId: string;
+  merchantId: string;
+  cartId: string;
+  conversationId?: string;
+  totalAmount: number;
+}
+
+export interface SessionStartedEvent extends BaseEvent {
+  type: "session.started";
+  sessionId: string;
+  merchantId: string;
+}
+
 export type MidevelaEvent =
   | MerchantCreatedEvent
   | MerchantDeletedEvent
@@ -271,6 +332,13 @@ export type MidevelaEvent =
   | WebsiteReactivatedEvent
   | WebsiteCrawlStartedEvent
   | WebsiteCrawlCompletedEvent
-  | WebsiteCrawlFailedEvent;
+  | WebsiteCrawlFailedEvent
+  | ProductAddedEvent
+  | ProductClickedEvent
+  | ProductViewedEvent
+  | CartViewedEvent
+  | CartUpdatedEvent
+  | CheckoutStartedEvent
+  | SessionStartedEvent;
 
 export type EventHandler<T extends MidevelaEvent = MidevelaEvent> = (event: T) => void | Promise<void>;

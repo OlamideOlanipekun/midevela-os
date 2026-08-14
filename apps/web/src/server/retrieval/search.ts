@@ -8,9 +8,7 @@ export interface RetrievedProduct {
   price: string;
   category: string | null;
   description: string | null;
-  /** Merchant product page (sourceUrl), http(s) only. */
   url: string | null;
-  /** First product image, http(s) only. */
   imageUrl: string | null;
   similarity: number;
 }
@@ -52,80 +50,139 @@ export function firstImageUrl(images: unknown): string | null {
   return null;
 }
 
+/** Ensure pgvector HNSW index exists for high-performance vector search */
+export async function ensureHnswIndex(): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "embeddings_embedding_hnsw_idx"
+      ON "embeddings" USING hnsw ("embedding" vector_cosine_ops);
+    `);
+  } catch (err) {
+    console.warn("[HNSW] Note: HNSW index creation check skipped:", err instanceof Error ? err.message : err);
+  }
+}
+
 /**
- * Cosine-similarity search over the org's embeddings, then re-fetches the
- * *live* Product/KnowledgeEntry rows for any hits — never hands the model
- * stale chunk text for things like price or stock that change after the
- * chunk was embedded.
+ * PRODUCT INDEX RETRIEVAL
+ * Queries pgvector HNSW vector index strictly for PRODUCT embeddings (source_type = 'PRODUCT'),
+ * then hydrates live Product records.
+ */
+export async function retrieveProducts(
+  orgId: string,
+  queryEmbedding: number[],
+  options?: { limit?: number; minSimilarity?: number }
+): Promise<RetrievedProduct[]> {
+  if (!queryEmbedding.every((v) => typeof v === "number" && Number.isFinite(v))) {
+    throw new Error("Query embedding contains non-numeric values");
+  }
+  const limit = options?.limit ?? 6;
+  const minSimilarity = options?.minSimilarity ?? SIMILARITY_FLOOR;
+  const vectorLiteral = `[${queryEmbedding.join(",")}]`;
+
+  const hits = await prisma.$queryRaw<EmbeddingHit[]>`
+    SELECT source_type, source_id, 1 - (embedding <=> ${vectorLiteral}::vector) AS similarity
+    FROM embeddings
+    WHERE org_id = ${orgId}::uuid AND source_type = 'PRODUCT'::"EmbeddingSourceType"
+    ORDER BY embedding <=> ${vectorLiteral}::vector
+    LIMIT ${limit}
+  `;
+
+  const relevant = hits.filter((h) => h.similarity >= minSimilarity);
+  if (relevant.length === 0) return [];
+
+  const productIds = relevant.map((h) => h.source_id);
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds }, orgId },
+    include: { category: true },
+  });
+
+  const productById = new Map(products.map((p) => [p.id, p]));
+  const results: RetrievedProduct[] = [];
+
+  for (const hit of relevant) {
+    const p = productById.get(hit.source_id);
+    if (!p) continue;
+    results.push({
+      type: "product",
+      id: p.id,
+      name: p.name,
+      price: formatMoney(p.price, p.currency),
+      category: p.category?.name ?? null,
+      description: p.description,
+      url: safeHttpUrl(p.sourceUrl),
+      imageUrl: firstImageUrl(p.images),
+      similarity: hit.similarity,
+    });
+  }
+
+  return results;
+}
+
+/**
+ * KNOWLEDGE INDEX RETRIEVAL
+ * Queries pgvector HNSW vector index strictly for KNOWLEDGE_ENTRY embeddings (policies, FAQs, docs),
+ * then hydrates live KnowledgeEntry records.
+ */
+export async function retrieveKnowledge(
+  orgId: string,
+  queryEmbedding: number[],
+  options?: { limit?: number; minSimilarity?: number }
+): Promise<RetrievedKnowledge[]> {
+  if (!queryEmbedding.every((v) => typeof v === "number" && Number.isFinite(v))) {
+    throw new Error("Query embedding contains non-numeric values");
+  }
+  const limit = options?.limit ?? 6;
+  const minSimilarity = options?.minSimilarity ?? SIMILARITY_FLOOR;
+  const vectorLiteral = `[${queryEmbedding.join(",")}]`;
+
+  const hits = await prisma.$queryRaw<EmbeddingHit[]>`
+    SELECT source_type, source_id, 1 - (embedding <=> ${vectorLiteral}::vector) AS similarity
+    FROM embeddings
+    WHERE org_id = ${orgId}::uuid AND source_type = 'KNOWLEDGE_ENTRY'::"EmbeddingSourceType"
+    ORDER BY embedding <=> ${vectorLiteral}::vector
+    LIMIT ${limit}
+  `;
+
+  const relevant = hits.filter((h) => h.similarity >= minSimilarity);
+  if (relevant.length === 0) return [];
+
+  const knowledgeIds = relevant.map((h) => h.source_id);
+  const knowledgeEntries = await prisma.knowledgeEntry.findMany({
+    where: { id: { in: knowledgeIds }, orgId },
+  });
+
+  const knowledgeById = new Map(knowledgeEntries.map((k) => [k.id, k]));
+  const results: RetrievedKnowledge[] = [];
+
+  for (const hit of relevant) {
+    const k = knowledgeById.get(hit.source_id);
+    if (!k) continue;
+    results.push({
+      type: "knowledge",
+      id: k.id,
+      title: k.title,
+      content: k.content,
+      similarity: hit.similarity,
+    });
+  }
+
+  return results;
+}
+
+/**
+ * Clean facade combining separated product and knowledge index searches.
  */
 export async function retrieveContext(
   orgId: string,
   queryEmbedding: number[],
   limit = 6
 ): Promise<RetrievedContext[]> {
-  if (!queryEmbedding.every((v) => typeof v === "number" && Number.isFinite(v))) {
-    throw new Error("Query embedding contains non-numeric values");
-  }
-  const vectorLiteral = `[${queryEmbedding.join(",")}]`;
-
-  const hits = await prisma.$queryRaw<EmbeddingHit[]>`
-    SELECT source_type, source_id, 1 - (embedding <=> ${vectorLiteral}::vector) AS similarity
-    FROM embeddings
-    WHERE org_id = ${orgId}::uuid
-    ORDER BY embedding <=> ${vectorLiteral}::vector
-    LIMIT ${limit}
-  `;
-
-  const relevant = hits.filter((h) => h.similarity >= SIMILARITY_FLOOR);
-  if (relevant.length === 0) return [];
-
-  const productIds = relevant.filter((h) => h.source_type === "PRODUCT").map((h) => h.source_id);
-  const knowledgeIds = relevant
-    .filter((h) => h.source_type === "KNOWLEDGE_ENTRY")
-    .map((h) => h.source_id);
-
-  const [products, knowledgeEntries] = await Promise.all([
-    productIds.length
-      ? prisma.product.findMany({ where: { id: { in: productIds }, orgId }, include: { category: true } })
-      : Promise.resolve([]),
-    knowledgeIds.length
-      ? prisma.knowledgeEntry.findMany({ where: { id: { in: knowledgeIds }, orgId } })
-      : Promise.resolve([]),
+  const [products, knowledge] = await Promise.all([
+    retrieveProducts(orgId, queryEmbedding, { limit }),
+    retrieveKnowledge(orgId, queryEmbedding, { limit }),
   ]);
 
-  const productById = new Map(products.map((p) => [p.id, p]));
-  const knowledgeById = new Map(knowledgeEntries.map((k) => [k.id, k]));
-
-  const results: RetrievedContext[] = [];
-  for (const hit of relevant) {
-    if (hit.source_type === "PRODUCT") {
-      const p = productById.get(hit.source_id);
-      // The product may have been deleted since it was embedded — skip
-      // rather than surface a dangling reference.
-      if (!p) continue;
-      results.push({
-        type: "product",
-        id: p.id,
-        name: p.name,
-        price: formatMoney(p.price, p.currency),
-        category: p.category?.name ?? null,
-        description: p.description,
-        url: safeHttpUrl(p.sourceUrl),
-        imageUrl: firstImageUrl(p.images),
-        similarity: hit.similarity,
-      });
-    } else {
-      const k = knowledgeById.get(hit.source_id);
-      if (!k) continue;
-      results.push({
-        type: "knowledge",
-        id: k.id,
-        title: k.title,
-        content: k.content,
-        similarity: hit.similarity,
-      });
-    }
-  }
-
-  return results;
+  const combined: RetrievedContext[] = [...products, ...knowledge];
+  return combined.sort((a, b) => b.similarity - a.similarity).slice(0, limit);
 }
+
