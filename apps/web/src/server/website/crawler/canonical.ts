@@ -11,7 +11,7 @@
  * same input URL always produces the same digest.
  */
 
-const TRACKING_PARAMS = new Set([
+const TRACKING_PARAMS = new Set<string>([
   "utm_source",
   "utm_medium",
   "utm_campaign",

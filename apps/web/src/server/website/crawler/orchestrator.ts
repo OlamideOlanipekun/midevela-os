@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import type { Crawl, CrawlStatus, CrawlPageType } from "@prisma/client";
 import { resolveCrawlLimits, type CrawlLimits } from "@/server/website/crawler/limits";
 import { safeFetch, isFetchResult, type SafeFetchOptions } from "@/server/website/crawler/fetcher";
+import type { FetchFailure } from "@/server/website/crawler/types";
 import { parseRobots, emptyRobots, isPathAllowed, type RobotsRules } from "@/server/website/crawler/robots";
 import { parseSitemap } from "@/server/website/crawler/sitemap";
 import { discoverLinks, declaredCanonical } from "@/server/website/crawler/discovery";
@@ -174,7 +175,7 @@ async function seedSitemap(ctx: CrawlContext, sitemapUrl: string, limits: CrawlL
 
 // ─── single page processing ──────────────────────────────────────────────
 
-const PERMANENT_FAILURES = new Set(["invalid", "ssrf", "content_type", "redirect_loop"] as const);
+const PERMANENT_FAILURES = new Set<string>(["invalid", "ssrf", "content_type", "redirect_loop"]);
 
 async function processPage(
   ctx: CrawlContext,
