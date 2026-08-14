@@ -58,6 +58,7 @@ export interface IntentConstraints {
   brand?: string;
   useCase?: string;
   attributes?: Record<string, string>;
+  [key: string]: unknown;
 }
 
 export interface ExplicitPreference {
@@ -66,6 +67,7 @@ export interface ExplicitPreference {
   confidence: 1.0;
   source: "SHOPPER_STATEMENT";
   updatedAt: string;
+  [key: string]: unknown;
 }
 
 export interface InferredPreference {
@@ -75,6 +77,7 @@ export interface InferredPreference {
   evidenceCount: number;
   source: "BEHAVIORAL_INFERENCE";
   updatedAt: string;
+  [key: string]: unknown;
 }
 
 export interface BehavioralScores {
@@ -84,6 +87,7 @@ export interface BehavioralScores {
   productInterestScores: Record<string, number>; // productId -> score
   categoryInterestScores: Record<string, number>; // categoryId -> score
   brandInterestScores: Record<string, number>; // brandName -> score
+  [key: string]: unknown;
 }
 
 export interface PageContext {
@@ -94,6 +98,7 @@ export interface PageContext {
   activeCategoryName?: string;
   selectedVariantId?: string;
   searchQuery?: string;
+  [key: string]: unknown;
 }
 
 export interface ShopperSessionState {

@@ -102,7 +102,7 @@ export async function getOrCreateShopperSession(
       intentStage: "INITIAL",
       currentIntent: "",
       intentConstraints: {},
-      scores: defaultScores(),
+      scores: defaultScores() as any,
       explicitPreferences: {},
       inferredPreferences: {},
       categoriesViewed: [],
