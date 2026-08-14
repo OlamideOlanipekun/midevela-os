@@ -269,3 +269,94 @@ function extractAttributeValues(
   }
   return Array.from(values);
 }
+
+// ── Milestone C: Variant Resolution for Commerce ─────────────────────────────
+
+export interface VariantSelection {
+  size?: string;
+  color?: string;
+  attributes?: Record<string, string>;
+}
+
+export interface VariantResolutionResult {
+  resolved: boolean;
+  variant?: {
+    id: string;
+    name?: string | null;
+    sku?: string | null;
+    attributes?: Record<string, unknown>;
+    inventoryStatus?: string;
+    inventoryQuantity?: number | null;
+    price?: string | null;
+  };
+  message?: string;
+}
+
+/**
+ * Resolve a specific variant given a product ID, org ID, and variant selections.
+ */
+export async function resolveVariant(
+  productId: string,
+  orgId: string,
+  selection: VariantSelection
+): Promise<VariantResolutionResult> {
+  const query: VariantQuery = {
+    size: selection.size,
+    color: selection.color,
+  };
+
+  const variants = await prisma.productVariant.findMany({
+    where: { productId, orgId },
+  });
+
+  if (variants.length === 0) {
+    return {
+      resolved: false,
+      message: "No variants found for this product",
+    };
+  }
+
+  // Filter matching candidates
+  const matching = variants.filter((v) => {
+    const attrs = (v.attributes ?? {}) as Record<string, unknown>;
+    if (!variantMatchesQuery(attrs, query)) return false;
+
+    if (selection.attributes) {
+      for (const [k, val] of Object.entries(selection.attributes)) {
+        if (!val) continue;
+        const matchesAttr = variantMatchesQuery(attrs, { attributeKey: k, attributeValue: val });
+        if (!matchesAttr) return false;
+      }
+    }
+    return true;
+  });
+
+  if (matching.length === 0) {
+    return {
+      resolved: false,
+      message: "Requested variant option does not exist for this product",
+    };
+  }
+
+  const inStock = matching.find((v) => v.inventoryStatus !== "OUT_OF_STOCK") ?? matching[0];
+  if (inStock.inventoryStatus === "OUT_OF_STOCK") {
+    return {
+      resolved: false,
+      message: "Requested variant is currently out of stock",
+    };
+  }
+
+  return {
+    resolved: true,
+    variant: {
+      id: inStock.id,
+      name: inStock.name,
+      sku: inStock.sku,
+      attributes: (inStock.attributes ?? {}) as Record<string, unknown>,
+      inventoryStatus: inStock.inventoryStatus,
+      inventoryQuantity: inStock.inventoryQuantity,
+      price: inStock.price ? inStock.price.toString() : null,
+    },
+  };
+}
+
