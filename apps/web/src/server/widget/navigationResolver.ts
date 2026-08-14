@@ -126,7 +126,7 @@ export async function resolveNavigation(
   const pages = await prisma.websitePage.findMany({
     where: {
       orgId,
-      httpStatus: { in: [200, null] },
+      NOT: { httpStatus: { gte: 400 } },
       OR: [
         { title: { contains: label, mode: "insensitive" } },
         { url: { contains: label.replace(/\s+/g, "-"), mode: "insensitive" } },
